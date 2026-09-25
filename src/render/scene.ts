@@ -1,17 +1,17 @@
 import { Application, Container, Graphics, Rectangle, Text, type FederatedPointerEvent } from 'pixi.js';
+import { UPGRADE_FX } from '../game/config/balance';
 import { PLANTS } from '../game/config/plants';
 import { RECIPES, type PotionId } from '../game/config/recipes';
-import { nextLockedRecipes } from '../game/commands';
+import { activeCombo, nextLockedRecipes } from '../game/commands';
 import { formatNumber } from '../game/format';
 import type { Game } from '../game/game';
 import { missingInputs, type GameEvent } from '../game/sim';
 import type { CustomerState, GameState } from '../game/state';
-import { milestoneCount } from '../game/stats';
+import { has, milestoneCount } from '../game/stats';
 import { openDrawer, showToast } from '../ui/store';
 import {
-  CAULDRON_X, CAULDRON_Y, COUNTER, DOOR, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT, LUMIA_COUNTER, OFFSTAGE_X,
-  QUEUE_X, QUEUE_Y,
-  FLOATING_SLOT_FROM, SHELF_Y, SLOT_POS, W, ZONES,
+  CAULDRON_X, CAULDRON_Y, COUNTER, DOOR, FLOATING_SLOT_FROM, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT,
+  LUMIA_COUNTER, OFFSTAGE_X, PROPS, QUEUE_X, QUEUE_Y, SHELF_Y, SLOT_POS, W, ZONES,
 } from './layout';
 import { PaperDoll } from './paperDoll';
 import { FONT, Pic, TextureBank } from './textures';
@@ -22,11 +22,13 @@ const text = (s: string, size: number, fill = 0xffffff, weight: '400' | '700' = 
     style: { fontFamily: FONT, fontSize: size, fill, fontWeight: weight, align: 'center', stroke: { color: 0x2b1d14, width: Math.max(3, size / 6) } },
   });
 
-const lighten = (c: number, k = 0.45) => {
-  const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
-  const f = (v: number) => Math.round(v + (255 - v) * k);
-  return (f(r) << 16) | (f(g) << 8) | f(b);
-};
+const lighten = (c: number, k = 0.45) => lerpColor(c, 0xffffff, k);
+
+function lerpColor(a: number, b: number, k: number): number {
+  const ch = (c: number, s: number) => (c >> s) & 255;
+  const mix = (s: number) => Math.round(ch(a, s) + (ch(b, s) - ch(a, s)) * k);
+  return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+}
 
 // ---------- 小元件 ----------
 
@@ -222,13 +224,21 @@ class CauldronView extends Container {
   private info = text('', 22, 0xffffff);
   private needs = new Container();
   private salamander: Pic;
+  private ladle: Pic;
+  private combo = text('', 22, 0xffb347);
+  private comboFill = 0xffb347;
   private shake = 0;
   private punch = 0;
   private t = Math.random() * 10;
   private recipe: PotionId | null = null;
   private locked: PotionId | null = null;
+  /** 拖曳中：大釜跟著手指的 x 座標；null = 在原位 */
+  dragX: number | null = null;
 
-  constructor(private i: number, private tex: TextureBank, private game: Game) {
+  constructor(
+    readonly i: number, private tex: TextureBank, private game: Game,
+    onPress: (view: CauldronView, e: FederatedPointerEvent) => void,
+  ) {
     super();
     this.position.set(CAULDRON_X[i], CAULDRON_Y);
     this.body = new Pic(tex, 'cauldron_t1');
@@ -250,15 +260,25 @@ class CauldronView extends Container {
     this.title.y = 66;
     this.info.anchor.set(0.5);
     this.needs.y = -140;
-    this.addChild(this.body, this.liquid, ...this.bubbles, this.salamander);
+    this.ladle = new Pic(tex, 'upg_servant_ladle');
+    this.ladle.anchor.set(0.5, 0.9);
+    this.combo.anchor.set(0.5);
+    this.addChild(this.body, this.liquid, ...this.bubbles, this.salamander, this.ladle);
     // 進度條、徽章、需求等資訊放在獨立圖層，畫在角色前面
     this.hud.position.copyFrom(this.position);
-    this.hud.addChild(this.bar, this.lv.view, this.title, this.info, this.needs);
+    this.hud.addChild(this.bar, this.lv.view, this.title, this.info, this.needs, this.combo);
 
     this.eventMode = 'static';
     this.cursor = 'pointer';
     this.hitArea = new Rectangle(-60, -120, 120, 130);
-    this.on('pointerdown', () => this.tap());
+    this.on('pointerdown', (e: FederatedPointerEvent) => {
+      this.tap();
+      onPress(this, e);
+    });
+  }
+
+  get active(): boolean {
+    return this.recipe !== null;
   }
 
   private tap(): void {
@@ -286,12 +306,15 @@ class CauldronView extends Container {
     this.bar.visible = active;
     this.lv.view.visible = active;
     this.salamander.visible = active && c.salamander > 0;
+    this.ladle.visible = active && has(s, 'servant_ladle');
     const brewing = !!c && c.batch > 0;
     this.liquid.visible = brewing;
     for (const b of this.bubbles) b.visible = brewing;
+    this.combo.text = '';
 
     if (!c) {
       this.setNeeds('', null, []);
+      this.x = this.hud.x = CAULDRON_X[this.i];
       if (!this.locked) return;
       const r = RECIPES[this.locked];
       this.body.setId('cauldron_t1');
@@ -306,9 +329,21 @@ class CauldronView extends Container {
     const bodyId = `cauldron_t${Math.min(3, milestoneCount(c.level)) + 1}`;
     this.body.alpha = 1;
     this.body.setId(bodyId);
-    this.x = CAULDRON_X[this.i] + (this.shake > 0 ? Math.sin(this.t * 80) * 8 * (this.shake / 0.35) : 0);
+    const boiling = c.boil > 0;
+    const jitter = this.shake > 0 ? Math.sin(this.t * 80) * 8 * (this.shake / 0.35)
+      : boiling ? Math.sin(this.t * 60) * 2 : 0;
+    const homeX = this.dragX ?? CAULDRON_X[this.i];
+    this.x = homeX + jitter;
+    this.hud.x = homeX;
+    // 拖曳中稍微浮起
+    const lift = this.dragX !== null ? 1.1 : 1;
+    this.scale.set(lift);
+    this.hud.scale.set(lift);
+    this.alpha = this.dragX !== null ? 0.9 : 1;
     const squash = 1 + Math.sin(this.punch * Math.PI) * 0.06;
     this.body.scale.y = this.body.baseScale / squash;
+    // 極速沸騰：鍋身泛紅光閃爍
+    this.body.tint = boiling ? lerpColor(0xffffff, 0xffa060, 0.5 + 0.5 * Math.sin(this.t * 14)) : 0xffffff;
 
     // 鍋內液體：灰階液面圖依配方著色，對齊各階大釜的鍋口
     const bw = this.body.texture.width * this.body.baseScale;
@@ -331,10 +366,27 @@ class CauldronView extends Container {
       });
     }
 
-    this.bar.set(c.progress / def.brewTime, lighten(def.color, 0.25));
+    // 隱形僕役湯勺：浮在鍋口右側攪拌
+    if (this.ladle.visible) {
+      this.ladle.position.set(bw * 0.22, -bh * 0.78 + Math.sin(this.t * 3) * 4);
+      this.ladle.rotation = 0.35 + Math.sin(this.t * (boiling ? 12 : 4)) * 0.35;
+    }
+
+    this.bar.set(c.progress / def.brewTime, boiling ? 0xffa040 : lighten(def.color, 0.25));
     this.lv.label.text = `Lv ${c.level}`;
     this.title.text = def.name;
     this.info.y = -bh - 22;
+
+    // 龍息風箱：連擊數、沸騰倒數、冷卻
+    if (has(s, 'bellows')) {
+      this.combo.y = -bh - 52;
+      const n = activeCombo(s, c);
+      if (boiling) this.combo.text = `🔥 極速沸騰 ${c.boil.toFixed(1)}s`;
+      else if (c.boilCooldown > 0) this.combo.text = `冷卻 ${Math.ceil(c.boilCooldown)}s`;
+      else if (n > 0) this.combo.text = `連擊 ${n}/${UPGRADE_FX.comboClicks}`;
+      const fill = boiling ? 0xff8a3c : c.boilCooldown > 0 ? 0xbbbbbb : 0xffb347;
+      if (fill !== this.comboFill) this.combo.style.fill = this.comboFill = fill;
+    }
 
     if (brewing) {
       this.info.text = `熬煮中 ×${c.batch}`;
@@ -553,6 +605,149 @@ class LumiaView extends Container {
   }
 }
 
+// ---------- 升級道具（買了才出現在場景裡） ----------
+
+class PropsLayer extends Container {
+  private items: { upg: string; pic: Pic; bob: number }[] = [];
+  private bell: Pic;
+  private bellPips = new Graphics();
+  private bellPunch = 0;
+  private crate: Pic;
+  private t = 0;
+
+  constructor(tex: TextureBank, private game: Game) {
+    super();
+    const add = (upg: string, id: string, pos: { x: number; y: number }, bob = 0, anchorY = 1) => {
+      const pic = new Pic(tex, id);
+      pic.anchor.set(0.5, anchorY);
+      pic.position.set(pos.x, pos.y);
+      pic.eventMode = 'none';
+      this.addChild(pic);
+      this.items.push({ upg, pic, bob });
+      return pic;
+    };
+    add('star_can', 'upg_starsilver_can', PROPS.starCan);
+    add('fortune_owl', 'upg_owl', PROPS.owl);
+    add('diffuser', 'upg_diffuser', PROPS.diffuser, 1.5);
+    add('signboard', 'upg_signboard', PROPS.signboard, 0, 0);
+
+    // 叫賣鈴鐺：可以點
+    this.bell = add('bell', 'upg_bell', PROPS.bell);
+    this.bell.eventMode = 'static';
+    this.bell.cursor = 'pointer';
+    this.bell.on('pointerdown', () => this.ring());
+    this.bellPips.position.set(PROPS.bell.x, PROPS.bell.y + 12);
+    this.addChild(this.bellPips);
+
+    // 收購箱：點了打開保留量設定
+    this.crate = add('crate', 'upg_crate', PROPS.crate);
+    this.crate.eventMode = 'static';
+    this.crate.cursor = 'pointer';
+    this.crate.on('pointerdown', () => openDrawer('counter', 'crate-reserve'));
+  }
+
+  private ring(): void {
+    const r = this.game.ringBell();
+    if (r === 'ok') this.bellPunch = 1;
+    else if (r === 'empty') showToast('鈴鐺還在充能中…');
+    else if (r === 'full') showToast('櫃台已經排滿客人了');
+  }
+
+  update(s: GameState, dt: number): void {
+    this.t += dt;
+    this.bellPunch = Math.max(0, this.bellPunch - dt * 3);
+    for (const it of this.items) {
+      it.pic.visible = has(s, it.upg);
+      if (it.bob) it.pic.y = PROPS.diffuser.y + Math.sin(this.t * it.bob) * 2;
+    }
+    // 招牌輕輕搖晃
+    const sign = this.items.find((i) => i.upg === 'signboard')!.pic;
+    sign.rotation = Math.sin(this.t * 1.3) * 0.05;
+    // 鈴鐺被搖時左右擺
+    this.bell.rotation = Math.sin(this.bellPunch * 20) * 0.4 * this.bellPunch;
+
+    // 鈴鐺剩餘次數
+    this.bellPips.clear();
+    this.bellPips.visible = this.bell.visible;
+    if (this.bell.visible) {
+      for (let k = 0; k < UPGRADE_FX.bellMaxCharges; k++) {
+        this.bellPips.circle((k - 1) * 14, 0, 5)
+          .fill({ color: k < s.bellCharges ? 0xffd34d : 0x3a2a20 })
+          .stroke({ width: 2, color: 0x2b1d14 });
+      }
+    }
+  }
+
+  get crateVisible(): boolean {
+    return this.crate.visible;
+  }
+}
+
+// ---------- 大釜拖曳排序 ----------
+
+/** 長按 0.3 秒後左右拖曳大釜，放開時移到最近的位置 */
+class CauldronDrag {
+  private view: CauldronView | null = null;
+  private downAt = 0;
+  private startX = 0;
+  private startY = 0;
+  private pointerX = 0;
+  private moved = false;
+  private dragging = false;
+
+  constructor(app: Application, private game: Game) {
+    app.stage.eventMode = 'static';
+    app.stage.hitArea = new Rectangle(0, 0, W, H);
+    app.stage.on('globalpointermove', (e: FederatedPointerEvent) => {
+      if (!this.view) return;
+      this.pointerX = e.global.x;
+      if (Math.hypot(e.global.x - this.startX, e.global.y - this.startY) > 24) this.moved = true;
+    });
+    const end = () => this.release();
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  }
+
+  press(view: CauldronView, e: FederatedPointerEvent): void {
+    if (!view.active || this.game.state.cauldrons.length < 2) return;
+    this.view = view;
+    this.downAt = performance.now();
+    this.startX = this.pointerX = e.global.x;
+    this.startY = e.global.y;
+    this.moved = false;
+    this.dragging = false;
+  }
+
+  update(): void {
+    const v = this.view;
+    if (!v) return;
+    if (!this.dragging) {
+      if (this.moved) {
+        this.view = null; // 手指滑開：不是長按
+        return;
+      }
+      if (performance.now() - this.downAt < 300) return;
+      this.dragging = true;
+    }
+    const n = this.game.state.cauldrons.length;
+    v.dragX = Math.max(CAULDRON_X[0], Math.min(CAULDRON_X[n - 1], this.pointerX));
+  }
+
+  private release(): void {
+    const v = this.view;
+    this.view = null;
+    if (!v || !this.dragging) return;
+    this.dragging = false;
+    const n = this.game.state.cauldrons.length;
+    let to = 0;
+    for (let k = 1; k < n; k++) {
+      if (Math.abs(CAULDRON_X[k] - v.dragX!) < Math.abs(CAULDRON_X[to] - v.dragX!)) to = k;
+    }
+    v.dragX = null;
+    if (this.game.moveCauldron(v.i, to)) showToast('已調整大釜順序：左邊的大釜優先取得原料');
+  }
+}
+
 // ---------- 飄字 ----------
 
 class FloatLayer extends Container {
@@ -629,35 +824,61 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   const tex = new TextureBank(app);
   await tex.init();
 
+  const drag = new CauldronDrag(app, game);
   const pots = SLOT_POS.map((_, i) => new PotView(i, tex, game));
-  const cauldrons = CAULDRON_X.map((_, i) => new CauldronView(i, tex, game));
+  const cauldrons = CAULDRON_X.map((_, i) => new CauldronView(i, tex, game, (v, e) => drag.press(v, e)));
+  const props = new PropsLayer(tex, game);
   const customers = new CustomerLayer(tex);
   const lumia = new LumiaView(tex);
   const floats = new FloatLayer();
   // 後排（y 較小）的盆栽先畫，才會被前排擋住
   const potsByDepth = [...pots].sort((p, q) => p.y - q.y);
   app.stage.addChild(
-    buildBackground(tex), ...potsByDepth, ...cauldrons, lumia, customers,
+    buildBackground(tex), props, ...potsByDepth, ...cauldrons, lumia, customers,
     ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud), floats,
   );
+
+  const cauldronPoint = (s: GameState, recipe: PotionId) => {
+    const idx = s.cauldrons.findIndex((c) => c.recipe === recipe);
+    return idx < 0 ? null : cauldrons[idx].anchorPoint;
+  };
 
   const onEvent = (e: GameEvent, s: GameState) => {
     switch (e.type) {
       case 'harvest': {
         const p = pots[e.slot].anchorPoint;
-        floats.spawn(`+${formatNumber(e.amount)} ${PLANTS[e.material].name}`, p.x, p.y, lighten(PLANTS[e.material].color));
+        const label = `+${formatNumber(e.amount)} ${PLANTS[e.material].name}`;
+        if (e.crit) floats.spawn(`暴擊生長！${label}`, p.x, p.y - 20, 0xffe066, true);
+        else if (e.bounty) floats.spawn(`豐收！${label}`, p.x, p.y - 10, 0x9dff8a);
+        else floats.spawn(label, p.x, p.y, lighten(PLANTS[e.material].color));
         break;
       }
       case 'brewed': {
-        const idx = s.cauldrons.findIndex((c) => c.recipe === e.recipe);
-        if (idx < 0) break;
-        const p = cauldrons[idx].anchorPoint;
-        floats.spawn(`+${formatNumber(e.amount)} ${RECIPES[e.recipe].name}`, p.x, p.y, lighten(RECIPES[e.recipe].color));
+        const p = cauldronPoint(s, e.recipe);
+        if (!p) break;
+        const label = `+${formatNumber(e.amount)} ${RECIPES[e.recipe].name}`;
+        if (e.double) floats.spawn(`雙倍！${label}`, p.x, p.y - 20, 0x9ee8ff, true);
+        else floats.spawn(label, p.x, p.y, lighten(RECIPES[e.recipe].color));
+        break;
+      }
+      case 'boil': {
+        const p = cauldronPoint(s, e.recipe);
+        if (p) floats.spawn('極速沸騰！', p.x, p.y - 40, 0xff8a3c, true);
         break;
       }
       case 'sale': {
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
-        floats.spawn(`+${formatNumber(e.gold)} 金${e.rush ? '（急單！）' : ''}`, p.x, p.y, 0xffd34d, e.rush);
+        const note = e.tip ? '（土豪小費！）' : e.rush ? '（急單！）' : '';
+        floats.spawn(`+${formatNumber(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, e.rush || e.tip);
+        break;
+      }
+      case 'wholesale': {
+        if (!props.crateVisible) break;
+        const what = [
+          e.amount > 0 ? `${formatNumber(e.amount)} 瓶` : '',
+          e.materials > 0 ? `${formatNumber(e.materials)} 份原料` : '',
+        ].filter(Boolean).join('、');
+        floats.spawn(`+${formatNumber(e.gold)} 金（收購 ${what}）`, PROPS.crate.x, PROPS.crate.y - 100, 0xe8c56a);
         break;
       }
       default:
@@ -670,6 +891,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     // 分頁在背景時畫面更新很慢，動畫仍以真實時間前進（上限 1 秒避免瞬移太遠）
     const dt = Math.min(1, ticker.deltaMS / 1000);
     const s = game.state;
+    drag.update();
+    props.update(s, dt);
     for (const p of pots) p.update(s, dt);
     for (const c of cauldrons) c.update(s, dt);
     customers.update(s, dt);

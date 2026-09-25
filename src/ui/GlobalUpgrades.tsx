@@ -1,0 +1,33 @@
+import { GLOBAL_UPGRADES, maxLevelOf, type GlobalUpgradeDef, type Zone } from '../game/config/upgrades';
+import type { GameState } from '../game/state';
+import { cratePct } from '../game/stats';
+import { BuyButton } from './BuyButton';
+import { useGame } from './store';
+
+function statusOf(def: GlobalUpgradeDef, s: GameState): string | undefined {
+  const lvl = s.upgrades[def.id] ?? 0;
+  const max = maxLevelOf(def);
+  if (def.id === 'crate') return lvl > 0 ? `收購價 ${Math.round(cratePct(s) * 100)}%` : undefined;
+  if (def.id === 'bell') return lvl > 0 ? `剩 ${s.bellCharges} 次` : undefined;
+  if (max === 1) return undefined;
+  return Number.isFinite(max) ? `Lv ${lvl}/${max}` : `Lv ${lvl}`;
+}
+
+/** 某個區域的全域升級清單 */
+export function GlobalUpgrades({ zone, title }: { zone: Zone; title: string }) {
+  const game = useGame();
+  const s = game.state;
+  const defs = GLOBAL_UPGRADES.filter((u) => u.zone === zone);
+  if (defs.length === 0) return null;
+  return (
+    <div class="card" id={`upgrades-${zone}`}>
+      <div class="card-title">{title}</div>
+      {defs.map((u) => (
+        <BuyButton
+          key={u.id} k={{ kind: 'global', id: u.id }} title={u.name} desc={u.desc} icon={u.icon}
+          status={statusOf(u, s)} doneText={maxLevelOf(u) === 1 ? '已擁有' : '已滿級'}
+        />
+      ))}
+    </div>
+  );
+}

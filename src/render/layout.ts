@@ -39,6 +39,19 @@ export const QUEUE_X = [1570, 1705, 1840];
 export const QUEUE_Y = 995;
 export const OFFSTAGE_X = 2060;
 
+/**
+ * 買了升級後出現在場景裡的道具（底部中心點）。
+ * 招牌掛在牆上，錨點是上緣。
+ */
+export const PROPS = {
+  starCan: { x: 512, y: 925 },
+  owl: { x: 1255, y: 846 },
+  bell: { x: 1462, y: 848 },
+  diffuser: { x: 1088, y: 704 },
+  signboard: { x: 1598, y: 540 },
+  crate: { x: 1500, y: 374 },
+};
+
 // 露米婭的工作點：櫃台左側，以及站在盆栽/大釜前方偏右（背影），不完全擋住物件
 export const LUMIA_COUNTER = { x: 1090, y: 990 };
 export const LUMIA_AT_POT = { dx: 44, dy: 50 };

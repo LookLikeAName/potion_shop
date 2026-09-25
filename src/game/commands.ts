@@ -1,36 +1,107 @@
 // 玩家指令。UI 與場景只透過這裡改變遊戲狀態。
-import { LEVEL_COST_GROWTH, TIER_MULT } from './config/balance';
+import { CUSTOMER, LEVEL_COST_GROWTH, SLOT_NEIGHBORS, TIER_MULT, UPGRADE_FX } from './config/balance';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, POTION_IDS, type PotionId } from './config/recipes';
-import { GLOBAL_UPGRADE_MAP, TARGET_UPGRADES } from './config/upgrades';
+import { GLOBAL_UPGRADE_MAP, TARGET_UPGRADES, maxLevelOf } from './config/upgrades';
 import { quote, type BuyMode, type Quote } from './costs';
-import { completeBrew, harvest, settlePlant, tryStartBrew, type SimContext } from './sim';
-import { createCauldron, type GameState } from './state';
-import { brewClickAdvance, plantClickAdvance } from './stats';
+import { completeBrew, harvest, settlePlant, spawnCustomer, tryStartBrew, type SimContext } from './sim';
+import { createCauldron, type CauldronState, type GameState } from './state';
+import { brewClickAdvance, has, plantClickAdvance, shearsChance } from './stats';
 
 // ---------- 點擊 ----------
 
-export function clickPlant(s: GameState, i: number, ctx: SimContext): 'harvest' | 'grow' | 'none' {
+export type PlantClick = 'harvest' | 'grow' | 'crit' | 'none';
+
+export function clickPlant(s: GameState, i: number, ctx: SimContext): PlantClick {
   const slot = s.slots[i];
   if (!slot?.plant) return 'none';
-  if (slot.ready) {
+  let result: PlantClick;
+  if (ctx.rng() < shearsChance(s)) {
+    // 附魔園藝剪：暴擊生長，立即收成並加倍產量
+    slot.ready = false;
+    slot.progress = 0;
+    harvest(s, i, UPGRADE_FX.shearsYield, ctx, true);
+    result = 'crit';
+  } else if (slot.ready) {
     slot.ready = false;
     slot.progress = 0;
     harvest(s, i, 1, ctx);
-    return 'harvest';
+    result = 'harvest';
+  } else {
+    slot.progress += plantClickAdvance(slot);
+    settlePlant(s, i, ctx);
+    result = 'grow';
   }
-  slot.progress += plantClickAdvance(slot);
-  settlePlant(s, i, ctx);
-  return 'grow';
+  if (has(s, 'star_can')) splash(s, i, ctx);
+  return result;
+}
+
+/** 星銀澆水壺：相鄰且生長中的盆栽也獲得一半推進量 */
+function splash(s: GameState, i: number, ctx: SimContext): void {
+  for (const n of SLOT_NEIGHBORS[i] ?? []) {
+    const slot = s.slots[n];
+    if (!slot?.open || !slot.plant || slot.ready) continue;
+    slot.progress += plantClickAdvance(slot) * UPGRADE_FX.starCanSplash;
+    settlePlant(s, n, ctx);
+  }
 }
 
 export function clickCauldron(s: GameState, recipe: PotionId, ctx: SimContext): 'brew' | 'missing' | 'none' {
   const c = s.cauldrons.find((x) => x.recipe === recipe);
   if (!c) return 'none';
   if (c.batch === 0 && !tryStartBrew(s, c)) return 'missing';
+  if (has(s, 'bellows')) countCombo(s, c, ctx);
   c.progress += brewClickAdvance(c);
   if (c.progress >= RECIPES[c.recipe].brewTime) completeBrew(s, c, ctx);
   return 'brew';
+}
+
+/** 龍息風箱：連點 10 下（每下間隔 1 秒內）觸發極速沸騰，之後冷卻 */
+function countCombo(s: GameState, c: CauldronState, ctx: SimContext): void {
+  if (c.boilCooldown > 0) return;
+  c.combo = s.time - c.comboAt <= UPGRADE_FX.comboGap ? c.combo + 1 : 1;
+  c.comboAt = s.time;
+  if (c.combo >= UPGRADE_FX.comboClicks) {
+    c.combo = 0;
+    c.boil = UPGRADE_FX.boilTime;
+    c.boilCooldown = UPGRADE_FX.boilTime + UPGRADE_FX.boilCooldown;
+    ctx.emit({ type: 'boil', recipe: c.recipe });
+  }
+}
+
+/** 連擊中斷時歸零（給畫面顯示用） */
+export function activeCombo(s: GameState, c: CauldronState): number {
+  return s.time - c.comboAt <= UPGRADE_FX.comboGap ? c.combo : 0;
+}
+
+// ---------- 櫃台 ----------
+
+export function ringBell(s: GameState, ctx: SimContext): 'ok' | 'empty' | 'full' | 'none' {
+  if (!has(s, 'bell') || s.cauldrons.length === 0) return 'none';
+  if (s.bellCharges < 1) return 'empty';
+  if (s.customers.length >= CUSTOMER.queueMax) return 'full';
+  s.bellCharges--;
+  spawnCustomer(s, ctx);
+  return 'ok';
+}
+
+export function setReserve(s: GameState, n: number): void {
+  s.settings.reserve = Math.max(0, Math.min(UPGRADE_FX.reserveMax, Math.round(n)));
+}
+
+export function setSellMaterials(s: GameState, on: boolean): void {
+  s.settings.sellMaterials = on;
+}
+
+// ---------- 大釜排序 ----------
+
+/** 把大釜從 from 移到 to（其他大釜順移）；順序 = 原料分配優先順序 */
+export function moveCauldron(s: GameState, from: number, to: number): boolean {
+  const n = s.cauldrons.length;
+  if (from === to || from < 0 || to < 0 || from >= n || to >= n) return false;
+  const [c] = s.cauldrons.splice(from, 1);
+  s.cauldrons.splice(to, 0, c);
+  return true;
 }
 
 // ---------- 種植與解鎖 ----------
@@ -99,6 +170,22 @@ interface PriceSpec {
   growth: number;
   owned: number;
   remaining: number;
+  /** 指定每級價格（取代等比價格） */
+  table?: number[];
+}
+
+/** 依價格表報價：table[k] 為第 k 級的價格 */
+function tableQuote(table: number[], owned: number, mode: BuyMode, budget: number): Quote {
+  const left = table.slice(owned);
+  const want = mode === 'max' ? left.length : Math.min(mode, left.length);
+  let count = 0;
+  let cost = 0;
+  for (let k = 0; k < want; k++) {
+    if (mode === 'max' && count > 0 && cost + left[k] > budget) break;
+    cost += left[k];
+    count++;
+  }
+  return { count, cost, affordable: count > 0 && cost <= budget };
 }
 
 function priceSpec(s: GameState, key: PurchaseKey): PriceSpec | null {
@@ -136,7 +223,7 @@ function priceSpec(s: GameState, key: PurchaseKey): PriceSpec | null {
       const owned = s.upgrades[key.id] ?? 0;
       return {
         base: def.cost.base, growth: def.cost.growth, owned,
-        remaining: def.maxLevel === undefined ? Infinity : def.maxLevel - owned,
+        remaining: maxLevelOf(def) - owned, table: def.costTable,
       };
     }
   }
@@ -145,6 +232,7 @@ function priceSpec(s: GameState, key: PurchaseKey): PriceSpec | null {
 export function getQuote(s: GameState, key: PurchaseKey, mode: BuyMode): Quote | null {
   const spec = priceSpec(s, key);
   if (!spec) return null;
+  if (spec.table) return tableQuote(spec.table, spec.owned, mode, s.gold);
   return quote(spec.base, spec.growth, spec.owned, mode, s.gold, spec.remaining);
 }
 
@@ -159,7 +247,11 @@ export function purchase(s: GameState, key: PurchaseKey, mode: BuyMode): boolean
     case 'fairy': s.slots[key.slot].fairy = true; break;
     case 'cauldronLevel': s.cauldrons.find((c) => c.recipe === key.recipe)!.level += n; break;
     case 'salamander': s.cauldrons.find((c) => c.recipe === key.recipe)!.salamander += n; break;
-    case 'global': s.upgrades[key.id] = (s.upgrades[key.id] ?? 0) + n; break;
+    case 'global':
+      s.upgrades[key.id] = (s.upgrades[key.id] ?? 0) + n;
+      // 剛買的鈴鐺是充滿的
+      if (key.id === 'bell') s.bellCharges = UPGRADE_FX.bellMaxCharges;
+      break;
   }
   return true;
 }

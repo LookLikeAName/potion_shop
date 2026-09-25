@@ -7,7 +7,7 @@ import { bulkCost, maxAffordable } from '../src/game/costs';
 import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
 import { exportSave, importSave, parseSave } from '../src/game/save';
-import { spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
+import { harvest, spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
 import { combine, growthSpeed } from '../src/game/stats';
 
@@ -91,7 +91,8 @@ describe('大釜', () => {
     unlockRecipe(s, 'focus');
     // 把專注糖漿移到最左邊
     s.cauldrons.reverse();
-    s.materials.redheart = 1;
+    // 專注糖漿要 3 紅心草 + 2 月光菇；紅心草只夠一口大釜開工
+    s.materials.redheart = 3;
     s.materials.moonshroom = 2;
     tick(s, 0.1, ctx());
     expect(s.cauldrons[0].recipe).toBe('focus');
@@ -167,6 +168,36 @@ describe('購買', () => {
     expect(s.gold).toBe(700);
     expect(plantSeed(s, 1, 'redheart')).toBe(false);
     expect(plantSeed(s, 3, 'redheart')).toBe(false); // 隱藏格
+  });
+});
+
+describe('豐收', () => {
+  it('擲中時產量 +50%（至少 +1），沒擲中照等級產出', () => {
+    const s = createInitialState();
+    s.slots[0].level = 10;
+    s.slots[0].ready = true;
+    const hit = ctx(() => 0.1);
+    clickPlant(s, 0, hit);
+    expect(s.materials.redheart).toBe(15);
+    expect(hit.events).toContainEqual(expect.objectContaining({ type: 'harvest', bounty: true }));
+
+    s.slots[0].ready = true;
+    clickPlant(s, 0, ctx(() => 0.9));
+    expect(s.materials.redheart).toBe(25);
+  });
+
+  it('等級 1 豐收也至少多 1 個', () => {
+    const s = createInitialState();
+    s.slots[0].ready = true;
+    clickPlant(s, 0, ctx(() => 0.1));
+    expect(s.materials.redheart).toBe(2);
+  });
+
+  it('離線取期望值（+10%）', () => {
+    const s = createInitialState();
+    s.slots[0].level = 10;
+    harvest(s, 0, 4, { ...ctx(), offline: true });
+    expect(s.materials.redheart).toBeCloseTo(4 * 10 * 1.1);
   });
 });
 

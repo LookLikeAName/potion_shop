@@ -11,9 +11,11 @@ interface Props {
   status?: string;
   /** 已買滿時顯示的文字 */
   doneText?: string;
+  /** 標題前的圖示（資源 ID） */
+  icon?: string;
 }
 
-export function BuyButton({ k, title, desc, status, doneText = '已擁有' }: Props) {
+export function BuyButton({ k, title, desc, status, doneText = '已擁有', icon }: Props) {
   const game = useGame();
   const q = game.quote(k, buyMode.value);
   if (!q) return null;
@@ -22,7 +24,7 @@ export function BuyButton({ k, title, desc, status, doneText = '已擁有' }: Pr
     <div class="buy-row">
       <div class="buy-text">
         <div class="buy-title">
-          {title} {status && <span class="buy-status">{status}</span>}
+          {icon && <Icon id={icon} />} {title} {status && <span class="buy-status">{status}</span>}
         </div>
         {desc && <div class="buy-desc">{desc}</div>}
       </div>

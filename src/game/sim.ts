@@ -1,32 +1,38 @@
 // 核心模擬。純邏輯，不碰畫面；在線、背景補算、離線結算、測試共用。
-import { CUSTOMER } from './config/balance';
-import { PLANTS, type MaterialId } from './config/plants';
+import { BOUNTY, CUSTOMER, UPGRADE_FX } from './config/balance';
+import { MATERIAL_IDS, PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
 import type { CauldronState, CustomerState, GameState } from './state';
 import {
-  arrivalRate, brewPassiveSpeed, customerPatience, growthSpeed, maxCustomerQty, sellPrice,
+  arrivalRate, bountyChance, brewClickAdvance, brewPassiveSpeed, condenserChance, cratePct, customerPatience,
+  drunkChance, growthSpeed, has, materialReserve, maxCustomerQty, plantClickAdvance, sellPrice,
 } from './stats';
 
 export type GameEvent =
-  | { type: 'harvest'; slot: number; material: MaterialId; amount: number }
-  | { type: 'brewed'; recipe: PotionId; amount: number }
+  | { type: 'harvest'; slot: number; material: MaterialId; amount: number; crit?: boolean; bounty?: boolean }
+  | { type: 'brewed'; recipe: PotionId; amount: number; double?: boolean }
+  | { type: 'boil'; recipe: PotionId }
   | { type: 'customerArrived'; id: number }
-  | { type: 'sale'; id: number; gold: number; rush: boolean }
-  | { type: 'customerLeft'; id: number };
+  | { type: 'sale'; id: number; gold: number; rush: boolean; tip: boolean }
+  | { type: 'customerLeft'; id: number }
+  | { type: 'wholesale'; amount: number; materials: number; gold: number };
 
 export interface SimContext {
   rng: () => number;
-  /** 離線模式：顧客改用期望值，不產生急單 */
+  /** 離線模式：顧客與機率改用期望值，不產生急單 */
   offline: boolean;
   emit: (e: GameEvent) => void;
 }
 
 export function tick(s: GameState, dt: number, ctx: SimContext): void {
   s.time += dt;
+  if (ctx.offline && has(s, 'guild_contract')) contractClicks(s, dt, ctx);
   tickPlants(s, dt, ctx);
   tickCauldrons(s, dt, ctx);
   if (ctx.offline) tickCustomersOffline(s, dt);
   else tickCustomers(s, dt, ctx);
+  tickBell(s, dt);
+  tickCrate(s, dt, ctx);
 }
 
 // ---------- 溫室 ----------
@@ -56,12 +62,27 @@ export function settlePlant(s: GameState, i: number, ctx: SimContext): void {
   }
 }
 
-export function harvest(s: GameState, i: number, times: number, ctx: SimContext): void {
+/** 收成 times 輪（暴擊時 times = 產量倍數，不再擲豐收） */
+export function harvest(s: GameState, i: number, times: number, ctx: SimContext, crit = false): void {
   const slot = s.slots[i];
   const material = slot.plant!;
-  const amount = times * slot.level;
+  let amount = times * slot.level;
+  let bounty = false;
+  if (!crit) {
+    const p = bountyChance(s);
+    const extra = Math.max(1, Math.round(slot.level * BOUNTY.bonus));
+    if (ctx.offline || times > 50) {
+      // 離線或一次收很多輪：取期望值
+      amount += times * p * extra;
+    } else {
+      let hits = 0;
+      for (let k = 0; k < times; k++) if (ctx.rng() < p) hits++;
+      amount += hits * extra;
+      bounty = hits > 0;
+    }
+  }
   s.materials[material] += amount;
-  ctx.emit({ type: 'harvest', slot: i, material, amount });
+  ctx.emit({ type: 'harvest', slot: i, material, amount, crit, bounty });
 }
 
 // ---------- 大釜 ----------
@@ -84,6 +105,8 @@ function tickCauldrons(s: GameState, dt: number, ctx: SimContext): void {
         t = 0;
       }
     }
+    c.boil = Math.max(0, c.boil - dt);
+    c.boilCooldown = Math.max(0, c.boilCooldown - dt);
   }
 }
 
@@ -99,9 +122,20 @@ export function tryStartBrew(s: GameState, c: CauldronState): boolean {
   return true;
 }
 
+/** 完成一輪；雙口冷凝管有機率產出 ×2（離線取期望值） */
 export function completeBrew(s: GameState, c: CauldronState, ctx: SimContext): void {
-  s.potions[c.recipe] += c.batch;
-  ctx.emit({ type: 'brewed', recipe: c.recipe, amount: c.batch });
+  const p = condenserChance(s);
+  let amount = c.batch;
+  let double = false;
+  if (p > 0) {
+    if (ctx.offline) amount *= 1 + p;
+    else if (ctx.rng() < p) {
+      amount *= 2;
+      double = true;
+    }
+  }
+  s.potions[c.recipe] += amount;
+  ctx.emit({ type: 'brewed', recipe: c.recipe, amount, double });
   c.batch = 0;
   c.progress = 0;
 }
@@ -170,33 +204,124 @@ function tryReserve(s: GameState, c: CustomerState): boolean {
 }
 
 export function finishSale(s: GameState, c: CustomerState, ctx: SimContext): void {
-  const gold = sellPrice(s, c.potion) * c.qty * (c.rush ? CUSTOMER.rushBonus : 1);
+  const tip = ctx.rng() < drunkChance(s);
+  const gold = sellPrice(s, c.potion) * c.qty
+    * (c.rush ? CUSTOMER.rushBonus : 1)
+    * (tip ? UPGRADE_FX.drunkMult : 1);
   s.gold += gold;
   s.stats.goldEarned += gold;
   s.stats.potionsSold += c.qty;
   s.stats.customersServed++;
   if (c.rush) s.stats.rushServed++;
   removeCustomer(s, c.id);
-  ctx.emit({ type: 'sale', id: c.id, gold, rush: c.rush });
+  ctx.emit({ type: 'sale', id: c.id, gold, rush: c.rush, tip });
 }
 
 function removeCustomer(s: GameState, id: number): void {
   s.customers = s.customers.filter((c) => c.id !== id);
 }
 
-/** 離線：顧客以基礎來客率的期望值購買，沒有急單 */
+/** 離線：顧客以基礎來客率的期望值購買，沒有急單；酒鬼小費取期望值 */
 function tickCustomersOffline(s: GameState, dt: number): void {
   const types = s.cauldrons.map((c) => c.recipe);
   if (types.length === 0) return;
   const avgQty = (CUSTOMER.qtyMin + maxCustomerQty(s)) / 2;
   const demandEach = ((arrivalRate(s) / CUSTOMER.interval) * avgQty * dt) / types.length;
+  const tipMult = 1 + drunkChance(s) * (UPGRADE_FX.drunkMult - 1);
   for (const p of types) {
     const sold = Math.min(s.potions[p], demandEach);
     if (sold <= 0) continue;
-    const gold = sold * sellPrice(s, p);
+    const gold = sold * sellPrice(s, p) * tipMult;
     s.potions[p] -= sold;
     s.gold += gold;
     s.stats.goldEarned += gold;
     s.stats.potionsSold += sold;
+  }
+}
+
+// ---------- 叫賣鈴鐺 ----------
+
+function tickBell(s: GameState, dt: number): void {
+  if (!has(s, 'bell') || s.bellCharges >= UPGRADE_FX.bellMaxCharges) {
+    s.bellTimer = 0;
+    return;
+  }
+  s.bellTimer += dt;
+  while (s.bellTimer >= UPGRADE_FX.bellRecharge && s.bellCharges < UPGRADE_FX.bellMaxCharges) {
+    s.bellTimer -= UPGRADE_FX.bellRecharge;
+    s.bellCharges++;
+  }
+}
+
+// ---------- 商會收購箱 ----------
+
+/**
+ * 超過保留量的藥水與原料，以一定比例收購（在線時整份收，離線可收零頭）。
+ * 藥水保留量由玩家設定；原料保留量自動計算為「所有大釜熬 3 輪」的量。
+ */
+function tickCrate(s: GameState, dt: number, ctx: SimContext): void {
+  const pct = cratePct(s);
+  if (pct <= 0) return;
+  s.crateTimer += dt;
+  if (s.crateTimer < UPGRADE_FX.crateInterval) return;
+  s.crateTimer = 0;
+  const excessOf = (have: number, keep: number) => {
+    const n = have - keep;
+    return ctx.offline ? n : Math.floor(n);
+  };
+
+  let amount = 0;
+  let gold = 0;
+  for (const c of s.cauldrons) {
+    const n = excessOf(s.potions[c.recipe], s.settings.reserve);
+    if (n <= 0) continue;
+    s.potions[c.recipe] -= n;
+    amount += n;
+    gold += n * sellPrice(s, c.recipe) * pct;
+  }
+
+  let materials = 0;
+  if (s.settings.sellMaterials) {
+    for (const m of MATERIAL_IDS) {
+      const n = excessOf(s.materials[m], materialReserve(s, m));
+      if (n <= 0) continue;
+      s.materials[m] -= n;
+      materials += n;
+      gold += n * PLANTS[m].sellValue * pct;
+    }
+  }
+
+  if (amount <= 0 && materials <= 0) return;
+  s.gold += gold;
+  s.stats.goldEarned += gold;
+  s.stats.potionsWholesaled += amount;
+  s.stats.materialsWholesaled += materials;
+  s.stats.wholesaleGold += gold;
+  ctx.emit({ type: 'wholesale', amount, materials, gold });
+}
+
+// ---------- 過勞精靈工會合約（離線自動點擊） ----------
+
+/** 每秒 N 次點擊，平均分給已種植的盆栽與運作中（或可開工）的大釜 */
+function contractClicks(s: GameState, dt: number, ctx: SimContext): void {
+  const pots = s.slots.map((slot, i) => (slot.plant ? i : -1)).filter((i) => i >= 0);
+  const targets = pots.length + s.cauldrons.length;
+  if (targets === 0) return;
+  const each = (UPGRADE_FX.contractCps * dt) / targets;
+  for (const i of pots) {
+    const slot = s.slots[i];
+    if (slot.ready) {
+      // 成熟但沒有花妖精：精靈幫忙收成
+      slot.ready = false;
+      slot.progress = 0;
+      harvest(s, i, 1, ctx);
+    }
+    slot.progress += plantClickAdvance(slot) * each;
+    settlePlant(s, i, ctx);
+  }
+  for (const c of s.cauldrons) {
+    if (c.batch === 0 && !tryStartBrew(s, c)) continue;
+    c.progress += brewClickAdvance(c) * each;
+    if (c.progress >= RECIPES[c.recipe].brewTime) completeBrew(s, c, ctx);
   }
 }

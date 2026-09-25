@@ -1,4 +1,4 @@
-import { CUSTOMER, INITIAL_OPEN_SLOTS, SLOT_COUNT } from './config/balance';
+import { CUSTOMER, INITIAL_OPEN_SLOTS, SLOT_COUNT, UPGRADE_FX } from './config/balance';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
 
@@ -34,6 +34,13 @@ export interface CauldronState {
   /** 本輪批量，0 = 閒置 */
   batch: number;
   salamander: number;
+  /** 龍息風箱：目前連擊數、上次點擊的模擬時間 */
+  combo: number;
+  comboAt: number;
+  /** 極速沸騰剩餘秒數 */
+  boil: number;
+  /** 風箱冷卻剩餘秒數（含沸騰中） */
+  boilCooldown: number;
 }
 
 export interface CustomerState {
@@ -53,6 +60,10 @@ export interface GameStats {
   goldEarned: number;
   customersServed: number;
   rushServed: number;
+  /** 收購箱收購的藥水數、原料數與金幣 */
+  potionsWholesaled: number;
+  materialsWholesaled: number;
+  wholesaleGold: number;
 }
 
 export interface GameState {
@@ -72,7 +83,20 @@ export interface GameState {
   customerTimer: number;
   /** 全域升級等級 */
   upgrades: Record<string, number>;
+  /** 叫賣鈴鐺剩餘次數與回復計時 */
+  bellCharges: number;
+  bellTimer: number;
+  /** 收購箱結算計時 */
+  crateTimer: number;
+  settings: GameSettings;
   stats: GameStats;
+}
+
+export interface GameSettings {
+  /** 收購箱：每種藥水保留給顧客的庫存量 */
+  reserve: number;
+  /** 收購箱：是否也收購多餘的原料 */
+  sellMaterials: boolean;
 }
 
 export function createSlot(open: boolean): SlotState {
@@ -80,7 +104,10 @@ export function createSlot(open: boolean): SlotState {
 }
 
 export function createCauldron(recipe: PotionId): CauldronState {
-  return { recipe, level: 1, progress: 0, batch: 0, salamander: 0 };
+  return {
+    recipe, level: 1, progress: 0, batch: 0, salamander: 0,
+    combo: 0, comboAt: -1e9, boil: 0, boilCooldown: 0,
+  };
 }
 
 const zeroRecord = <K extends string>(keys: K[]) =>
@@ -103,6 +130,13 @@ export function createInitialState(): GameState {
     nextCustomerId: 1,
     customerTimer: CUSTOMER.interval - CUSTOMER.firstDelay,
     upgrades: {},
-    stats: { potionsSold: 0, goldEarned: 0, customersServed: 0, rushServed: 0 },
+    bellCharges: 0,
+    bellTimer: 0,
+    crateTimer: 0,
+    settings: { reserve: UPGRADE_FX.reserveDefault, sellMaterials: true },
+    stats: {
+      potionsSold: 0, goldEarned: 0, customersServed: 0, rushServed: 0,
+      potionsWholesaled: 0, materialsWholesaled: 0, wholesaleGold: 0,
+    },
   };
 }

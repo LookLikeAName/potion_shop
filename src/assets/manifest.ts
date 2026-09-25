@@ -64,6 +64,18 @@ export const ASSETS: AssetDef[] = [
   a('upg_raincloud', 80, 54, 0x8a9bb0, '雨雲', 'round'),
   a('upg_fairy', 46, 46, 0x6cc36a, '妖精', 'circle'),
   a('upg_salamander', 64, 36, 0xff8a3c, '火蜥蜴', 'round'),
+  a('upg_starsilver_can', 56, 50, 0xb8c6e0, '澆水壺', 'round'),
+  a('upg_shears', 56, 56, 0xc9a44a, '園藝剪', 'round'),
+  a('upg_servant_ladle', 54, 70, 0xc8a070, '湯勺', 'round'),
+  a('upg_bellows', 64, 64, 0x8a4a3a, '風箱', 'round'),
+  a('upg_condenser', 64, 64, 0x9ad0d8, '冷凝管', 'round'),
+  a('upg_owl', 56, 66, 0x8a5a36, '貓頭鷹', 'round'),
+  a('upg_signboard', 96, 70, 0x9a6a3e, '招牌', 'rect'),
+  a('upg_diffuser', 50, 60, 0xa8c8a0, '擴香儀', 'round'),
+  a('upg_bell', 46, 46, 0xd9a441, '鈴', 'circle'),
+  a('upg_drunk', 56, 56, 0xc98a3a, '酒杯', 'round'),
+  a('upg_crate', 96, 80, 0x7a5a3a, '收購箱', 'rect'),
+  a('upg_guild_contract', 56, 56, 0xe8dcc0, '合約', 'round'),
 
   // 露米婭：一張走路圖 + 待機 + 背影（站在盆栽/大釜前工作），原圖都朝左
   a('lumia_chibi_idle', 150, 210, 0xe98a4a, '露米婭', 'round', -1),

@@ -6,6 +6,7 @@ import { formatNumber, formatSeconds } from '../../game/format';
 import type { CauldronState } from '../../game/state';
 import { brewPassiveSpeed, milestoneMult, nextMilestone, sellPrice } from '../../game/stats';
 import { BuyButton } from '../BuyButton';
+import { GlobalUpgrades } from '../GlobalUpgrades';
 import { Icon } from '../Icon';
 import { useGame } from '../store';
 
@@ -26,8 +27,9 @@ export function CauldronPanel() {
     <div class="cards">
       <p class="hint">
         點擊大釜可攪拌加速。沒有火蜥蜴時，大釜只能靠點擊熬煮。<br />
-        共用原料時，<b>最左邊的大釜優先</b>（拖曳換位置將在後續版本開放）。
+        共用原料時，<b>最左邊的大釜優先</b>。在場景中<b>長按大釜再左右拖曳</b>可以調整順序。
       </p>
+      <GlobalUpgrades zone="cauldron" title="工坊設備" />
       {s.cauldrons.map((c) => <CauldronCard key={c.recipe} c={c} />)}
       {nextLockedRecipes(s).map((p) => {
         const r = RECIPES[p];
@@ -72,7 +74,7 @@ function CauldronCard({ c }: { c: CauldronState }) {
       </div>
       <BuyButton k={{ kind: 'cauldronLevel', recipe: c.recipe }} title="升級大釜" desc="每級批量 +1" />
       <BuyButton
-        k={{ kind: 'salamander', recipe: c.recipe }} title="鍋底火蜥蜴" status={`Lv ${c.salamander}`}
+        k={{ kind: 'salamander', recipe: c.recipe }} title="鍋底火蜥蜴" icon="upg_salamander" status={`Lv ${c.salamander}`}
         desc="Lv1 讓大釜自己熬煮（基礎速度 50%），之後每級 +25%"
       />
     </div>

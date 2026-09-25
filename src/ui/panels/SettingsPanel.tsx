@@ -53,6 +53,7 @@ export function SettingsPanel() {
           <span>賣出藥水 {formatNumber(s.stats.potionsSold)}</span>
           <span>服務顧客 {formatNumber(s.stats.customersServed)}</span>
           <span>完成急單 {formatNumber(s.stats.rushServed)}</span>
+          <span>收購箱收購 {formatNumber(s.stats.potionsWholesaled)} 瓶</span>
         </div>
       </div>
       <div class="card">

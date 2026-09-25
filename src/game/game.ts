@@ -151,6 +151,23 @@ export class Game {
     return this.run(() => cmd.plantSeed(this.state, slot, m));
   }
 
+  ringBell() {
+    if (this.paused) return 'none' as const;
+    return this.run(() => cmd.ringBell(this.state, this.ctx));
+  }
+
+  moveCauldron(from: number, to: number) {
+    return this.run(() => cmd.moveCauldron(this.state, from, to));
+  }
+
+  setReserve(n: number) {
+    this.run(() => cmd.setReserve(this.state, n));
+  }
+
+  setSellMaterials(on: boolean) {
+    this.run(() => cmd.setSellMaterials(this.state, on));
+  }
+
   replant(slot: number, m: MaterialId) {
     return this.run(() => cmd.replant(this.state, slot, m, this.ctx));
   }

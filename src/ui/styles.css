@@ -172,6 +172,11 @@ html, body {
 .replant[open] summary { margin-bottom: 0.2em; }
 
 .row { display: flex; gap: 0.5em; margin: 0.4em 0; }
+.toggle { display: flex; align-items: center; gap: 0.4em; font-size: 0.85em; font-weight: 700; margin-top: 0.5em; cursor: pointer; }
+.toggle input { width: 1.1em; height: 1.1em; accent-color: var(--teal); }
+.stepper { align-items: center; }
+.stepper .btn { min-width: 3.2em; padding: 0.3em 0.5em; }
+.stepper-value { min-width: 3em; text-align: center; font-weight: 700; font-size: 1.1em; }
 .btn {
   font: inherit;
   font-size: 0.85em;

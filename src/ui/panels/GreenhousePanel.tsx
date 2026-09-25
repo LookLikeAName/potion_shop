@@ -1,9 +1,11 @@
+import { BOUNTY } from '../../game/config/balance';
 import { MATERIAL_IDS, PLANTS } from '../../game/config/plants';
 import { replantCost } from '../../game/commands';
 import { formatNumber, formatSeconds } from '../../game/format';
 import type { SlotState } from '../../game/state';
 import { growthSpeed, milestoneMult, nextMilestone } from '../../game/stats';
 import { BuyButton } from '../BuyButton';
+import { GlobalUpgrades } from '../GlobalUpgrades';
 import { Icon } from '../Icon';
 import { useGame } from '../store';
 
@@ -11,7 +13,11 @@ export function GreenhousePanel() {
   const game = useGame();
   return (
     <div class="cards">
-      <p class="hint">點擊盆栽可催熟；成熟後要再點一下採收（雇用花妖精後自動採收）。</p>
+      <p class="hint">
+        點擊盆栽可催熟；成熟後要再點一下採收（雇用花妖精後自動採收）。<br />
+        每次收成有 {Math.round(BOUNTY.chance * 100)}% 機率<b>豐收</b>：產量 +{Math.round(BOUNTY.bonus * 100)}%。
+      </p>
+      <GlobalUpgrades zone="greenhouse" title="溫室工具" />
       {game.state.slots.map((slot, i) => <SlotCard key={i} i={i} slot={slot} />)}
     </div>
   );
@@ -70,11 +76,11 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
       </div>
       <BuyButton k={{ kind: 'potLevel', slot: i }} title="升級盆栽" desc="每級採收量 +1" />
       <BuyButton
-        k={{ kind: 'rain', slot: i }} title="局部微型雨雲" status={`Lv ${slot.rain}`}
+        k={{ kind: 'rain', slot: i }} title="局部微型雨雲" icon="upg_raincloud" status={`Lv ${slot.rain}`}
         desc="只在這盆上方下雨的生氣小烏雲。生長速度 +25%/級"
       />
       <BuyButton
-        k={{ kind: 'fairy', slot: i }} title="貪吃花妖精" doneText="已雇用"
+        k={{ kind: 'fairy', slot: i }} title="貪吃花妖精" icon="upg_fairy" doneText="已雇用"
         desc="植物一成熟就一口吞下，再吐到倉庫。自動採收"
       />
       <Replant i={i} slot={slot} />

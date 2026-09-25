@@ -1,6 +1,6 @@
 // 數值計算：依企劃書第 5 章「同池相加、異池相乘」。
-import { CUSTOMER, MILESTONES } from './config/balance';
-import { PLANTS } from './config/plants';
+import { BOUNTY, CHANCE_CAP, CUSTOMER, MILESTONES, UPGRADE_FX } from './config/balance';
+import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
 import { GLOBAL_UPGRADES, TARGET_UPGRADES, type Mod, type StatId } from './config/upgrades';
 import type { CauldronState, GameState, SlotState } from './state';
@@ -49,6 +49,11 @@ export function plantClickAdvance(slot: SlotState): number {
   return slot.plant ? PLANTS[slot.plant].clickAdvance * milestoneMult(slot.level) : 0;
 }
 
+/** 極速沸騰中的速度倍率 */
+export function boilMult(c: CauldronState): number {
+  return c.boil > 0 ? UPGRADE_FX.boilMult : 1;
+}
+
 /** 大釜被動熬煮速度倍率，沒有火蜥蜴 = 0 */
 export function brewPassiveSpeed(s: GameState, c: CauldronState): number {
   if (c.salamander <= 0) return 0;
@@ -56,11 +61,50 @@ export function brewPassiveSpeed(s: GameState, c: CauldronState): number {
   return base * combine([
     ...globalMods(s, 'brewSpeed'),
     { stat: 'brewSpeed', pool: 'S', value: milestoneMult(c.level) },
+    { stat: 'brewSpeed', pool: 'S', value: boilMult(c) },
   ]);
 }
 
 export function brewClickAdvance(c: CauldronState): number {
-  return RECIPES[c.recipe].clickAdvance * milestoneMult(c.level);
+  return RECIPES[c.recipe].clickAdvance * milestoneMult(c.level) * boilMult(c);
+}
+
+// ---------- 升級擁有狀態與機率 ----------
+
+export function has(s: GameState, id: string): boolean {
+  return (s.upgrades[id] ?? 0) > 0;
+}
+
+const chance = (p: number) => Math.min(CHANCE_CAP, p);
+
+/** 豐收機率（之後的開心度特權或事件可以加在這裡） */
+export function bountyChance(_s: GameState): number {
+  return chance(BOUNTY.chance);
+}
+
+export function shearsChance(s: GameState): number {
+  return has(s, 'shears') ? chance(UPGRADE_FX.shearsChance) : 0;
+}
+
+/** 雙口冷凝管雙倍產出機率（M3 的「魔力同調」會加在這裡） */
+export function condenserChance(s: GameState): number {
+  return has(s, 'condenser') ? chance(UPGRADE_FX.condenserChance) : 0;
+}
+
+export function drunkChance(s: GameState): number {
+  return has(s, 'drunks') ? chance(UPGRADE_FX.drunkChance) : 0;
+}
+
+/** 原料保留量：足夠所有大釜以目前等級熬 N 輪 */
+export function materialReserve(s: GameState, m: MaterialId): number {
+  const perRound = s.cauldrons.reduce((sum, c) => sum + (RECIPES[c.recipe].inputs[m] ?? 0) * c.level, 0);
+  return Math.max(UPGRADE_FX.materialReserveMin, perRound * UPGRADE_FX.materialReserveRounds);
+}
+
+/** 收購箱收購價比例（售價的幾成），沒有收購箱 = 0 */
+export function cratePct(s: GameState): number {
+  const lvl = s.upgrades.crate ?? 0;
+  return lvl > 0 ? UPGRADE_FX.crateBasePct + UPGRADE_FX.crateStepPct * (lvl - 1) : 0;
 }
 
 export function sellPrice(s: GameState, potion: PotionId): number {

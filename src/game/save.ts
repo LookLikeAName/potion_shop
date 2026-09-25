@@ -68,6 +68,7 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     potions: { ...base.potions, ...st.potions },
     upgrades: { ...st.upgrades },
     stats: { ...base.stats, ...st.stats },
+    settings: { ...base.settings, ...st.settings },
     slots: base.slots.map((d, i) => ({ ...createSlot(d.open), ...d, ...st.slots?.[i] })),
     cauldrons: (st.cauldrons ?? base.cauldrons).map((c) => ({ ...createCauldron(c.recipe), ...c })),
     customers: st.customers ?? [],
