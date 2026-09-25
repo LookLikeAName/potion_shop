@@ -1,5 +1,7 @@
 import { Application, Container, Graphics, Rectangle, Text, type FederatedPointerEvent } from 'pixi.js';
+import { ACHIEVEMENTS } from '../game/config/achievements';
 import { UPGRADE_FX } from '../game/config/balance';
+import { ASSIGNMENTS, type Assignment } from '../game/config/mascot';
 import { PLANTS } from '../game/config/plants';
 import { RECIPES, type PotionId } from '../game/config/recipes';
 import { activeCombo, nextLockedRecipes } from '../game/commands';
@@ -7,11 +9,14 @@ import { formatNumber } from '../game/format';
 import type { Game } from '../game/game';
 import { missingInputs, type GameEvent } from '../game/sim';
 import type { CustomerState, GameState } from '../game/state';
-import { has, milestoneCount } from '../game/stats';
-import { openDrawer, showToast } from '../ui/store';
 import {
-  CAULDRON_X, CAULDRON_Y, COUNTER, DOOR, FLOATING_SLOT_FROM, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT,
-  LUMIA_COUNTER, OFFSTAGE_X, PROPS, QUEUE_X, QUEUE_Y, SHELF_Y, SLOT_POS, W, ZONES,
+  autoHarvest, brewPassiveSpeed, growthSpeed, has, isResting, isTired, milestoneCount, redeemed, workZone,
+} from '../game/stats';
+import { lumiaOpen, openDrawer, showToast } from '../ui/store';
+import {
+  ASSIGN_ZONES, CAULDRON_X, CAULDRON_Y, COUNTER, DOOR, FLOATING_SLOT_FROM, FLOOR_1F_Y, FLOOR_2F_Y,
+  FLOOR_SPLIT_Y, FURNITURE, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT, LUMIA_COUNTER, OFFSTAGE_X, PROPS,
+  QUEUE_X, QUEUE_Y, REST_POS, SHELF_Y, SLOT_POS, W, ZONES,
 } from './layout';
 import { PaperDoll } from './paperDoll';
 import { FONT, Pic, TextureBank } from './textures';
@@ -23,6 +28,66 @@ const text = (s: string, size: number, fill = 0xffffff, weight: '400' | '700' = 
   });
 
 const lighten = (c: number, k = 0.45) => lerpColor(c, 0xffffff, k);
+
+/**
+ * 顯示速度上限（秒）：一輪收成／熬煮比這個還快時，改用「高速模式」表現，
+ * 進度條以這個速度循環（飄字照常每次都跳，保留打擊感）。
+ */
+const FAST_CYCLE = 0.5;
+
+/** 植物在高速模式下的變換循環（秒）：比進度條更快，畫面更有刺激感 */
+const PLANT_FAST_CYCLE = 0.22;
+
+/** 簡單的粒子：從某點噴出、受重力落下、淡出 */
+class ParticleLayer extends Container {
+  private items: { g: Graphics; vx: number; vy: number; life: number; max: number }[] = [];
+  private static readonly MAX = 320;
+
+  burst(x: number, y: number, color: number, count = 8, power = 1): void {
+    for (let k = 0; k < count; k++) {
+      if (this.items.length >= ParticleLayer.MAX) this.items.shift()!.g.destroy();
+      const g = new Graphics().circle(0, 0, 3 + Math.random() * 4).fill({ color: lerpColor(color, 0xffffff, Math.random() * 0.5) });
+      g.position.set(x, y);
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.2;
+      const sp = (160 + Math.random() * 220) * power;
+      const life = 0.45 + Math.random() * 0.35;
+      this.addChild(g);
+      this.items.push({ g, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life, max: life });
+    }
+  }
+
+  update(dt: number): void {
+    for (const p of this.items) {
+      p.life -= dt;
+      p.vy += 700 * dt;
+      p.g.x += p.vx * dt;
+      p.g.y += p.vy * dt;
+      p.g.alpha = Math.max(0, p.life / p.max);
+      p.g.scale.set(0.5 + 0.5 * (p.life / p.max));
+    }
+    for (const p of this.items.filter((i) => i.life <= 0)) p.g.destroy();
+    this.items = this.items.filter((i) => i.life > 0);
+  }
+}
+
+/** 高速模式進度條的閃爍金色 */
+const shimmer = (t: number) => lerpColor(0xffc234, 0xfff6c0, 0.5 + 0.5 * Math.sin(t * 12));
+
+/** 量測實際產量（每秒），用平滑平均避免數字亂跳 */
+class RateMeter {
+  value = 0;
+  private recent = 0;
+
+  add(amount: number): void {
+    this.recent += amount;
+  }
+
+  update(dt: number): void {
+    if (dt <= 0) return;
+    this.value += (this.recent / dt - this.value) * Math.min(1, dt / 1.5);
+    this.recent = 0;
+  }
+}
 
 function lerpColor(a: number, b: number, k: number): number {
   const ch = (c: number, s: number) => (c >> s) & 255;
@@ -74,12 +139,20 @@ class PotView extends Container {
   private ready = text('!', 32, 0xffe066);
   private punch = 0;
   private t = Math.random() * 10;
+  /** 高速模式下進度條的顯示相位（0~1，以上限速度循環） */
+  private visPhase = 0;
+  /** 高速模式下植物變換的相位（比進度條更快） */
+  private plantPhase = 0;
+  /** 高速模式：植物背後的脈動光暈 */
+  private aura = new Graphics();
+  private rate = new RateMeter();
+  private rateText = text('', 16, 0xffe066);
   /** 浮空盆栽（隱藏格）：飄在溫室半空，下方有魔法光暈 */
   private floating: boolean;
   private baseY: number;
   private glow = new Graphics();
 
-  constructor(private i: number, tex: TextureBank, private game: Game) {
+  constructor(private i: number, tex: TextureBank, private game: Game, private particles: ParticleLayer) {
     super();
     const pos = SLOT_POS[i];
     this.position.set(pos.x, pos.y);
@@ -104,10 +177,12 @@ class PotView extends Container {
     this.ready.anchor.set(0.5);
     this.ready.x = 36;
     // 植物畫在花盆前面，根部落在盆口的土面上
-    this.addChild(this.pot, this.plant, this.rain, this.fairy);
+    this.addChild(this.pot, this.aura, this.plant, this.rain, this.fairy);
     // 進度條、徽章等資訊放在獨立圖層，畫在角色前面
     this.hud.position.copyFrom(this.position);
-    this.hud.addChild(this.bar, this.lv.view, this.hint, this.ready);
+    this.rateText.anchor.set(0.5, 0.5);
+    this.rateText.y = 64;
+    this.hud.addChild(this.bar, this.lv.view, this.hint, this.ready, this.rateText);
 
     this.eventMode = 'static';
     this.cursor = 'pointer';
@@ -162,25 +237,71 @@ class PotView extends Container {
 
     const def = PLANTS[slot.plant];
     const r = slot.progress / def.growTime;
-    const stage = slot.ready
-      ? slot.level >= 25 ? 'lush' : 'mature'
-      : r < 0.34 ? 'sprout' : r < 0.67 ? 'growing' : 'mature';
-    this.plant.setId(`plant_${slot.plant}_${stage}`);
-
-    const squash = 1 + Math.sin(this.punch * Math.PI) * 0.12;
-    const bob = slot.ready ? 1 + Math.sin(this.t * 6) * 0.04 : 1;
-    // 植物根部對齊花盆盆口的土面（約在盆高 85% 處）
+    // 一輪比顯示上限還快：進度條與植物改用「高速模式」表現，不照真實進度畫（會一直閃成空的）。
+    // 進度條以 FAST_CYCLE 循環；植物以更快的 PLANT_FAST_CYCLE 在幼苗 → 成長中 → 成熟之間變換，
+    // 每輪結束「啵」一下：擠壓回彈 + 噴出同色光點
+    const fast = autoHarvest(s, slot) && def.growTime / growthSpeed(s, slot) < FAST_CYCLE;
+    this.rate.update(dt);
     const potH = this.pot.texture.height * this.pot.baseScale;
+    let popped = false;
+    if (fast) {
+      this.visPhase = (this.visPhase + dt / FAST_CYCLE) % 1;
+      const next = this.plantPhase + dt / PLANT_FAST_CYCLE;
+      popped = next >= 1;
+      this.plantPhase = next % 1;
+    }
+    const grown = slot.level >= 25 ? 'lush' : 'mature';
+    const shown = fast ? this.plantPhase : r;
+    const stage = !fast && slot.ready
+      ? grown
+      : shown < 0.34 ? 'sprout' : shown < 0.67 ? 'growing' : fast ? grown : 'mature';
+    this.plant.setId(`plant_${slot.plant}_${stage}`);
+    const plantH = this.plant.texture.height * this.plant.baseScale;
+    // 植物根部對齊花盆盆口的土面（約在盆高 85% 處）
     this.plant.y = -potH * 0.85;
-    this.plant.scale.y = this.plant.baseScale * bob / squash;
+    if (popped) {
+      this.punch = 1;
+      this.particles.burst(this.x, this.y + this.plant.y - plantH * 0.7, def.color, 7);
+    }
+
+    const squash = 1 + Math.sin(this.punch * Math.PI) * (fast ? 0.22 : 0.12);
+    const bob = fast ? 1 + Math.sin(this.t * 14) * 0.05 : slot.ready ? 1 + Math.sin(this.t * 6) * 0.04 : 1;
+    // 高速模式：每輪從 75% 一路長到 115%，並從根部快速搖擺
+    const grow = fast ? 0.75 + 0.4 * (1 - (1 - this.plantPhase) ** 3) : 1;
+    const base = this.plant.baseScale;
+    this.plant.scale.set(base * grow * (fast ? squash : 1), base * grow * bob / squash);
+    this.plant.rotation = fast ? Math.sin(this.t * 22) * 0.07 : 0;
     this.pot.scale.y = this.pot.baseScale / (1 + (squash - 1) * 0.4);
-    const top = this.plant.y - this.plant.texture.height * this.plant.baseScale;
+    this.drawAura(fast, def.color, plantH);
+    const top = this.plant.y - plantH;
     this.ready.y = top - 10 + Math.sin(this.t * 5) * 6;
     this.rain.y = Math.min(top, -potH - 110) - 22 + Math.sin(this.t * 2) * 4;
     this.fairy.y = -potH * 0.4 + Math.sin(this.t * 3 + 1) * 5;
 
-    this.bar.set(slot.ready ? 1 : r, slot.ready ? 0xffd34d : lighten(def.color, 0.2));
+    if (fast) {
+      this.bar.set(this.visPhase, shimmer(this.t));
+      this.rateText.text = `⚡${formatNumber(this.rate.value)}/秒`;
+    } else {
+      this.bar.set(slot.ready ? 1 : r, slot.ready ? 0xffd34d : lighten(def.color, 0.2));
+      this.rateText.text = '';
+    }
     this.lv.label.text = `Lv ${slot.level}`;
+  }
+
+  /** 收成事件（用來量測實際產量） */
+  noteHarvest(amount: number): void {
+    this.rate.add(amount);
+  }
+
+  /** 高速模式：植物背後跟著節奏脈動的光暈 */
+  private drawAura(on: boolean, color: number, plantH: number): void {
+    this.aura.clear();
+    if (!on) return;
+    const pulse = 0.5 + 0.5 * Math.sin(this.t * 12);
+    const cy = this.plant.y - plantH * 0.5;
+    this.aura
+      .circle(0, cy, plantH * (0.55 + 0.12 * pulse)).fill({ color: lighten(color, 0.3), alpha: 0.18 + 0.14 * pulse })
+      .circle(0, cy, plantH * (0.35 + 0.08 * pulse)).fill({ color: 0xfff6c0, alpha: 0.15 + 0.1 * pulse });
   }
 
   /** 上下漂浮、輕微搖晃；光暈留在原處，盆栽飄高時變小變淡 */
@@ -227,6 +348,10 @@ class CauldronView extends Container {
   private ladle: Pic;
   private combo = text('', 22, 0xffb347);
   private comboFill = 0xffb347;
+  /** 高速模式：進度條顯示相位、距離上次完成的秒數、實際產量 */
+  private visPhase = 0;
+  private sinceBrew = 99;
+  private rate = new RateMeter();
   private shake = 0;
   private punch = 0;
   private t = Math.random() * 10;
@@ -307,7 +432,12 @@ class CauldronView extends Container {
     this.lv.view.visible = active;
     this.salamander.visible = active && c.salamander > 0;
     this.ladle.visible = active && has(s, 'servant_ladle');
-    const brewing = !!c && c.batch > 0;
+    this.sinceBrew += dt;
+    this.rate.update(dt);
+    // 一輪比顯示上限還快、而且最近真的有產出：高速模式（液體常駐、進度條以上限速度循環）
+    const speed = c ? brewPassiveSpeed(s, c) : 0;
+    const fast = !!c && speed > 0 && RECIPES[c.recipe].brewTime / speed < FAST_CYCLE && this.sinceBrew < 1;
+    const brewing = !!c && (c.batch > 0 || fast);
     this.liquid.visible = brewing;
     for (const b of this.bubbles) b.visible = brewing;
     this.combo.text = '';
@@ -356,8 +486,9 @@ class CauldronView extends Container {
       this.liquid.width = lw;
       this.liquid.height = lw * 0.3;
       this.liquid.y = ly;
+      const bubbleSpeed = fast ? 3 : 1;
       this.bubbles.forEach((b, k) => {
-        const ph = (this.t * (1.1 + k * 0.35) + k * 0.37) % 1;
+        const ph = (this.t * (1.1 + k * 0.35) * bubbleSpeed + k * 0.37) % 1;
         const size = (lw * 0.16) * (1 - ph * 0.5);
         b.tint = lighten(def.color, 0.5);
         b.width = b.height = size;
@@ -372,7 +503,12 @@ class CauldronView extends Container {
       this.ladle.rotation = 0.35 + Math.sin(this.t * (boiling ? 12 : 4)) * 0.35;
     }
 
-    this.bar.set(c.progress / def.brewTime, boiling ? 0xffa040 : lighten(def.color, 0.25));
+    if (fast) {
+      this.visPhase = (this.visPhase + dt / FAST_CYCLE) % 1;
+      this.bar.set(this.visPhase, shimmer(this.t));
+    } else {
+      this.bar.set(c.progress / def.brewTime, boiling ? 0xffa040 : lighten(def.color, 0.25));
+    }
     this.lv.label.text = `Lv ${c.level}`;
     this.title.text = def.name;
     this.info.y = -bh - 22;
@@ -388,7 +524,10 @@ class CauldronView extends Container {
       if (fill !== this.comboFill) this.combo.style.fill = this.comboFill = fill;
     }
 
-    if (brewing) {
+    if (fast) {
+      this.info.text = `高速熬煮 ⚡${formatNumber(this.rate.value)}/秒`;
+      this.setNeeds('', null, []);
+    } else if (brewing) {
       this.info.text = `熬煮中 ×${c.batch}`;
       this.setNeeds('', null, []);
     } else {
@@ -396,6 +535,12 @@ class CauldronView extends Container {
       const missing = missingInputs(s, c);
       this.setNeeds(`${c.recipe}:${missing.join(',')}`, c.recipe, missing);
     }
+  }
+
+  /** 熬煮完成事件（量測實際產量、判斷是否持續在產出） */
+  noteBrew(amount: number): void {
+    this.rate.add(amount);
+    this.sinceBrew = 0;
   }
 
   /** 閒置時顯示配方需求（只在內容改變時重建） */
@@ -433,6 +578,8 @@ const NPC_FOR: Record<PotionId, string[]> = {
 };
 
 const CUSTOMER_SPEED = 260;
+/** 訂單氣泡每一列的高度 */
+const ROW_H = 44;
 
 class CustomerView extends Container {
   targetX = OFFSTAGE_X;
@@ -440,28 +587,41 @@ class CustomerView extends Container {
   private body: PaperDoll;
   private bubble = new Container();
   private bubbleBg = new Graphics();
-  private qty = new Text({ text: '', style: { fontFamily: FONT, fontSize: 24, fontWeight: '700', fill: 0x4a3426 } });
+  /** 訂單每一項一列：藥水圖示 + 數量 */
+  private rows: Text[] = [];
   private patience = new Bar(96, 10);
   private look = '';
 
   constructor(tex: TextureBank, public readonly id: number, c: CustomerState) {
     super();
-    const pool = NPC_FOR[c.potion];
+    const pool = NPC_FOR[c.lines[0].potion];
     this.body = new PaperDoll(tex, pool[c.id % pool.length]);
     this.x = OFFSTAGE_X;
     this.y = QUEUE_Y;
-    const icon = new Pic(tex, `potion_${c.potion}`, 40, 40);
-    icon.anchor.set(0.5);
-    icon.x = -18;
-    this.qty.anchor.set(0, 0.5);
-    this.qty.x = 6;
+    this.bubble.addChild(this.bubbleBg);
+    // 由下往上排，氣泡底部固定在頭頂
+    const n = c.lines.length;
+    c.lines.forEach((l, k) => {
+      const y = -(n - 1 - k) * ROW_H;
+      const icon = new Pic(tex, `potion_${l.potion}`, 38, 38);
+      icon.anchor.set(0.5);
+      icon.position.set(-20, y);
+      const qty = new Text({ text: '', style: { fontFamily: FONT, fontSize: 24, fontWeight: '700', fill: 0x4a3426 } });
+      qty.anchor.set(0, 0.5);
+      qty.position.set(4, y);
+      this.rows.push(qty);
+      this.bubble.addChild(icon, qty);
+    });
+    this.bubbleH = n * ROW_H + 12;
     this.patience.y = 34;
-    this.bubble.addChild(this.bubbleBg, icon, this.qty, this.patience);
+    this.bubble.addChild(this.patience);
     this.bubble.y = -258;
     this.addChild(this.body, this.bubble);
   }
 
-  update(c: CustomerState | undefined, dt: number): void {
+  private bubbleH = ROW_H + 12;
+
+  update(c: CustomerState | undefined, dt: number, s: GameState): void {
     const dx = this.targetX - this.x;
     const moving = Math.abs(dx) > 1;
     this.x += Math.sign(dx) * Math.min(Math.abs(dx), CUSTOMER_SPEED * dt);
@@ -473,13 +633,26 @@ class CustomerView extends Container {
     if (!c) return;
 
     const checkout = c.status === 'checkout';
-    const look = `${checkout}:${c.rush}`;
+    // 等待中：每一項依目前庫存顯示夠不夠（綠 = 夠、紅 = 還缺）
+    const enough = c.lines.map((l) => s.potions[l.potion] >= l.qty);
+    const look = `${checkout}:${c.rush}:${c.partial}:${enough.join()}`;
     if (look !== this.look) {
       this.look = look;
-      this.qty.text = checkout ? '✓' : `×${c.qty}`;
-      this.qty.style.fill = checkout ? 0x2f8a3a : 0x4a3426;
+      c.lines.forEach((l, k) => {
+        const row = this.rows[k];
+        if (checkout) {
+          row.text = c.partial ? `${l.delivered}/${l.qty}` : '✓';
+          row.style.fill = c.partial && l.delivered < l.qty ? 0xb07a2a : 0x2f8a3a;
+        } else {
+          row.text = `×${l.qty}`;
+          row.style.fill = !c.rush ? 0x4a3426 : enough[k] ? 0x2f8a3a : 0xc0443e;
+        }
+      });
+      // 最下面一列的中心在 y = 0，氣泡往上長
+      const top = ROW_H / 2 + 6 - this.bubbleH;
       this.bubbleBg.clear()
-        .roundRect(-50, -28, 100, 56, 16).fill({ color: checkout ? 0xdff5d8 : 0xfff6e0 })
+        .roundRect(-50, top, 100, this.bubbleH, 16)
+        .fill({ color: checkout ? (c.partial ? 0xfff0cc : 0xdff5d8) : 0xfff6e0 })
         .stroke({ width: 3, color: c.rush && !checkout ? 0xe0485f : 0x2b1d14 });
     }
     this.patience.visible = c.rush && !checkout;
@@ -515,7 +688,7 @@ class CustomerLayer extends Container {
         v.leaving = true;
         v.targetX = OFFSTAGE_X + 60;
       }
-      v.update(c, dt);
+      v.update(c, dt, s);
       if (v.leaving && v.x >= OFFSTAGE_X) {
         this.views.delete(id);
         v.destroy({ children: true });
@@ -529,86 +702,340 @@ class CustomerLayer extends Container {
   }
 }
 
-// ---------- 露米婭（M3 指派系統前：在店裡的工作點之間走動） ----------
+// ---------- 露米婭：依指派在工作點之間走動、長按拖曳指派、點一下互動 ----------
+
+type Pose = 'idle' | 'walk' | 'back' | 'drag' | 'sleep' | 'tired_walk';
 
 interface Station {
   x: number;
   y: number;
-  /** back = 背對鏡頭站在盆栽/大釜前工作 */
-  pose: 'back' | 'idle';
+  /** back = 背對鏡頭站在盆栽/大釜前工作；sleep = 在坐墊上睡覺 */
+  pose: 'back' | 'idle' | 'sleep';
   dir: 1 | -1;
 }
 
 const LUMIA_SPEED = 120;
+const TIRED_SPEED = 60;
+const POOF_TIME = 0.28;
 
 class LumiaView extends Container {
   private doll: PaperDoll;
+  private zz = text('zZ', 26, 0xcfe3ff);
+  private sparkle = new Graphics();
   private target: Station | null = null;
   private stay = 1.5;
+  private stateKey = '';
+  private t = 0;
+  /** 跨樓層時的魔法瞬移：out → 換位置 → in */
+  private poof: { phase: 'out' | 'in'; t: number; to: Station } | null = null;
+  dragging = false;
+  private swing = 0;
+  private lastDragX = 0;
 
-  constructor(tex: TextureBank) {
+  constructor(private tex: TextureBank) {
     super();
     this.doll = new PaperDoll(tex, 'lumia_chibi_idle');
-    this.addChild(this.doll);
+    this.zz.anchor.set(0.5);
+    this.addChild(this.sparkle, this.doll, this.zz);
     this.position.set(LUMIA_COUNTER.x, LUMIA_COUNTER.y);
-    // 不擋住後方盆栽/大釜的點擊
+    // 點擊由獨立的判定區（LumiaDrag.hit）處理
     this.eventMode = 'none';
   }
 
-  /** 目前可以去的工作點：已種植的前排盆栽、已解鎖的大釜、櫃台旁 */
+  /** 依服裝挑圖：有服裝差分的正式圖就用，沒有就退回預設服裝 */
+  private poseId(s: GameState, pose: Pose): string {
+    const o = s.mascot.outfit;
+    if (o !== 'default' && this.tex.hasArt(`lumia_chibi_${o}_${pose}`)) return `lumia_chibi_${o}_${pose}`;
+    if (this.tex.hasArt(`lumia_chibi_${pose}`)) return `lumia_chibi_${pose}`;
+    const fallback: Record<Pose, Pose> = { idle: 'idle', walk: 'walk', back: 'back', drag: 'idle', sleep: 'idle', tired_walk: 'walk' };
+    return `lumia_chibi_${fallback[pose]}`;
+  }
+
+  /** 依目前的指派，可以去的地方 */
   private stations(s: GameState): Station[] {
-    const out: Station[] = [{ ...LUMIA_COUNTER, pose: 'idle', dir: 1 }];
-    s.slots.forEach((slot, i) => {
-      if (slot.plant && i < 3) {
-        out.push({ x: SLOT_POS[i].x + LUMIA_AT_POT.dx, y: SLOT_POS[i].y + LUMIA_AT_POT.dy, pose: 'back', dir: -1 });
-      }
-    });
+    if (isResting(s)) return [{ ...REST_POS, pose: 'sleep', dir: -1 }];
+    const pots: Station[] = s.slots.flatMap((slot, i) => (slot.plant && i < FLOATING_SLOT_FROM
+      ? [{ x: SLOT_POS[i].x + LUMIA_AT_POT.dx, y: SLOT_POS[i].y + LUMIA_AT_POT.dy, pose: 'back' as const, dir: -1 as const }]
+      : []));
     const last = s.cauldrons.length - 1;
-    const y = CAULDRON_Y + LUMIA_AT_CAULDRON.dy;
-    if (last >= 0) out.push({ x: CAULDRON_X[0] - LUMIA_AT_CAULDRON.dx, y, pose: 'back', dir: 1 });
-    if (last >= 1) out.push({ x: CAULDRON_X[last] + LUMIA_AT_CAULDRON.dx, y, pose: 'back', dir: -1 });
-    return out;
+    const cy = CAULDRON_Y + LUMIA_AT_CAULDRON.dy;
+    const cauldrons: Station[] = [];
+    if (last >= 0) cauldrons.push({ x: CAULDRON_X[0] - LUMIA_AT_CAULDRON.dx, y: cy, pose: 'back', dir: 1 });
+    if (last >= 1) cauldrons.push({ x: CAULDRON_X[last] + LUMIA_AT_CAULDRON.dx, y: cy, pose: 'back', dir: -1 });
+    const counter: Station = { ...LUMIA_COUNTER, pose: 'idle', dir: 1 };
+    // 自由活動時跟著模擬選的區域走（workZone 會回傳她目前的區域）
+    switch (workZone(s)) {
+      case 'greenhouse': return pots.length ? pots : [counter];
+      case 'cauldron': return cauldrons.length ? cauldrons : [counter];
+      default: return [counter];
+    }
+  }
+
+  /** 被拖曳中：掛在手指下方，隨移動左右擺盪 */
+  dragTo(s: GameState, x: number, y: number, dt: number): void {
+    const vx = (x - this.lastDragX) / Math.max(dt, 1 / 120);
+    this.lastDragX = x;
+    this.swing += (Math.max(-0.5, Math.min(0.5, -vx * 0.0012)) - this.swing) * Math.min(1, dt * 10);
+    this.position.set(x, y);
+    this.rotation = this.swing + Math.sin(this.t * 3) * 0.04;
+    this.doll.setPose(this.poseId(s, 'drag'));
+    this.doll.mode = 'idle';
+    // 讓手（圖片上緣）在指標位置，身體往下垂
+    this.doll.y = this.doll.pic.texture.height * this.doll.pic.baseScale * 0.92;
+    this.doll.alpha = 1;
+    this.zz.visible = false;
+    this.doll.update(dt);
+  }
+
+  startDrag(): void {
+    this.dragging = true;
+    this.poof = null;
+    this.target = null;
+    this.lastDragX = this.x;
+  }
+
+  /** 放開：落到該區域的地板上，再走去新的工作點 */
+  drop(x: number, floorY: number): void {
+    this.dragging = false;
+    this.rotation = 0;
+    this.swing = 0;
+    this.doll.y = 0;
+    this.position.set(x, floorY);
+    this.target = null;
+    this.stay = 0.4;
+    this.stateKey = '';
   }
 
   update(s: GameState, dt: number): void {
+    this.t += dt;
+    if (this.dragging) return;
     const doll = this.doll;
+    const tired = isTired(s) && !isResting(s);
+
+    // 指派或休息狀態改變：馬上出發去新的地方
+    const key = `${s.mascot.assignment}:${workZone(s)}:${isResting(s)}:${s.cauldrons.length}:${s.slots.filter((x) => x.plant).length}`;
+    if (key !== this.stateKey) {
+      this.stateKey = key;
+      this.target = null;
+      this.stay = 0;
+    }
+
+    // 魔法瞬移動畫
+    if (this.poof) {
+      this.poof.t += dt;
+      const k = Math.min(1, this.poof.t / POOF_TIME);
+      if (this.poof.phase === 'out') {
+        doll.alpha = 1 - k;
+        doll.scale.set(1 - k * 0.6, 1 + k * 0.3);
+        if (k >= 1) {
+          this.position.set(this.poof.to.x, this.poof.to.y);
+          this.poof = { phase: 'in', t: 0, to: this.poof.to };
+        }
+      } else {
+        doll.alpha = k;
+        doll.scale.set(0.4 + k * 0.6, 1.3 - k * 0.3);
+        if (k >= 1) {
+          this.arrive(s, this.poof.to);
+          this.poof = null;
+        }
+      }
+      this.drawSparkle(this.poof ? 1 - Math.abs(0.5 - k) : 0);
+      doll.update(dt);
+      return;
+    }
+    doll.alpha = 1;
+    doll.scale.set(1);
+    this.drawSparkle(0);
+
     if (!this.target) {
-      // 停留中
       this.stay -= dt;
       if (this.stay <= 0) {
-        const options = this.stations(s).filter((st) => Math.hypot(st.x - this.x, st.y - this.y) > 30);
+        const all = this.stations(s);
+        const options = all.filter((st) => Math.hypot(st.x - this.x, st.y - this.y) > 30);
         this.target = options[Math.floor(Math.random() * options.length)] ?? null;
         this.stay = 3 + Math.random() * 5;
+        // 只有一個點而且已經在那裡：擺好姿勢
+        if (!this.target && all[0]) this.arrive(s, all[0]);
       }
+      this.updateZz(s, dt);
       doll.update(dt);
+      return;
+    }
+
+    // 目標在另一層樓：用魔法瞬移
+    const otherFloor = (this.y < FLOOR_SPLIT_Y) !== (this.target.y < FLOOR_SPLIT_Y);
+    if (otherFloor) {
+      this.poof = { phase: 'out', t: 0, to: this.target };
+      this.target = null;
       return;
     }
 
     const dx = this.target.x - this.x;
     const dy = this.target.y - this.y;
     const dist = Math.hypot(dx, dy);
-    const step = LUMIA_SPEED * dt;
+    const speed = tired ? TIRED_SPEED : LUMIA_SPEED;
+    const step = speed * dt;
     if (dist <= step) {
-      this.position.set(this.target.x, this.target.y);
-      doll.setPose(this.target.pose === 'back' ? 'lumia_chibi_back' : 'lumia_chibi_idle');
-      doll.mode = this.target.pose === 'back' ? 'work' : 'idle';
-      doll.dir = this.target.dir;
+      this.arrive(s, this.target);
       this.target = null;
     } else {
       this.x += (dx / dist) * step;
       this.y += (dy / dist) * step;
-      doll.setPose('lumia_chibi_walk');
+      doll.setPose(this.poseId(s, tired ? 'tired_walk' : 'walk'));
       doll.mode = 'walk';
       if (Math.abs(dx) > 2) doll.dir = dx > 0 ? 1 : -1;
     }
-    doll.update(dt, LUMIA_SPEED);
+    this.updateZz(s, dt);
+    doll.update(dt, speed);
+  }
+
+  private arrive(s: GameState, st: Station): void {
+    this.position.set(st.x, st.y);
+    const pose: Pose = st.pose === 'back' ? 'back' : st.pose === 'sleep' ? 'sleep' : 'idle';
+    this.doll.setPose(this.poseId(s, pose));
+    this.doll.mode = st.pose === 'back' ? 'work' : 'idle';
+    this.doll.dir = st.dir;
+  }
+
+  /** 睡覺或疲勞時頭上冒 zZ */
+  private updateZz(s: GameState, _dt: number): void {
+    const sleepy = isResting(s) || isTired(s);
+    this.zz.visible = sleepy && !this.dragging;
+    if (!this.zz.visible) return;
+    const h = this.doll.pic.texture.height * this.doll.pic.baseScale;
+    this.zz.position.set(34, -h - 10 + Math.sin(this.t * 2) * 6);
+    this.zz.alpha = 0.6 + 0.4 * Math.sin(this.t * 3);
+  }
+
+  private drawSparkle(strength: number): void {
+    this.sparkle.clear();
+    if (strength <= 0) return;
+    for (let k = 0; k < 6; k++) {
+      const a = this.t * 4 + (k * Math.PI) / 3;
+      this.sparkle.circle(Math.cos(a) * 50, -90 + Math.sin(a) * 60, 5).fill({ color: 0xfff1a8, alpha: strength });
+    }
+    this.sparkle.circle(0, -90, 70 * strength).fill({ color: 0xc9a0ff, alpha: 0.25 * strength });
+  }
+
+  /** 互動判定用的範圍（相對於腳底） */
+  get hitBox() {
+    return new Rectangle(this.x - 55, this.y - 200, 110, 200);
+  }
+}
+
+/** 拖曳露米婭時，標示放開後會指派到哪一區 */
+class ZoneHighlight extends Container {
+  private g = new Graphics();
+  private caption = text('', 30, 0xffffff);
+  private current: Assignment | null = null;
+
+  constructor() {
+    super();
+    this.caption.anchor.set(0.5);
+    this.addChild(this.g, this.caption);
+    this.visible = false;
+    this.eventMode = 'none';
+  }
+
+  show(zone: Assignment | null): void {
+    this.visible = !!zone;
+    if (!zone || zone === this.current) return;
+    this.current = zone;
+    const z = ASSIGN_ZONES[zone];
+    this.g.clear()
+      .roundRect(z.x, z.y, z.w, z.h, 18).fill({ color: 0xfff1a8, alpha: 0.18 })
+      .stroke({ width: 5, color: 0xffd34d, alpha: 0.9 });
+    this.caption.text = `${ASSIGNMENTS[zone].name}\n${ASSIGNMENTS[zone].desc}`;
+    this.caption.position.set(z.x + z.w / 2, z.y + 60);
+  }
+}
+
+function zoneAt(x: number, y: number): Assignment | null {
+  for (const [id, z] of Object.entries(ASSIGN_ZONES) as [Assignment, (typeof ASSIGN_ZONES)[Assignment]][]) {
+    if (x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h) return id;
+  }
+  return null;
+}
+
+/** 長按（或按住拖動）露米婭 → 拎起來指派；短按 → 打開互動視窗 */
+class LumiaDrag {
+  readonly hit = new Container();
+  private down: { t: number; x: number; y: number } | null = null;
+  private pointer = { x: 0, y: 0 };
+  private active = false;
+
+  constructor(
+    app: Application, private game: Game, private lumia: LumiaView, private highlight: ZoneHighlight,
+    private onDragChange: (dragging: boolean) => void,
+  ) {
+    this.hit.eventMode = 'static';
+    this.hit.cursor = 'grab';
+    this.hit.on('pointerdown', (e: FederatedPointerEvent) => {
+      this.down = { t: performance.now(), x: e.global.x, y: e.global.y };
+      this.pointer = { x: e.global.x, y: e.global.y };
+    });
+    app.stage.on('globalpointermove', (e: FederatedPointerEvent) => {
+      this.pointer = { x: e.global.x, y: e.global.y };
+    });
+    const end = () => this.release();
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  }
+
+  update(s: GameState, dt: number): void {
+    this.hit.hitArea = this.lumia.hitBox;
+    if (this.down && !this.active) {
+      const moved = Math.hypot(this.pointer.x - this.down.x, this.pointer.y - this.down.y) > 12;
+      if (moved || performance.now() - this.down.t > 250) {
+        this.active = true;
+        this.lumia.startDrag();
+        this.onDragChange(true);
+      }
+    }
+    if (this.active) {
+      this.lumia.dragTo(s, this.pointer.x, this.pointer.y, dt);
+      this.highlight.show(zoneAt(this.pointer.x, this.pointer.y));
+    }
+  }
+
+  private release(): void {
+    if (!this.down) return;
+    const wasDrag = this.active;
+    this.down = null;
+    this.active = false;
+    this.highlight.show(null);
+    if (!wasDrag) {
+      lumiaOpen.value = true;
+      return;
+    }
+    const zone = zoneAt(this.pointer.x, this.pointer.y) ?? this.game.state.mascot.assignment;
+    const floorY = this.pointer.y < FLOOR_SPLIT_Y ? FLOOR_2F_Y : FLOOR_1F_Y;
+    const x = Math.max(60, Math.min(W - 60, this.pointer.x));
+    this.lumia.drop(x, floorY);
+    this.onDragChange(false);
+    this.game.assignLumia(zone);
+    showToast(`露米婭：交給我吧！（${ASSIGNMENTS[zone].name}：${ASSIGNMENTS[zone].desc}）`);
+  }
+}
+
+/** 狂熱時刻：畫面邊框閃耀金光 */
+class FeverOverlay extends Graphics {
+  private t = 0;
+
+  update(s: GameState, dt: number): void {
+    this.t += dt;
+    this.clear();
+    if (s.feverLeft <= 0) return;
+    const a = 0.45 + 0.35 * Math.sin(this.t * 6);
+    this.rect(8, 84, W - 16, H - 92).stroke({ width: 14, color: 0xffd34d, alpha: a });
+    this.rect(22, 98, W - 44, H - 120).stroke({ width: 6, color: 0xff8fb8, alpha: a * 0.7 });
   }
 }
 
 // ---------- 升級道具（買了才出現在場景裡） ----------
 
 class PropsLayer extends Container {
-  private items: { upg: string; pic: Pic; bob: number }[] = [];
+  private items: { upg: string; when: (s: GameState) => boolean; pic: Pic; bob: number; baseY: number }[] = [];
   private bell: Pic;
   private bellPips = new Graphics();
   private bellPunch = 0;
@@ -617,19 +1044,26 @@ class PropsLayer extends Container {
 
   constructor(tex: TextureBank, private game: Game) {
     super();
-    const add = (upg: string, id: string, pos: { x: number; y: number }, bob = 0, anchorY = 1) => {
+    const add = (
+      upg: string, id: string, pos: { x: number; y: number }, bob = 0, anchorY = 1,
+      when: (s: GameState) => boolean = (s) => has(s, upg),
+    ) => {
       const pic = new Pic(tex, id);
       pic.anchor.set(0.5, anchorY);
       pic.position.set(pos.x, pos.y);
       pic.eventMode = 'none';
       this.addChild(pic);
-      this.items.push({ upg, pic, bob });
+      this.items.push({ upg, when, pic, bob, baseY: pos.y });
       return pic;
     };
     add('star_can', 'upg_starsilver_can', PROPS.starCan);
     add('fortune_owl', 'upg_owl', PROPS.owl);
     add('diffuser', 'upg_diffuser', PROPS.diffuser, 1.5);
     add('signboard', 'upg_signboard', PROPS.signboard, 0, 0);
+    // 休息室家具（開心度兌換）
+    for (const [id, pos] of Object.entries(FURNITURE)) {
+      add(id, `furn_${id}`, pos, 0, 1, (s) => redeemed(s, id) > 0);
+    }
 
     // 叫賣鈴鐺：可以點
     this.bell = add('bell', 'upg_bell', PROPS.bell);
@@ -657,8 +1091,8 @@ class PropsLayer extends Container {
     this.t += dt;
     this.bellPunch = Math.max(0, this.bellPunch - dt * 3);
     for (const it of this.items) {
-      it.pic.visible = has(s, it.upg);
-      if (it.bob) it.pic.y = PROPS.diffuser.y + Math.sin(this.t * it.bob) * 2;
+      it.pic.visible = it.when(s);
+      if (it.bob) it.pic.y = it.baseY + Math.sin(this.t * it.bob) * 2;
     }
     // 招牌輕輕搖晃
     const sign = this.items.find((i) => i.upg === 'signboard')!.pic;
@@ -750,10 +1184,14 @@ class CauldronDrag {
 
 // ---------- 飄字 ----------
 
+/** 同時存在的飄字上限：產量極快時避免物件無限增加拖慢畫面（超過就先移除最舊的） */
+const MAX_FLOATS = 160;
+
 class FloatLayer extends Container {
   private items: { t: Text; life: number; vx: number; vy: number }[] = [];
 
   spawn(s: string, x: number, y: number, color: number, big = false): void {
+    if (this.items.length >= MAX_FLOATS) this.items.shift()!.t.destroy();
     const t = text(s, big ? 40 : 26, color);
     t.anchor.set(0.5);
     t.position.set(x, y);
@@ -825,17 +1263,29 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   await tex.init();
 
   const drag = new CauldronDrag(app, game);
-  const pots = SLOT_POS.map((_, i) => new PotView(i, tex, game));
+  const particles = new ParticleLayer();
+  const pots = SLOT_POS.map((_, i) => new PotView(i, tex, game, particles));
   const cauldrons = CAULDRON_X.map((_, i) => new CauldronView(i, tex, game, (v, e) => drag.press(v, e)));
   const props = new PropsLayer(tex, game);
   const customers = new CustomerLayer(tex);
   const lumia = new LumiaView(tex);
   const floats = new FloatLayer();
+  const highlight = new ZoneHighlight();
+  const fever = new FeverOverlay();
+  // 露米婭平常畫在盆栽與大釜前面；被拎起來時移到最上層
+  const lumiaLayer = new Container();
+  const dragLayer = new Container();
+  lumiaLayer.addChild(lumia);
+  const lumiaDrag = new LumiaDrag(app, game, lumia, highlight, (dragging) =>
+    (dragging ? dragLayer : lumiaLayer).addChild(lumia));
   // 後排（y 較小）的盆栽先畫，才會被前排擋住
   const potsByDepth = [...pots].sort((p, q) => p.y - q.y);
   app.stage.addChild(
-    buildBackground(tex), props, ...potsByDepth, ...cauldrons, lumia, customers,
-    ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud), floats,
+    // 進度條、徽章等資訊層在露米婭下面，不會擋到她；
+    // 她的點擊判定也在這些之上：重疊時優先抓得到她（擋住了就把她拖到別處）
+    buildBackground(tex), props, ...potsByDepth, ...cauldrons, particles,
+    ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud),
+    lumiaLayer, lumiaDrag.hit, customers, floats, fever, highlight, dragLayer,
   );
 
   const cauldronPoint = (s: GameState, recipe: PotionId) => {
@@ -846,19 +1296,28 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   const onEvent = (e: GameEvent, s: GameState) => {
     switch (e.type) {
       case 'harvest': {
-        const p = pots[e.slot].anchorPoint;
-        const label = `+${formatNumber(e.amount)} ${PLANTS[e.material].name}`;
+        const pot = pots[e.slot];
+        pot.noteHarvest(e.amount);
+        const p = pot.anchorPoint;
+        const name = PLANTS[e.material].name;
+        const color = lighten(PLANTS[e.material].color);
+        const label = `+${formatNumber(e.amount)} ${name}`;
         if (e.crit) floats.spawn(`暴擊生長！${label}`, p.x, p.y - 20, 0xffe066, true);
         else if (e.bounty) floats.spawn(`豐收！${label}`, p.x, p.y - 10, 0x9dff8a);
-        else floats.spawn(label, p.x, p.y, lighten(PLANTS[e.material].color));
+        else floats.spawn(label, p.x, p.y, color);
         break;
       }
       case 'brewed': {
-        const p = cauldronPoint(s, e.recipe);
-        if (!p) break;
-        const label = `+${formatNumber(e.amount)} ${RECIPES[e.recipe].name}`;
+        const idx = s.cauldrons.findIndex((c) => c.recipe === e.recipe);
+        if (idx < 0) break;
+        const view = cauldrons[idx];
+        view.noteBrew(e.amount);
+        const p = view.anchorPoint;
+        const name = RECIPES[e.recipe].name;
+        const color = lighten(RECIPES[e.recipe].color);
+        const label = `+${formatNumber(e.amount)} ${name}`;
         if (e.double) floats.spawn(`雙倍！${label}`, p.x, p.y - 20, 0x9ee8ff, true);
-        else floats.spawn(label, p.x, p.y, lighten(RECIPES[e.recipe].color));
+        else floats.spawn(label, p.x, p.y, color);
         break;
       }
       case 'boil': {
@@ -868,7 +1327,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       }
       case 'sale': {
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
-        const note = e.tip ? '（土豪小費！）' : e.rush ? '（急單！）' : '';
+        const note = e.tip ? '（土豪小費！）' : e.rush ? '（急單！）' : e.partial ? '（部分購買）' : '';
         floats.spawn(`+${formatNumber(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, e.rush || e.tip);
         break;
       }
@@ -881,6 +1340,14 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         floats.spawn(`+${formatNumber(e.gold)} 金（收購 ${what}）`, PROPS.crate.x, PROPS.crate.y - 100, 0xe8c56a);
         break;
       }
+      case 'achievement': {
+        const a = ACHIEVEMENTS.find((x) => x.id === e.id);
+        if (a) showToast(`🏆 成就達成：${a.name}（+${a.reward} ♥）`);
+        break;
+      }
+      case 'mascot':
+        showToast(e.kind === 'exhausted' ? '露米婭累壞了，去休息室睡一下…' : '露米婭睡飽了，回去工作囉！');
+        break;
       default:
         break;
     }
@@ -897,7 +1364,10 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     for (const c of cauldrons) c.update(s, dt);
     customers.update(s, dt);
     lumia.update(s, dt);
+    lumiaDrag.update(s, dt);
+    fever.update(s, dt);
     for (const e of game.drainEvents()) onEvent(e, s);
+    particles.update(dt);
     floats.update(dt);
   });
 

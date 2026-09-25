@@ -76,11 +76,36 @@ export const ASSETS: AssetDef[] = [
   a('upg_drunk', 56, 56, 0xc98a3a, '酒杯', 'round'),
   a('upg_crate', 96, 80, 0x7a5a3a, '收購箱', 'rect'),
   a('upg_guild_contract', 56, 56, 0xe8dcc0, '合約', 'round'),
+  a('upg_fertilizer', 56, 56, 0x8ac06a, '肥料', 'round'),
+  a('upg_warm_circle', 56, 56, 0xff9a5a, '魔法陣', 'circle'),
+  a('upg_poster', 56, 56, 0xe8c56a, '海報', 'rect'),
+  // 送給露米婭的禮物
+  a('gift_snack', 56, 56, 0xf0b070, '點心', 'round'),
+  a('gift_bouquet', 56, 56, 0xff9ec0, '花束', 'round'),
+  a('gift_hairpin', 56, 56, 0xc9a0ff, '髮飾', 'round'),
 
-  // 露米婭：一張走路圖 + 待機 + 背影（站在盆栽/大釜前工作），原圖都朝左
-  a('lumia_chibi_idle', 150, 210, 0xe98a4a, '露米婭', 'round', -1),
-  a('lumia_chibi_walk', 150, 210, 0xe98a4a, '露米婭\n走路', 'round', -1),
-  a('lumia_chibi_back', 150, 210, 0xe98a4a, '露米婭\n背影', 'round', -1),
+  // 露米婭：每個動作一張圖，原圖都朝左。服裝差分沒有正式圖時會退回預設服裝的圖
+  ...(['', 'maid_', 'pajama_', 'robe_'] as const).flatMap((o) => [
+    a(`lumia_chibi_${o}idle`, 150, 210, 0xe98a4a, `露米婭\n${o}待機`, 'round', -1),
+    a(`lumia_chibi_${o}walk`, 150, 210, 0xe98a4a, `露米婭\n${o}走路`, 'round', -1),
+    a(`lumia_chibi_${o}back`, 150, 210, 0xe98a4a, `露米婭\n${o}背影`, 'round', -1),
+    a(`lumia_chibi_${o}drag`, 150, 210, 0xe98a4a, `露米婭\n${o}拎起`, 'round', -1),
+  ]),
+  a('lumia_chibi_sleep', 170, 120, 0xe98a4a, '露米婭\n睡覺', 'round', -1),
+  a('lumia_chibi_tired_walk', 150, 210, 0xe98a4a, '露米婭\n疲勞', 'round', -1),
+
+  // 開心度兌換：特權天賦圖示、劇情 CG（CG 在介面中也當縮圖用）
+  a('icon_cheer', 64, 64, 0xff8fb8, '聲', 'circle'),
+  a('icon_attunement', 64, 64, 0x9ee8ff, '同', 'circle'),
+  a('icon_green_thumb', 64, 64, 0x6cc36a, '綠', 'circle'),
+  a('icon_telepathy', 64, 64, 0xc9a0ff, '心', 'circle'),
+  a('cg_celebration', 64, 36, 0xd9a441, '宴', 'rect'),
+  a('cg_starry_vow', 64, 36, 0x3a4a8a, '誓', 'rect'),
+
+  // 休息室家具
+  a('furn_slime_doll', 50, 44, 0xff9ec0, '史萊姆', 'circle'),
+  a('furn_gramophone', 76, 80, 0xc59a3c, '留聲機', 'round'),
+  a('furn_tea_set', 80, 50, 0xd9b38c, '紅茶組', 'round'),
 
   // 顧客（原圖都朝左）
   a('npc_novice_adventurer', 170, 215, 0x8f7a5a, '新手\n冒險者', 'round', -1),

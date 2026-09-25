@@ -1,6 +1,6 @@
 // 升級定義。效果一律描述為「修正值 (Mod)」，由 stats.ts 依企劃書第 5 章的疊加規則計算。
 
-export type StatId = 'growthSpeed' | 'brewSpeed' | 'sellPrice' | 'arrivalRate' | 'patience';
+export type StatId = 'growthSpeed' | 'brewSpeed' | 'sellPrice' | 'arrivalRate' | 'patience' | 'harvestYield';
 
 /** G=金幣池 M=看板娘池 H=開心度池（池內相加）；S=特殊乘數（直接相乘） */
 export type Pool = 'G' | 'M' | 'H' | 'S';
@@ -43,7 +43,19 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
     desc: '刻著魔導書符文的剪刀。手動點擊植物時 5% 機率「暴擊生長」：立即收成，產量 ×3。',
     cost: { base: 6000, growth: 1 }, maxLevel: 1, mods: none,
   },
+  {
+    id: 'fertilizer', icon: 'upg_fertilizer', name: '魔法肥料', zone: 'greenhouse',
+    desc: '露米婭自己調配的發光肥料。所有植物每次收成量 +10%/級（可無限升級）。',
+    cost: { base: 1000, growth: 1.6 },
+    mods: (l) => [{ stat: 'harvestYield', pool: 'G', value: 0.1 * l }],
+  },
   // ---- 大釜 ----
+  {
+    id: 'warm_circle', icon: 'upg_warm_circle', name: '保溫魔法陣', zone: 'cauldron',
+    desc: '畫在爐台下的保溫符文。所有大釜被動熬煮速度 +15%/級（可無限升級）。',
+    cost: { base: 1500, growth: 1.6 },
+    mods: (l) => [{ stat: 'brewSpeed', pool: 'G', value: 0.15 * l }],
+  },
   {
     id: 'servant_ladle', icon: 'upg_servant_ladle', name: '隱形僕役湯勺', zone: 'cauldron',
     desc: '自己瘋狂攪拌的漂浮湯勺。所有大釜被動熬煮速度 ×1.5（最多 3 級）。',
@@ -78,6 +90,11 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
     desc: '薄荷與薰衣草香氣讓顧客忘記時間。顧客耐心 +30%。',
     cost: { base: 1000, growth: 1 }, maxLevel: 1,
     mods: () => [{ stat: 'patience', pool: 'G', value: 0.3 }],
+  },
+  {
+    id: 'poster', icon: 'upg_poster', name: '宣傳海報', zone: 'counter',
+    desc: '貼滿全鎮的藥水廣告。顧客每種藥水的需求上限 +1/級（可無限升級），讓多出來的產量賣給全價顧客。',
+    cost: { base: 3000, growth: 2 }, mods: none,
   },
   {
     id: 'bell', icon: 'upg_bell', name: '叫賣鈴鐺', zone: 'counter',

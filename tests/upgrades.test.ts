@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { CUSTOMER, UPGRADE_FX } from '../src/game/config/balance';
 import {
-  activeCombo, clickCauldron, clickPlant, getQuote, moveCauldron, purchase, ringBell, setReserve,
-  setSellMaterials, unlockRecipe,
+  activeCombo, clickCauldron, clickPlant, getQuote, giftAvailable, giftPrice, giveGift, moveCauldron, purchase,
+  ringBell, setReserve, setSellMaterials, unlockRecipe,
 } from '../src/game/commands';
 import { simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
 import { completeBrew, finishSale, spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
-import { brewPassiveSpeed, cratePct } from '../src/game/stats';
+import { brewPassiveSpeed, cratePct, maxCustomerQty } from '../src/game/stats';
 
 function ctx(rng = () => 0.5): SimContext & { events: GameEvent[] } {
   const events: GameEvent[] = [];
@@ -263,6 +263,68 @@ describe('大釜排序', () => {
     expect(moveCauldron(s, 1, 0)).toBe(true);
     expect(s.cauldrons.map((c) => c.recipe)).toEqual(['focus', 'glow']);
     expect(moveCauldron(s, 0, 5)).toBe(false);
+  });
+});
+
+describe('無限升級（金幣出口）', () => {
+  it('魔法肥料：收成量 +10%/級', () => {
+    const s = createInitialState();
+    s.upgrades.fertilizer = 3;
+    s.slots[0].level = 10;
+    s.slots[0].ready = true;
+    clickPlant(s, 0, ctx(() => 0.99)); // 不豐收
+    expect(s.materials.redheart).toBeCloseTo(13);
+  });
+
+  it('保溫魔法陣：被動熬煮 +15%/級', () => {
+    const s = createInitialState();
+    s.cauldrons[0].salamander = 1;
+    const b0 = brewPassiveSpeed(s, s.cauldrons[0]);
+    s.upgrades.warm_circle = 2;
+    expect(brewPassiveSpeed(s, s.cauldrons[0])).toBeCloseTo(b0 * 1.3);
+  });
+
+  it('宣傳海報：需求上限 +1/級，價格每級 ×2', () => {
+    const s = createInitialState();
+    s.gold = 1e6;
+    const before = maxCustomerQty(s);
+    purchase(s, { kind: 'global', id: 'poster' }, 1);
+    purchase(s, { kind: 'global', id: 'poster' }, 1);
+    expect(maxCustomerQty(s)).toBe(before + 2);
+    expect(s.gold).toBe(1e6 - 3000 - 6000);
+  });
+});
+
+describe('送禮物', () => {
+  it('價格 = 目前收入 × 分鐘數（至少最低價），每天每種一次', () => {
+    const s = createInitialState();
+    expect(giftPrice(s, 'snack')).toBe(200);
+    s.incomeRate = 100; // 每秒 100 金
+    expect(giftPrice(s, 'snack')).toBe(12000); // 2 分鐘
+    expect(giftPrice(s, 'hairpin')).toBe(60000); // 10 分鐘
+
+    s.gold = 1e6;
+    expect(giveGift(s, 'snack', 'd1')).toBe(true);
+    expect(s.happiness).toBeCloseTo(0.1);
+    expect(giveGift(s, 'snack', 'd1')).toBe(false);
+    expect(giftAvailable(s, 'snack', 'd2')).toBe(true);
+    expect(giveGift(s, 'snack', 'd2')).toBe(true);
+  });
+
+  it('錢不夠不能送', () => {
+    const s = createInitialState();
+    s.gold = 100;
+    expect(giveGift(s, 'snack', 'd1')).toBe(false);
+    expect(s.happiness).toBe(0);
+  });
+
+  it('收入追蹤會跟著實際收入變化', () => {
+    const s = createInitialState();
+    s.potions.glow = 1e6;
+    s.cauldrons[0].level = 1;
+    const c = ctx(() => 0);
+    run(s, 300, c);
+    expect(s.incomeRate).toBeGreaterThan(0);
   });
 });
 

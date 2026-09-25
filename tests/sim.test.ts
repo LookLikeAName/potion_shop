@@ -9,7 +9,7 @@ import { simulateOffline } from '../src/game/offline';
 import { exportSave, importSave, parseSave } from '../src/game/save';
 import { harvest, spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
-import { combine, growthSpeed } from '../src/game/stats';
+import { combine, growthSpeed, sellPrice } from '../src/game/stats';
 
 function ctx(rng = () => 0.5): SimContext & { events: GameEvent[] } {
   const events: GameEvent[] = [];
@@ -134,6 +134,85 @@ describe('顧客', () => {
     const s = createInitialState();
     run(s, 200, ctx(() => 0.99));
     expect(s.customers.length).toBeLessThanOrEqual(CUSTOMER.queueMax);
+  });
+});
+
+describe('多品項訂單', () => {
+  /** 依序回傳指定的亂數 */
+  const seq = (...vals: number[]) => {
+    let i = 0;
+    return () => vals[Math.min(i++, vals.length - 1)];
+  };
+  const withAllRecipes = () => {
+    const s = createInitialState();
+    s.gold = 1e9;
+    unlockRecipe(s, 'focus');
+    unlockRecipe(s, 'elixir');
+    s.customerTimer = -1e9;
+    return s;
+  };
+
+  it('解鎖多種配方後，一張訂單可以有多種不重複的藥水', () => {
+    const s = withAllRecipes();
+    // 0.95 → 三種；接著每項：選藥水、數量
+    const c = spawnCustomer(s, ctx(seq(0.95, 0, 0, 0, 0, 0, 0)));
+    expect(c.lines).toHaveLength(3);
+    expect(new Set(c.lines.map((l) => l.potion)).size).toBe(3);
+  });
+
+  it('只解鎖一種配方時一定是單品', () => {
+    const s = createInitialState();
+    const c = spawnCustomer(s, ctx(seq(0.99, 0, 0)));
+    expect(c.lines).toHaveLength(1);
+  });
+
+  it('整張訂單湊齊才成交；等待中補齊仍有急單獎勵', () => {
+    const s = withAllRecipes();
+    const before = s.gold;
+    const c = ctx(seq(0.7, 0, 0, 0, 0)); // 兩種，各 1 瓶
+    const cust = spawnCustomer(s, c);
+    expect(cust.lines).toHaveLength(2);
+    s.potions[cust.lines[0].potion] = 5; // 只有第一種
+    run(s, 1, c);
+    expect(cust.status).toBe('waiting');
+    s.potions[cust.lines[1].potion] = 5;
+    run(s, CUSTOMER.checkout + 0.3, c);
+    const full = cust.lines.reduce((g, l) => g + sellPrice(s, l.potion), 0);
+    expect(s.gold - before).toBeCloseTo(full * CUSTOMER.rushBonus);
+  });
+
+  it('時間到湊不齊：買走現有的部分，整筆 ×80%，沒有急單獎勵', () => {
+    const s = withAllRecipes();
+    const before = s.gold;
+    const c = ctx(seq(0.7, 0, 0.99, 0, 0.99)); // 兩種，各 3 瓶
+    const cust = spawnCustomer(s, c);
+    const [a, b] = cust.lines;
+    expect(a.qty).toBe(3);
+    s.potions[a.potion] = 2; // 第一種只有 2 瓶，第二種沒有
+    run(s, CUSTOMER.patience + CUSTOMER.checkout + 0.5, c);
+    expect(s.customers.some((x) => x.id === cust.id)).toBe(false);
+    expect(a.delivered).toBe(2);
+    expect(b.delivered).toBe(0);
+    expect(s.gold - before).toBeCloseTo(2 * sellPrice(s, a.potion) * CUSTOMER.partialPriceMult);
+    expect(c.events).toContainEqual(expect.objectContaining({ type: 'sale', partial: true, rush: false }));
+  });
+
+  it('一瓶都沒有就離開，不扣任何東西', () => {
+    const s = withAllRecipes();
+    const before = s.gold;
+    const c = ctx(seq(0.7, 0, 0, 0, 0));
+    const cust = spawnCustomer(s, c);
+    run(s, CUSTOMER.patience + 1, c);
+    expect(c.events).toContainEqual({ type: 'customerLeft', id: cust.id });
+    expect(s.gold).toBe(before);
+  });
+
+  it('舊存檔的單品顧客會轉成訂單格式', () => {
+    const save = parseSave(JSON.stringify({
+      version: 1, savedAt: 1,
+      state: { customers: [{ id: 3, potion: 'focus', qty: 2, status: 'waiting', patience: 5, patienceMax: 20, rush: true, checkout: 0 }] },
+    }));
+    expect(save?.state.customers[0].lines).toEqual([{ potion: 'focus', qty: 2, delivered: 0 }]);
   });
 });
 

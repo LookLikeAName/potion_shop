@@ -1,4 +1,5 @@
 import { CUSTOMER, INITIAL_OPEN_SLOTS, SLOT_COUNT, UPGRADE_FX } from './config/balance';
+import { MASCOT, type Assignment, type OutfitId, type WorkZone } from './config/mascot';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
 
@@ -43,15 +44,24 @@ export interface CauldronState {
   boilCooldown: number;
 }
 
-export interface CustomerState {
-  id: number;
+/** 訂單中的一項：某種藥水要幾瓶、實際拿到幾瓶 */
+export interface OrderLine {
   potion: PotionId;
   qty: number;
+  delivered: number;
+}
+
+export interface CustomerState {
+  id: number;
+  /** 一張訂單可以有多種藥水（每種不重複） */
+  lines: OrderLine[];
   status: 'waiting' | 'checkout';
   patience: number;
   patienceMax: number;
   /** 到店時庫存不足 → 急單 */
   rush: boolean;
+  /** 時間到只湊到一部分 → 以折扣價買走現有的 */
+  partial: boolean;
   checkout: number;
 }
 
@@ -90,6 +100,35 @@ export interface GameState {
   crateTimer: number;
   settings: GameSettings;
   stats: GameStats;
+  mascot: MascotState;
+  /** 開心度兌換項目的購買次數 */
+  redeemed: Record<string, number>;
+  /** 已達成的成就 */
+  achievements: Record<string, boolean>;
+  achievementTimer: number;
+  /** 狂熱時刻剩餘秒數、上次使用的日期 */
+  feverLeft: number;
+  feverDay: string;
+  /** 平滑後的每秒收入（禮物價格用） */
+  incomeRate: number;
+  /** 今天已經送過的禮物 */
+  giftDay: string;
+  giftsToday: Record<string, boolean>;
+}
+
+export interface MascotState {
+  assignment: Assignment;
+  /** 體力耗盡後自動去休息（回滿後回到原本的指派） */
+  autoRest: boolean;
+  stamina: number;
+  /** 互動能量 */
+  energy: number;
+  outfit: OutfitId;
+  /** 上次領取每日互動獎勵的日期 */
+  dailyKey: string;
+  /** 自由活動時目前工作的區域，以及還要待多久 */
+  patrolZone: WorkZone | null;
+  patrolTimer: number;
 }
 
 export interface GameSettings {
@@ -107,6 +146,15 @@ export function createCauldron(recipe: PotionId): CauldronState {
   return {
     recipe, level: 1, progress: 0, batch: 0, salamander: 0,
     combo: 0, comboAt: -1e9, boil: 0, boilCooldown: 0,
+  };
+}
+
+export function createMascot(): MascotState {
+  return {
+    assignment: 'patrol', autoRest: false,
+    stamina: MASCOT.staminaMax, energy: MASCOT.energyMax,
+    outfit: 'default', dailyKey: '',
+    patrolZone: null, patrolTimer: 0,
   };
 }
 
@@ -134,6 +182,15 @@ export function createInitialState(): GameState {
     bellTimer: 0,
     crateTimer: 0,
     settings: { reserve: UPGRADE_FX.reserveDefault, sellMaterials: true },
+    mascot: createMascot(),
+    redeemed: {},
+    achievements: {},
+    achievementTimer: 0,
+    feverLeft: 0,
+    feverDay: '',
+    incomeRate: 0,
+    giftDay: '',
+    giftsToday: {},
     stats: {
       potionsSold: 0, goldEarned: 0, customersServed: 0, rushServed: 0,
       potionsWholesaled: 0, materialsWholesaled: 0, wholesaleGold: 0,

@@ -1,5 +1,6 @@
+import type { PotionId } from './config/recipes';
 import {
-  createCauldron, createInitialState, createSlot, SAVE_VERSION, type GameState,
+  createCauldron, createInitialState, createSlot, SAVE_VERSION, type CustomerState, type GameState,
 } from './state';
 
 const KEY = 'idle-potion-shop/save';
@@ -69,9 +70,18 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     upgrades: { ...st.upgrades },
     stats: { ...base.stats, ...st.stats },
     settings: { ...base.settings, ...st.settings },
+    mascot: { ...base.mascot, ...st.mascot },
+    redeemed: { ...st.redeemed },
+    achievements: { ...st.achievements },
+    giftsToday: { ...st.giftsToday },
     slots: base.slots.map((d, i) => ({ ...createSlot(d.open), ...d, ...st.slots?.[i] })),
     cauldrons: (st.cauldrons ?? base.cauldrons).map((c) => ({ ...createCauldron(c.recipe), ...c })),
-    customers: st.customers ?? [],
+    // 舊版顧客只有單一藥水 { potion, qty }：轉成訂單格式
+    customers: (st.customers ?? []).map((c) => {
+      const old = c as Partial<CustomerState> & { potion?: PotionId; qty?: number };
+      if (old.lines) return c;
+      return { ...c, partial: false, lines: [{ potion: old.potion ?? 'glow', qty: old.qty ?? 1, delivered: 0 }] };
+    }),
   };
   return { version: SAVE_VERSION, savedAt: raw.savedAt ?? Date.now(), state };
 }

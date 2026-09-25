@@ -1,5 +1,9 @@
 // 玩家指令。UI 與場景只透過這裡改變遊戲狀態。
 import { CUSTOMER, LEVEL_COST_GROWTH, SLOT_NEIGHBORS, TIER_MULT, UPGRADE_FX } from './config/balance';
+import { HAPPINESS_MAP, TALENT_FX } from './config/happiness';
+import {
+  GIFTS, MASCOT, OUTFITS, type Assignment, type OutfitId, type Reaction, type TouchPart,
+} from './config/mascot';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, POTION_IDS, type PotionId } from './config/recipes';
 import { GLOBAL_UPGRADE_MAP, TARGET_UPGRADES, maxLevelOf } from './config/upgrades';
@@ -51,7 +55,7 @@ export function clickCauldron(s: GameState, recipe: PotionId, ctx: SimContext): 
   if (!c) return 'none';
   if (c.batch === 0 && !tryStartBrew(s, c)) return 'missing';
   if (has(s, 'bellows')) countCombo(s, c, ctx);
-  c.progress += brewClickAdvance(c);
+  c.progress += brewClickAdvance(s, c);
   if (c.progress >= RECIPES[c.recipe].brewTime) completeBrew(s, c, ctx);
   return 'brew';
 }
@@ -91,6 +95,129 @@ export function setReserve(s: GameState, n: number): void {
 
 export function setSellMaterials(s: GameState, on: boolean): void {
   s.settings.sellMaterials = on;
+}
+
+// ---------- 看板娘 ----------
+
+export function assignLumia(s: GameState, a: Assignment): void {
+  s.mascot.assignment = a;
+  // 玩家親手指派（包含叫醒她）時，取消自動休息
+  s.mascot.autoRest = false;
+}
+
+export interface TouchResult {
+  reaction: Reaction;
+  gain: number;
+  daily: boolean;
+}
+
+/**
+ * 觸碰立繪。spam = 1 秒內觸碰太多下（由執行期以真實時間判斷）。
+ * dayKey = 今天的日期（凌晨 4 點重置），用來發每日第一次互動獎勵。
+ */
+export function touchLumia(s: GameState, part: TouchPart, spam: boolean, dayKey: string): TouchResult {
+  if (spam) return { reaction: 'panic', gain: 0, daily: false };
+  const m = s.mascot;
+  let gain = 0;
+  let daily = false;
+  if (m.dailyKey !== dayKey) {
+    m.dailyKey = dayKey;
+    gain += MASCOT.dailyBonus;
+    daily = true;
+  }
+  let reaction: Reaction = 'shy';
+  if (m.energy >= MASCOT.touchCost) {
+    m.energy -= MASCOT.touchCost;
+    gain += MASCOT.touchReward;
+    reaction = part === 'head' ? 'headpat' : 'poke';
+  }
+  s.happiness += gain;
+  return { reaction, gain, daily };
+}
+
+/** 本地時間的日期字串，每天凌晨 4 點換日 */
+export function dayKeyOf(nowMs: number): string {
+  const d = new Date(nowMs - MASCOT.dayResetHour * 3600_000);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+// ---------- 送禮物 ----------
+
+/** 取 3 位有效數字，讓價格好讀 */
+const roundNice = (n: number) => {
+  if (n < 1000) return Math.ceil(n / 10) * 10;
+  const p = 10 ** (Math.floor(Math.log10(n)) - 2);
+  return Math.ceil(n / p) * p;
+};
+
+export function giftPrice(s: GameState, id: string): number {
+  const g = GIFTS.find((x) => x.id === id)!;
+  return roundNice(Math.max(g.minPrice, s.incomeRate * g.minutes * 60));
+}
+
+/** 今天還能不能送（每天凌晨 4 點重置） */
+export function giftAvailable(s: GameState, id: string, dayKey: string): boolean {
+  return s.giftDay !== dayKey || !s.giftsToday[id];
+}
+
+export function giveGift(s: GameState, id: string, dayKey: string): boolean {
+  const g = GIFTS.find((x) => x.id === id);
+  if (!g || !giftAvailable(s, id, dayKey)) return false;
+  const price = giftPrice(s, id);
+  if (s.gold < price) return false;
+  if (s.giftDay !== dayKey) {
+    s.giftDay = dayKey;
+    s.giftsToday = {};
+  }
+  s.gold -= price;
+  s.giftsToday[id] = true;
+  s.happiness += g.happiness;
+  return true;
+}
+
+// ---------- 開心度兌換 ----------
+
+/** 下一次兌換要花多少整數開心度；已買滿 = null */
+export function redeemCost(s: GameState, id: string): number | null {
+  const item = HAPPINESS_MAP[id];
+  if (!item) return null;
+  const owned = s.redeemed[id] ?? 0;
+  if (owned >= item.max) return null;
+  return item.cost(owned);
+}
+
+export function redeem(s: GameState, id: string): boolean {
+  const cost = redeemCost(s, id);
+  // 開心度有小數，但只能花整數部分
+  if (cost === null || Math.floor(s.happiness + 1e-9) < cost) return false;
+  s.happiness -= cost;
+  s.redeemed[id] = (s.redeemed[id] ?? 0) + 1;
+  if (id === 'green_thumb') {
+    for (const slot of s.slots) slot.open = true;
+  }
+  return true;
+}
+
+export function outfitOwned(s: GameState, o: OutfitId): boolean {
+  const item = OUTFITS[o].item;
+  return !item || (s.redeemed[item] ?? 0) > 0;
+}
+
+export function equipOutfit(s: GameState, o: OutfitId): boolean {
+  if (!outfitOwned(s, o)) return false;
+  s.mascot.outfit = o;
+  return true;
+}
+
+export function canStartFever(s: GameState, dayKey: string): boolean {
+  return (s.redeemed.vow ?? 0) > 0 && s.feverLeft <= 0 && s.feverDay !== dayKey;
+}
+
+export function startFever(s: GameState, dayKey: string): boolean {
+  if (!canStartFever(s, dayKey)) return false;
+  s.feverLeft = TALENT_FX.feverSeconds;
+  s.feverDay = dayKey;
+  return true;
 }
 
 // ---------- 大釜排序 ----------

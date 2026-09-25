@@ -3,14 +3,17 @@ import { MATERIAL_IDS, PLANTS } from '../game/config/plants';
 import { POTION_IDS, RECIPES } from '../game/config/recipes';
 import type { BuyMode } from '../game/costs';
 import { formatDuration, formatHappiness, formatNumber } from '../game/format';
+import { canStartFever } from '../game/commands';
 import { Icon } from './Icon';
+import { LumiaModal } from './LumiaModal';
 import { CauldronPanel } from './panels/CauldronPanel';
 import { CounterPanel } from './panels/CounterPanel';
 import { GreenhousePanel } from './panels/GreenhousePanel';
+import { LumiaPanel, StoryModal } from './panels/LumiaPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
 import {
-  buyMode, drawerFocus, drawerOpen, drawerTab, lockState, offlineReport, requestTakeover, toast, useGame,
-  type DrawerTab,
+  buyMode, drawerFocus, drawerOpen, drawerTab, lockState, offlineReport, openDrawer, requestTakeover, toast,
+  useGame, type DrawerTab,
 } from './store';
 
 export function App() {
@@ -18,6 +21,8 @@ export function App() {
     <>
       <TopBar />
       <Drawer />
+      <LumiaModal />
+      <StoryModal />
       <OfflineModal />
       <LockOverlay />
       {toast.value && <div class="toast" key={toast.value.id}>{toast.value.text}</div>}
@@ -43,7 +48,10 @@ function TopBar() {
           <div class="res" key={p} title={RECIPES[p].name}><Icon id={`potion_${p}`} /> {formatNumber(s.potions[p])}</div>
         ))}
       </div>
-      <div class="res" title="開心度"><Icon id="icon_happiness" /> {formatHappiness(s.happiness)}</div>
+      <button class="res res-btn" title="開心度（點擊打開兌換）" onClick={() => openDrawer('lumia')}>
+        <Icon id="icon_happiness" /> {formatHappiness(s.happiness)}
+      </button>
+      <FeverButton />
       <button class="book-btn" onClick={() => (drawerOpen.value = !drawerOpen.value)}>
         📖 魔導書
       </button>
@@ -51,10 +59,25 @@ function TopBar() {
   );
 }
 
+/** 狂熱時刻（星空下的誓言解鎖）：每天一次 */
+function FeverButton() {
+  const game = useGame();
+  const s = game.state;
+  if (!s.redeemed.vow) return null;
+  if (s.feverLeft > 0) return <div class="fever-btn active">✨ 狂熱中 {Math.ceil(s.feverLeft)}s</div>;
+  const ready = canStartFever(s, game.today);
+  return (
+    <button class="fever-btn" disabled={!ready} onClick={() => game.startFever()} title="60 秒內所有生產速度 ×10，每天一次">
+      ✨ {ready ? '狂熱時刻' : '今天已使用'}
+    </button>
+  );
+}
+
 const TABS: { id: DrawerTab; label: string }[] = [
   { id: 'greenhouse', label: '溫室' },
   { id: 'cauldron', label: '大釜' },
   { id: 'counter', label: '櫃台' },
+  { id: 'lumia', label: '露米婭' },
   { id: 'settings', label: '設定' },
 ];
 
@@ -91,7 +114,7 @@ function Drawer() {
         </div>
         <button class="close" onClick={() => (drawerOpen.value = false)} aria-label="關閉">✕</button>
       </div>
-      {tab !== 'settings' && (
+      {tab !== 'settings' && tab !== 'lumia' && (
         <div class="modes">
           購買數量
           {MODES.map((m) => (
@@ -105,6 +128,7 @@ function Drawer() {
         {tab === 'greenhouse' && <GreenhousePanel />}
         {tab === 'cauldron' && <CauldronPanel />}
         {tab === 'counter' && <CounterPanel />}
+        {tab === 'lumia' && <LumiaPanel />}
         {tab === 'settings' && <SettingsPanel />}
       </div>
     </aside>
@@ -123,6 +147,10 @@ function OfflineModal() {
         <h2>歡迎回來，老師！</h2>
         <p>你離開了 {formatDuration(r.seconds)}。</p>
         <p class="big">精靈們努力工作，獲得 <Icon id="icon_gold" /> <b>{formatNumber(r.gold)}</b> 金幣！</p>
+        {r.pajama && <p class="hint">露米婭穿著星空絨毛睡衣，睡得特別香甜：離線金幣 ×2！</p>}
+        {r.happiness > 0.00005 && (
+          <p>看板娘充分休息，開心度增加 <Icon id="icon_happiness" /> <b>{formatHappiness(r.happiness)}</b>！</p>
+        )}
         {(mats.length > 0 || pots.length > 0) && (
           <div class="report-list">
             {mats.map((m) => <span key={m}><Icon id={`item_${m}`} /> {PLANTS[m].name} {sign(r.materials[m])}</span>)}

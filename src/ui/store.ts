@@ -3,7 +3,7 @@ import type { BuyMode } from '../game/costs';
 import type { Game } from '../game/game';
 import type { OfflineReport } from '../game/offline';
 
-export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'settings';
+export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'lumia' | 'settings';
 
 /** 遊戲狀態變更計數，UI 讀取它來訂閱更新 */
 export const uiTick = signal(0);
@@ -15,6 +15,10 @@ export const buyMode = signal<BuyMode>(1);
 export const offlineReport = signal<OfflineReport | null>(null);
 export const lockState = signal<'ok' | 'blocked' | 'lost'>('ok');
 export const toast = signal<{ id: number; text: string } | null>(null);
+/** 露米婭互動視窗 */
+export const lumiaOpen = signal(false);
+/** 正在播放的劇情 ID */
+export const storyId = signal<string | null>(null);
 
 let game: Game | null = null;
 let takeoverFn: (() => Promise<void>) | null = null;

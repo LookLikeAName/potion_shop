@@ -52,6 +52,31 @@ export const PROPS = {
   crate: { x: 1500, y: 374 },
 };
 
+/** 拖曳露米婭時的指派區域（放開時落在哪一區就指派到哪裡） */
+export const ASSIGN_ZONES = {
+  rest: { x: 30, y: 80, w: 950, h: 330 },
+  patrol: { x: 980, y: 80, w: 910, h: 330 },
+  greenhouse: { x: 30, y: 420, w: 560, h: 640 },
+  cauldron: { x: 590, y: 420, w: 470, h: 640 },
+  counter: { x: 1060, y: 420, w: 860, h: 640 },
+} as const;
+
+/** 各樓層角色站立的地板高度 */
+export const FLOOR_2F_Y = 372;
+export const FLOOR_1F_Y = 985;
+/** 1F 與 2F 的分界：目標跨過這條線就用魔法瞬移 */
+export const FLOOR_SPLIT_Y = 600;
+
+/** 休息室：坐墊上睡覺的位置 */
+export const REST_POS = { x: 405, y: 336 };
+
+/** 休息室家具（開心度兌換後出現） */
+export const FURNITURE = {
+  slime_doll: { x: 530, y: 350 },
+  gramophone: { x: 705, y: 232 },
+  tea_set: { x: 790, y: 232 },
+};
+
 // 露米婭的工作點：櫃台左側，以及站在盆栽/大釜前方偏右（背影），不完全擋住物件
 export const LUMIA_COUNTER = { x: 1090, y: 990 };
 export const LUMIA_AT_POT = { dx: 44, dy: 50 };

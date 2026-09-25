@@ -26,6 +26,13 @@ export const CUSTOMER = {
   /** 急單基礎耐心（秒） */
   patience: 20,
   rushBonus: 1.5,
+  /**
+   * 一張訂單有幾種藥水的機率（依已解鎖的配方數）。
+   * 例：解鎖 3 種時 60% 單品、30% 兩種、10% 三種。
+   */
+  linesChance: { 1: [1], 2: [0.65, 0.35], 3: [0.6, 0.3, 0.1] } as Record<number, number[]>,
+  /** 時間到只湊到部分訂單：整筆價格倍率 */
+  partialPriceMult: 0.8,
 };
 
 export const OFFLINE = {

@@ -1,4 +1,6 @@
 import { OFFLINE } from './config/balance';
+import { TALENT_FX } from './config/happiness';
+import { OUTFIT_BONUS } from './config/mascot';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
 import { finishSale, tick, type SimContext } from './sim';
@@ -10,15 +12,17 @@ export interface OfflineReport {
   /** 被計入的秒數（受上限限制） */
   simulated: number;
   capped: boolean;
+  /** 穿著睡衣，金幣已 ×2 */
+  pajama: boolean;
   gold: number;
   materials: Record<MaterialId, number>;
   potions: Record<PotionId, number>;
   happiness: number;
 }
 
-export function offlineCapSeconds(_s: GameState): number {
-  // 心電感應（開心度特權）在 M3 加入後延長到 72 小時
-  return OFFLINE.baseCapHours * 3600;
+export function offlineCapSeconds(s: GameState): number {
+  const hours = (s.redeemed.telepathy ?? 0) > 0 ? TALENT_FX.telepathyCapHours : OFFLINE.baseCapHours;
+  return hours * 3600;
 }
 
 export function simulateOffline(s: GameState, seconds: number): OfflineReport {
@@ -44,6 +48,14 @@ export function simulateOffline(s: GameState, seconds: number): OfflineReport {
     left -= dt;
   }
 
+  // 星空絨毛睡衣：穿著時離線金幣 ×2
+  const pajama = s.mascot.outfit === 'pajama';
+  if (pajama) {
+    const extra = (s.gold - before.gold) * (OUTFIT_BONUS.pajamaOffline - 1);
+    s.gold += extra;
+    s.stats.goldEarned += extra;
+  }
+
   const diff = <K extends string>(keys: K[], a: Record<K, number>, b: Record<K, number>) =>
     Object.fromEntries(keys.map((k) => [k, b[k] - a[k]])) as Record<K, number>;
 
@@ -51,6 +63,7 @@ export function simulateOffline(s: GameState, seconds: number): OfflineReport {
     seconds,
     simulated,
     capped: seconds > cap,
+    pajama,
     gold: s.gold - before.gold,
     happiness: s.happiness - before.happiness,
     materials: diff(MATERIAL_IDS, before.materials, s.materials),

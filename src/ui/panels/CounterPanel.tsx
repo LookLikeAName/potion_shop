@@ -22,6 +22,10 @@ export function CounterPanel() {
           <span>急單耐心 {formatSeconds(customerPatience(s))}</span>
           <span>急單獎勵 ×{CUSTOMER.rushBonus}</span>
         </div>
+        <p class="hint">
+          解鎖多種配方後，顧客的訂單可能包含好幾種藥水（氣泡中綠色 = 庫存夠、紅色 = 還缺）。
+          整張湊齊才全價成交；耐心用完還湊不齊，顧客會買走現有的部分，價格 ×{CUSTOMER.partialPriceMult * 100}%。
+        </p>
         <div class="stats">
           {s.cauldrons.map((c) => (
             <span key={c.recipe}>

@@ -1,5 +1,6 @@
 // 執行期的遊戲物件：以真實經過時間推進模擬、存檔、轉發玩家指令。
 import { CLICK_CAP_PER_SEC, OFFLINE, TICK } from './config/balance';
+import { MASCOT, type Assignment, type OutfitId, type TouchPart } from './config/mascot';
 import type { MaterialId } from './config/plants';
 import type { PotionId } from './config/recipes';
 import * as cmd from './commands';
@@ -24,6 +25,7 @@ export class Game {
   private listeners = new Set<() => void>();
   private lastNotify = 0;
   private clickTimes: number[] = [];
+  private touchTimes: number[] = [];
   private ctx: SimContext = {
     rng: Math.random,
     offline: false,
@@ -149,6 +151,41 @@ export class Game {
 
   plantSeed(slot: number, m: MaterialId) {
     return this.run(() => cmd.plantSeed(this.state, slot, m));
+  }
+
+  // ---------- 看板娘與開心度 ----------
+
+  get today(): string {
+    return cmd.dayKeyOf(Date.now());
+  }
+
+  assignLumia(a: Assignment) {
+    this.run(() => cmd.assignLumia(this.state, a));
+  }
+
+  /** 觸碰立繪；1 秒內觸碰 4 下以上算狂戳 */
+  touchLumia(part: TouchPart): cmd.TouchResult {
+    const now = performance.now();
+    this.touchTimes = this.touchTimes.filter((t) => now - t < 1000);
+    this.touchTimes.push(now);
+    const spam = this.touchTimes.length >= MASCOT.spamTouches;
+    return this.run(() => cmd.touchLumia(this.state, part, spam, this.today));
+  }
+
+  giveGift(id: string) {
+    return this.run(() => cmd.giveGift(this.state, id, this.today));
+  }
+
+  redeem(id: string) {
+    return this.run(() => cmd.redeem(this.state, id));
+  }
+
+  equipOutfit(o: OutfitId) {
+    return this.run(() => cmd.equipOutfit(this.state, o));
+  }
+
+  startFever() {
+    return this.run(() => cmd.startFever(this.state, this.today));
   }
 
   ringBell() {
