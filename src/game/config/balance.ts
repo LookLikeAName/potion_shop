@@ -14,10 +14,10 @@ export const LEVEL_COST_GROWTH = 1.15;
 export const TIER_MULT: Record<1 | 2 | 3, number> = { 1: 1, 2: 20, 3: 400 };
 
 export const CUSTOMER = {
-  /** 基礎來客間隔（秒） */
-  interval: 12,
+  /** 基礎來客間隔（秒）。買不到也沒有懲罰，所以初期讓客人來得勤一點 */
+  interval: 8,
   /** 開新遊戲後第一位顧客多快出現 */
-  firstDelay: 4,
+  firstDelay: 3,
   qtyMin: 1,
   qtyMax: 3,
   queueMax: 3,

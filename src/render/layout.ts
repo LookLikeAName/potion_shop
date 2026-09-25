@@ -11,25 +11,39 @@ export const ZONES = {
   shop: { x: 1270, y: 400, w: 620, h: 650, label: '店面', color: 0x7a5334 },
 };
 
-/** 盆栽底部中心點；前 3 格在地板，後 2 格（隱藏格）在層架上 */
+// 以下座標對齊正式背景 bg_dollhouse_main（1920×1080）上的地板標記。
+
+/**
+ * 盆栽底部中心點：前 3 格站在溫室地板標記上（初始開放），
+ * 後 2 格是飄浮在溫室半空中的魔法盆栽（隱藏格），落在前排之間的上方。
+ */
 export const SLOT_POS = [
-  { x: 140, y: 960 },
-  { x: 310, y: 960 },
-  { x: 480, y: 960 },
-  { x: 225, y: 660 },
-  { x: 395, y: 660 },
+  { x: 186, y: 910 },
+  { x: 308, y: 910 },
+  { x: 433, y: 910 },
+  { x: 247, y: 650 },
+  { x: 372, y: 650 },
 ];
+/** 從第幾格開始是浮空盆栽 */
+export const FLOATING_SLOT_FROM = 3;
+/** 佔位背景用的層架高度 */
 export const SHELF_Y = 662;
 
-export const CAULDRON_X = [715, 930, 1145];
-export const CAULDRON_Y = 965;
+/** 爐台上的三個大釜標記 */
+export const CAULDRON_X = [706, 817, 922];
+export const CAULDRON_Y = 808;
 
-export const COUNTER = { x: 1290, y: 870, w: 200, h: 170 };
-export const DOOR = { x: 1790, y: 760, w: 100, h: 290 };
-export const QUEUE_X = [1560, 1665, 1770];
-export const QUEUE_Y = 1030;
-export const OFFSTAGE_X = 2050;
+export const COUNTER = { x: 1140, y: 810, w: 360, h: 175 };
+export const DOOR = { x: 1650, y: 520, w: 270, h: 420 };
+export const QUEUE_X = [1570, 1705, 1840];
+export const QUEUE_Y = 995;
+export const OFFSTAGE_X = 2060;
 
-// M3 做指派系統前，先讓她在二樓休息室走動，避免擋住大釜
-export const LUMIA_Y = 368;
-export const LUMIA_RANGE: [number, number] = [540, 1250];
+// 露米婭的工作點：櫃台左側，以及站在盆栽/大釜前方偏右（背影），不完全擋住物件
+export const LUMIA_COUNTER = { x: 1090, y: 990 };
+export const LUMIA_AT_POT = { dx: 44, dy: 50 };
+/**
+ * 大釜在爐台上而且彼此很近，她只站在大釜列的兩側（最左那口的左邊、最右那口的右邊），
+ * 避免擠在中間擋住兩口大釜。
+ */
+export const LUMIA_AT_CAULDRON = { dx: 80, dy: 70 };

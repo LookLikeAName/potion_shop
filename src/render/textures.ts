@@ -60,6 +60,8 @@ export class TextureBank {
 /** 依資源 ID 顯示的 Sprite，自動縮放到指定大小（保持比例） */
 export class Pic extends Sprite {
   private id = '';
+  private dir: 1 | -1 = 1;
+  private fit = 1;
 
   constructor(private bank: TextureBank, id: string, private boxW?: number, private boxH?: number) {
     super();
@@ -73,13 +75,26 @@ export class Pic extends Sprite {
     const def = ASSET_MAP[id];
     const w = this.boxW ?? def?.w ?? this.texture.width;
     const h = this.boxH ?? def?.h ?? this.texture.height;
-    const s = Math.min(w / this.texture.width, h / this.texture.height);
-    const flip = Math.sign(this.scale.x) || 1;
-    this.scale.set(s * flip, s);
+    this.fit = Math.min(w / this.texture.width, h / this.texture.height);
+    this.scale.set(this.fit, this.fit);
+    this.face(this.dir);
   }
 
-  /** 左右翻轉（保持大小） */
+  /** 面向右 (1) 或左 (-1)；會依原圖面向自動決定要不要翻轉 */
   face(dir: 1 | -1): void {
-    this.scale.x = Math.abs(this.scale.x) * dir;
+    this.dir = dir;
+    // 佔位圖是對稱的色塊，不必翻轉
+    const facing = this.bank.hasArt(this.id) ? ASSET_MAP[this.id]?.facing ?? 1 : dir;
+    this.scale.x = this.fit * (dir === facing ? 1 : -1);
+  }
+
+  /** 以顯示框縮放後的原始比例（不含翻轉、擠壓） */
+  get baseScale(): number {
+    return this.fit;
+  }
+
+  /** 原圖面向（佔位圖視為朝右） */
+  get facing(): 1 | -1 {
+    return this.bank.hasArt(this.id) ? ASSET_MAP[this.id]?.facing ?? 1 : 1;
   }
 }

@@ -40,7 +40,16 @@ tests/           Vitest 單元測試
 
 ## 換上正式美術
 
-把 Grok Imagine 生成、去背後的圖片依照 `ArtAssetPrompts.md` 的資源 ID 命名，放進 `src/assets/art/` 任一子資料夾，頁面會自動重新整理並取代佔位圖。換上正式背景後，通常需要微調 `src/render/layout.ts` 裡的座標。
+1. 把去背後的原圖依照 `ArtAssetPrompts.md` 的資源 ID 命名，放進 `IdlePotionShop_ArtAssets/`（任何子資料夾都可以）。
+2. 在 WSL 執行匯入腳本，會縮到遊戲需要的大小並轉成 WebP，輸出到 `src/assets/art/`：
+   ```bash
+   python3 scripts/import_art.py
+   ```
+3. 頁面會自動重新整理並取代佔位圖。
+
+- 新角色/顧客圖要在 `src/assets/manifest.ts` 標明原圖面向（`facing`：1 朝右、-1 朝左）。
+- 換了大釜圖要重新量鍋口位置（`src/render/scene.ts` 的 `RIM`）。
+- 換了背景要調整 `src/render/layout.ts` 的座標。
 
 ## 目前進度（M1 核心迴圈）
 

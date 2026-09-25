@@ -47,6 +47,29 @@ export function plantSeed(s: GameState, i: number, m: MaterialId): boolean {
   return true;
 }
 
+/**
+ * 改種的價格：這個盆栽種過的植物免費（恢復當時的等級與升級），沒種過的付種子價。
+ * 不能改種時回傳 null。
+ */
+export function replantCost(s: GameState, i: number, m: MaterialId): number | null {
+  const slot = s.slots[i];
+  if (!slot?.open || !slot.plant || slot.plant === m) return null;
+  return slot.memory[m] ? 0 : PLANTS[m].seedCost;
+}
+
+export function replant(s: GameState, i: number, m: MaterialId, ctx: SimContext): boolean {
+  const cost = replantCost(s, i, m);
+  if (cost === null || s.gold < cost) return false;
+  const slot = s.slots[i];
+  // 已成熟的先幫忙收成，不浪費
+  if (slot.ready) harvest(s, i, 1, ctx);
+  s.gold -= cost;
+  slot.memory[slot.plant!] = { level: slot.level, rain: slot.rain, fairy: slot.fairy };
+  const next = slot.memory[m] ?? { level: 1, rain: 0, fairy: false };
+  Object.assign(slot, { plant: m, ...next, progress: 0, ready: false });
+  return true;
+}
+
 export function unlockRecipe(s: GameState, p: PotionId): boolean {
   if (s.cauldrons.some((c) => c.recipe === p)) return false;
   const cost = RECIPES[p].unlockCost;

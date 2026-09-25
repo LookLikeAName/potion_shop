@@ -29,6 +29,7 @@ Grok Imagine 不會輸出透明背景。所以物件素材一律指定**純白�
 * 遊戲邏輯解析度是 1920×1080。每個資源都標了「遊戲內顯示尺寸」，**原圖請保留至少 2 倍大小**，由程式縮小。
 * 開發期間會用程式自動產生同名佔位圖（色塊 + 文字）。你把正式圖放進去就會自動取代，不需要一次全部生成。
 * 程式只看**檔名**（資源 ID），子資料夾分類只是方便整理；支援 `.png`、`.webp`、`.jpg`（需要透明背景的請用 PNG 或 WebP）。
+* 建議做法：原圖放在 `IdlePotionShop_ArtAssets/`，再執行 `python3 scripts/import_art.py` 自動縮圖並轉成 WebP（第一批 22.4 MB → 1.5 MB）。
 * 開發伺服器執行中時放入新圖，頁面會自動重新整理。
 
 ### 0.4 共用區塊（已展開在各 Prompt 內，這裡供修改參考）
@@ -114,15 +115,14 @@ Character reference sheet, Japanese anime style, kawaii and heartwarming, 2D fan
 **共用 Prompt 模板**（把 `{POSE}` 換成下表的描述；請附上參考圖）：
 
 ```
-Japanese anime style, kawaii and heartwarming, 2D fantasy game art, soft cel shading, clean dark-brown lineart, warm palette. chibi super-deformed style, 2.5 heads tall, rounded simple shapes, thick clean outline, readable as a small game sprite, full body visible. Lumia, a 20-year-old adult woman apprentice witch alchemist, messy shoulder-length copper-orange hair with one springy ahoge strand, cute Japanese anime-style face with big sparkling amethyst-purple eyes, light freckles, small slightly crooked dark-teal witch hat with a red leafy sprig in the hatband, cream puff-sleeve blouse, brown leather corset vest, short dark-teal cape with a gold star clasp, maroon knee-length skirt, belt with small glass vials, brown lace-up boots. {POSE}. Side three-quarter view facing right. single isolated subject, centered, entire subject fully in frame with generous margin, plain solid pure white background, no ground shadow, no text, no watermark.
+Japanese anime style, kawaii and heartwarming, 2D fantasy game art, soft cel shading, clean dark-brown lineart, warm palette. chibi super-deformed style, 2.5 heads tall, rounded simple shapes, thick clean outline, readable as a small game sprite, full body visible. Lumia, a 20-year-old adult woman apprentice witch alchemist, messy shoulder-length copper-orange hair with one springy ahoge strand, cute Japanese anime-style face with big sparkling amethyst-purple eyes, light freckles, small slightly crooked dark-teal witch hat with a red leafy sprig in the hatband, cream puff-sleeve blouse, brown leather corset vest, short dark-teal cape with a gold star clasp, maroon knee-length skirt, belt with small glass vials, brown lace-up boots. {POSE}. Side three-quarter view facing left. single isolated subject, centered, entire subject fully in frame with generous margin, plain solid pure white background, no ground shadow, no text, no watermark.
 ```
 
 | 資源 ID | 優先 | 比例 | {POSE} |
 |---|---|---|---|
 | lumia_chibi_idle | ★★★ | 1:1 | standing relaxed with a cheerful smile, holding an oversized wooden ladle over her shoulder |
-| lumia_chibi_walk_a | ★★★ | 1:1 | walking mid-stride, left foot forward, arms swinging, happy expression |
-| lumia_chibi_walk_b | ★★★ | 1:1 | walking mid-stride, right foot forward, arms swinging, happy expression |
-| lumia_chibi_stir | ★★ | 1:1 | stirring with an oversized wooden ladle held in both hands, focused determined face, leaning forward |
+| lumia_chibi_walk | ★★★ | 1:1 | walking mid-stride, arms swinging, happy expression |
+| lumia_chibi_back | ★★★ | 1:1 | seen from behind (back view), standing and working at something in front of her, holding the oversized wooden ladle |
 | lumia_chibi_guitar | ★★ | 1:1 | playing the oversized wooden ladle like an air guitar, eyes closed, rocking out, one leg raised, musical notes around her |
 | lumia_chibi_talk_plant | ★★ | 1:1 | crouching down and talking encouragingly to something small on the ground, one finger raised, sweet smile |
 | lumia_chibi_counter | ★★ | 1:1 | standing and waving hello to a customer, bright welcoming smile |
@@ -134,12 +134,13 @@ Japanese anime style, kawaii and heartwarming, 2D fantasy game art, soft cel sha
 | lumia_chibi_slime | ★ | 1:1 | sitting and squishing a round pink slime plush toy, delighted expression |
 | lumia_chibi_hide_doll | ★ | 1:1 | wrapping a small plush toy inside her cape and giggling secretly, mischievous happy face |
 
-> **動畫做法：** Q版動畫以「程式動態」為主（上下彈跳、擠壓伸展、左右翻轉），walk 只需要 a/b 兩張交替。不需要逐格動畫。
-> 如果想要更生動，可以用 Grok Imagine 的「圖片轉影片」把 idle 做成短循環影片，再抽幀成 sprite sheet（選配）。
+> **動畫做法（紙娃娃劇）：** 每個動作只要**一張圖**。移動、工作、待機全靠程式的上下彈跳、擠壓伸展、左右翻面表現，不需要逐格動畫。
+> - `lumia_chibi_walk`：走路時使用；`lumia_chibi_back`：站在盆栽/大釜前工作時使用（背影）。
+> - 目前露米婭的圖都**朝左**，之後新增的角色圖也建議朝左，保持一致（方向不同也可以，在 `manifest.ts` 標明 `facing` 即可）。
 
 ### 2.2 服裝差分 Q版（★，每套 3 張）
 
-使用上面的模板，但把 [LUMIA] 的服裝描述**換成**下面的服裝描述，姿勢使用 idle / walk_a / walk_b：
+使用上面的模板，但把 [LUMIA] 的服裝描述**換成**下面的服裝描述，姿勢使用 idle / walk / back：
 
 | 服裝 | 資源 ID 前綴 | 替換的服裝描述 |
 |---|---|---|

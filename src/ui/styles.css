@@ -167,6 +167,10 @@ html, body {
 .buy-btn:not(:disabled):active { transform: scale(0.96); }
 .buy-count { font-size: 0.8em; opacity: 0.8; }
 
+.replant { margin-top: 0.3em; border-top: 1px dashed var(--parchment-dark); padding-top: 0.3em; }
+.replant summary { cursor: pointer; font-size: 0.8em; font-weight: 700; color: var(--teal); padding: 0.2em 0; }
+.replant[open] summary { margin-bottom: 0.2em; }
+
 .row { display: flex; gap: 0.5em; margin: 0.4em 0; }
 .btn {
   font: inherit;
@@ -234,6 +238,6 @@ html, body {
   font-size: 22px;
   font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
-@media (orientation: portrait) and (max-width: 900px) {
+@media (orientation: portrait) and (pointer: coarse) {
   #rotate-hint { display: flex; }
 }

@@ -1,4 +1,5 @@
 import { MATERIAL_IDS, PLANTS } from '../../game/config/plants';
+import { replantCost } from '../../game/commands';
 import { formatNumber, formatSeconds } from '../../game/format';
 import type { SlotState } from '../../game/state';
 import { growthSpeed, milestoneMult, nextMilestone } from '../../game/stats';
@@ -76,6 +77,43 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
         k={{ kind: 'fairy', slot: i }} title="貪吃花妖精" doneText="已雇用"
         desc="植物一成熟就一口吞下，再吐到倉庫。自動採收"
       />
+      <Replant i={i} slot={slot} />
     </div>
+  );
+}
+
+/** 改種：這盆種過的植物免費換回（保留當時的等級與升級），沒種過的付種子價 */
+function Replant({ i, slot }: { i: number; slot: SlotState }) {
+  const game = useGame();
+  const s = game.state;
+  const others = MATERIAL_IDS.filter((m) => m !== slot.plant);
+  return (
+    <details class="replant">
+      <summary>改種其他植物</summary>
+      <p class="hint">
+        目前的等級與升級會保留在這個盆栽裡，之後種回{PLANTS[slot.plant!].name}時免費恢復。
+      </p>
+      {others.map((m) => {
+        const p = PLANTS[m];
+        const cost = replantCost(s, i, m);
+        if (cost === null) return null;
+        const mem = slot.memory[m];
+        return (
+          <div class="buy-row" key={m}>
+            <div class="buy-text">
+              <div class="buy-title"><Icon id={`item_${m}`} /> {p.name}</div>
+              <div class="buy-desc">
+                {mem
+                  ? `種過：恢復 Lv ${mem.level}${mem.rain ? `、雨雲 Lv ${mem.rain}` : ''}${mem.fairy ? '、花妖精' : ''}`
+                  : `從 Lv 1 開始；生長 ${p.growTime} 秒`}
+              </div>
+            </div>
+            <button class="buy-btn" disabled={s.gold < cost} onClick={() => game.replant(i, m)}>
+              {cost === 0 ? '免費改種' : <><Icon id="icon_gold" size={1} /> {formatNumber(cost)}</>}
+            </button>
+          </div>
+        );
+      })}
+    </details>
   );
 }

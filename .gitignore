@@ -1,4 +1,24 @@
+# 相依套件與建置產物
 node_modules/
 dist/
+.vite/
+coverage/
+
+# 美術原圖（體積大）：只提交 scripts/import_art.py 轉好的 src/assets/art/*.webp
+IdlePotionShop_ArtAssets/
+
+# 環境設定與本機檔案
+.env
+.env.*
+*.local
+
+# Python
+__pycache__/
+*.pyc
+
+# 作業系統產生的檔案
 *.log
 .DS_Store
+Thumbs.db
+desktop.ini
+*:Zone.Identifier

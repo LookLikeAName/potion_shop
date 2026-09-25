@@ -4,16 +4,26 @@ import { POTION_IDS, type PotionId } from './config/recipes';
 
 export const SAVE_VERSION = 1;
 
+/** 盆栽對某種植物的培育紀錄（改種後再種回來會恢復） */
+export interface PlotMemory {
+  level: number;
+  rain: number;
+  fairy: boolean;
+}
+
 export interface SlotState {
   open: boolean;
   plant: MaterialId | null;
+  /** 以下三項是目前這種植物的等級與升級 */
   level: number;
+  rain: number;
+  fairy: boolean;
   /** 已生長秒數（0 ~ growTime） */
   progress: number;
   /** 已成熟、等待手動採收 */
   ready: boolean;
-  rain: number;
-  fairy: boolean;
+  /** 這個盆栽種過的其他植物的紀錄 */
+  memory: Partial<Record<MaterialId, PlotMemory>>;
 }
 
 export interface CauldronState {
@@ -66,7 +76,7 @@ export interface GameState {
 }
 
 export function createSlot(open: boolean): SlotState {
-  return { open, plant: null, level: 1, progress: 0, ready: false, rain: 0, fairy: false };
+  return { open, plant: null, level: 1, rain: 0, fairy: false, progress: 0, ready: false, memory: {} };
 }
 
 export function createCauldron(recipe: PotionId): CauldronState {

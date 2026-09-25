@@ -151,6 +151,10 @@ export class Game {
     return this.run(() => cmd.plantSeed(this.state, slot, m));
   }
 
+  replant(slot: number, m: MaterialId) {
+    return this.run(() => cmd.replant(this.state, slot, m, this.ctx));
+  }
+
   unlockRecipe(p: PotionId) {
     return this.run(() => cmd.unlockRecipe(this.state, p));
   }

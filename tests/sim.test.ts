@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CUSTOMER } from '../src/game/config/balance';
-import { clickCauldron, clickPlant, getQuote, plantSeed, purchase, unlockRecipe } from '../src/game/commands';
+import {
+  clickCauldron, clickPlant, getQuote, plantSeed, purchase, replant, replantCost, unlockRecipe,
+} from '../src/game/commands';
 import { bulkCost, maxAffordable } from '../src/game/costs';
 import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
@@ -165,6 +167,50 @@ describe('購買', () => {
     expect(s.gold).toBe(700);
     expect(plantSeed(s, 1, 'redheart')).toBe(false);
     expect(plantSeed(s, 3, 'redheart')).toBe(false); // 隱藏格
+  });
+});
+
+describe('改種', () => {
+  it('第一次種新植物付種子價、從 Lv1 開始；種回原本的植物免費並恢復等級與升級', () => {
+    const s = createInitialState();
+    const c = ctx();
+    s.gold = 10_000;
+    Object.assign(s.slots[0], { level: 12, rain: 3, fairy: true });
+
+    expect(replantCost(s, 0, 'moonshroom')).toBe(300);
+    expect(replant(s, 0, 'moonshroom', c)).toBe(true);
+    expect(s.gold).toBe(9_700);
+    expect(s.slots[0]).toMatchObject({ plant: 'moonshroom', level: 1, rain: 0, fairy: false });
+
+    expect(replantCost(s, 0, 'redheart')).toBe(0);
+    expect(replant(s, 0, 'redheart', c)).toBe(true);
+    expect(s.gold).toBe(9_700);
+    expect(s.slots[0]).toMatchObject({ plant: 'redheart', level: 12, rain: 3, fairy: true });
+    // 月光菇的紀錄也被保留
+    expect(s.slots[0].memory.moonshroom).toEqual({ level: 1, rain: 0, fairy: false });
+  });
+
+  it('成熟的植物改種前會先收成', () => {
+    const s = createInitialState();
+    s.gold = 1000;
+    s.slots[0].ready = true;
+    replant(s, 0, 'moonshroom', ctx());
+    expect(s.materials.redheart).toBe(1);
+  });
+
+  it('同一種植物、空花盆、隱藏格都不能改種', () => {
+    const s = createInitialState();
+    s.gold = 1e6;
+    expect(replantCost(s, 0, 'redheart')).toBeNull();
+    expect(replantCost(s, 1, 'redheart')).toBeNull();
+    expect(replantCost(s, 3, 'redheart')).toBeNull();
+  });
+
+  it('錢不夠時不能改種', () => {
+    const s = createInitialState();
+    s.gold = 10;
+    expect(replant(s, 0, 'moonshroom', ctx())).toBe(false);
+    expect(s.slots[0].plant).toBe('redheart');
   });
 });
 
