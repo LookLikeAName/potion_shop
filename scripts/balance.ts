@@ -4,13 +4,13 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { CUSTOMER, TICK } from '../src/game/config/balance';
 import { MATERIAL_IDS, PLANTS, type MaterialId } from '../src/game/config/plants';
 import { RECIPES, type PotionId } from '../src/game/config/recipes';
-import { GLOBAL_UPGRADES } from '../src/game/config/upgrades';
+import { CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADES } from '../src/game/config/upgrades';
 import * as cmd from '../src/game/commands';
 import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
 import { missingInputs, tick, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
-import { arrivalRate } from '../src/game/stats';
+import { arrivalRate, materialReserve } from '../src/game/stats';
 
 const args = process.argv.slice(2);
 const MINUTES = Number(args[args.indexOf('--minutes') + 1]) || 180;
@@ -115,16 +115,21 @@ function candidates(s: GameState, ctx: SimContext): Buy[] {
   return out;
 }
 
-/** 庫存堆積到保留量兩倍以上：玩家會想買收購箱 */
-const stockPiling = (s: GameState) =>
-  s.cauldrons.some((c) => s.potions[c.recipe] > s.settings.reserve * 2);
+/** 某個還沒買的收購箱，對應的庫存已經堆到保留量兩倍以上：玩家會想買它 */
+function crateNeeded(s: GameState, label: string): boolean {
+  if (!label.startsWith('收購箱：')) return false;
+  if (label === '收購箱：原料') {
+    return !s.upgrades[CRATE_MATERIALS] && MATERIAL_IDS.some((m) => s.materials[m] > materialReserve(s, m) * 2);
+  }
+  const p = s.cauldrons.map((c) => c.recipe).find((r) => label.endsWith(RECIPES[r].name));
+  return !!p && !s.upgrades[CRATE_FOR[p]] && s.potions[p] > s.settings.reserves[p] * 2;
+}
 
-/** 解鎖、種新植物（以及庫存堆積時的收購箱）優先存錢；其他就買最便宜的 */
+/** 解鎖、種新植物（以及庫存堆積時對應的收購箱）優先存錢；其他就買最便宜的 */
 function botShop(s: GameState, ctx: SimContext, log: (label: string) => void): void {
   for (let n = 0; n < 200; n++) {
     const list = candidates(s, ctx);
-    const isPriority = (b: Buy) =>
-      /^(解鎖|種植|改種)/.test(b.label) || (b.label === '商會收購箱' && !s.upgrades.crate && stockPiling(s));
+    const isPriority = (b: Buy) => /^(解鎖|種植|改種)/.test(b.label) || crateNeeded(s, b.label);
     const priority = list.filter(isPriority).sort((a, b) => a.cost - b.cost)[0];
     // 有優先項目時，只買價格低於它 10% 的小東西，其他錢存起來
     const pick = priority && s.gold >= priority.cost

@@ -5,6 +5,7 @@ import type { MaterialId } from './config/plants';
 import type { PotionId } from './config/recipes';
 import * as cmd from './commands';
 import type { BuyMode } from './costs';
+import { FlowTracker } from './flow';
 import { simulateOffline, type OfflineReport } from './offline';
 import { loadGame, saveGame, type SaveFile } from './save';
 import { tick, type GameEvent, type SimContext } from './sim';
@@ -17,6 +18,8 @@ const NOTIFY_INTERVAL_MS = 200;
 export class Game {
   state: GameState;
   paused = false;
+  /** 產銷統計（最近約 30 秒的平均） */
+  readonly flow = new FlowTracker();
   onOffline?: (r: OfflineReport) => void;
 
   private last: number;
@@ -29,7 +32,10 @@ export class Game {
   private ctx: SimContext = {
     rng: Math.random,
     offline: false,
-    emit: (e) => this.events.push(e),
+    emit: (e) => {
+      this.events.push(e);
+      this.flow.note(e);
+    },
   };
 
   constructor(save: SaveFile | null) {
@@ -54,6 +60,7 @@ export class Game {
 
     if (elapsed > OFFLINE.reportThreshold) {
       this.acc = 0;
+      this.flow.reset();
       const report = simulateOffline(this.state, elapsed);
       this.onOffline?.(report);
       this.notify(true);
@@ -64,6 +71,7 @@ export class Game {
     let n = 0;
     while (this.acc >= TICK && n < MAX_CATCHUP_TICKS) {
       tick(this.state, TICK, this.ctx);
+      this.flow.sample(this.state, TICK);
       this.acc -= TICK;
       n++;
     }
@@ -85,6 +93,7 @@ export class Game {
     const save = loadGame();
     this.state = save?.state ?? createInitialState();
     this.events = [];
+    this.flow.reset();
     this.acc = 0;
     this.paused = false;
     this.last = save ? Math.min(save.savedAt, Date.now()) : Date.now();
@@ -94,6 +103,7 @@ export class Game {
   replaceState(save: SaveFile): void {
     this.state = save.state;
     this.events = [];
+    this.flow.reset();
     this.acc = 0;
     this.last = Date.now();
     this.save();
@@ -197,12 +207,16 @@ export class Game {
     return this.run(() => cmd.moveCauldron(this.state, from, to));
   }
 
-  setReserve(n: number) {
-    this.run(() => cmd.setReserve(this.state, n));
+  setReserve(potion: PotionId, n: number) {
+    this.run(() => cmd.setReserve(this.state, potion, n));
   }
 
-  setSellMaterials(on: boolean) {
-    this.run(() => cmd.setSellMaterials(this.state, on));
+  setMaterialSell(m: MaterialId, on: boolean) {
+    this.run(() => cmd.setMaterialSell(this.state, m, on));
+  }
+
+  setMaterialKeep(m: MaterialId, pct: number) {
+    this.run(() => cmd.setMaterialKeep(this.state, m, pct));
   }
 
   replant(slot: number, m: MaterialId) {

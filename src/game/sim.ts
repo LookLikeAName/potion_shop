@@ -1,5 +1,6 @@
 // 核心模擬。純邏輯，不碰畫面；在線、背景補算、離線結算、測試共用。
 import { ACHIEVEMENTS } from './config/achievements';
+import { CRATE_FOR, CRATE_MATERIALS } from './config/upgrades';
 import { BOUNTY, CUSTOMER, UPGRADE_FX } from './config/balance';
 import { TALENT_FX } from './config/happiness';
 import { INCOME_SMOOTHING, MASCOT } from './config/mascot';
@@ -8,7 +9,7 @@ import { RECIPES, type PotionId } from './config/recipes';
 import type { CauldronState, CustomerState, GameState, OrderLine } from './state';
 import {
   arrivalRate, autoHarvest, bountyChance, brewClickAdvance, brewPassiveSpeed, checkoutTime, condenserChance,
-  cratePct, customerPatience, drunkChance, growthSpeed, harvestYield, has, isResting, materialReserve,
+  cratePct, customerPatience, drunkChance, growthSpeed, harvestYield, has, hasAnyCrate, isResting, materialReserve,
   maxCustomerQty, patrolZones, plantClickAdvance, redeemed, sellPrice,
 } from './stats';
 
@@ -19,9 +20,13 @@ export type GameEvent =
   | { type: 'customerArrived'; id: number }
   | { type: 'sale'; id: number; gold: number; rush: boolean; tip: boolean; partial: boolean }
   | { type: 'customerLeft'; id: number }
-  | { type: 'wholesale'; amount: number; materials: number; gold: number }
+  /** 某一個收購箱收購了 amount 瓶（或份原料）；原料收購箱另外列出每種原料各收了多少 */
+  | { type: 'wholesale'; crate: CrateKind; amount: number; gold: number; items?: Partial<Record<MaterialId, number>> }
   | { type: 'mascot'; kind: 'exhausted' | 'woke' }
   | { type: 'achievement'; id: string };
+
+/** 收購箱種類：每種藥水一個、原料一個 */
+export type CrateKind = PotionId | 'materials';
 
 export interface SimContext {
   rng: () => number;
@@ -318,12 +323,11 @@ function tickBell(s: GameState, dt: number): void {
 // ---------- 商會收購箱 ----------
 
 /**
- * 超過保留量的藥水與原料，以一定比例收購（在線時整份收，離線可收零頭）。
- * 藥水保留量由玩家設定；原料保留量自動計算為「所有大釜熬 3 輪」的量。
+ * 每種藥水各有一個收購箱（各自的保留量與收購價），原料另有一個（每種原料各自開關；保留量 = 設定百分比 × 所有大釜熬 1 輪的量）。
+ * 超過保留量的部分以該收購箱的比例收購（在線時整份收，離線可收零頭）。
  */
 function tickCrate(s: GameState, dt: number, ctx: SimContext): void {
-  const pct = cratePct(s);
-  if (pct <= 0) return;
+  if (!hasAnyCrate(s)) return;
   s.crateTimer += dt;
   if (s.crateTimer < UPGRADE_FX.crateInterval) return;
   s.crateTimer = 0;
@@ -332,34 +336,40 @@ function tickCrate(s: GameState, dt: number, ctx: SimContext): void {
     return ctx.offline ? n : Math.floor(n);
   };
 
-  let amount = 0;
-  let gold = 0;
+  const pay = (crate: CrateKind, amount: number, gold: number, items?: Partial<Record<MaterialId, number>>) => {
+    s.gold += gold;
+    s.stats.goldEarned += gold;
+    s.stats.wholesaleGold += gold;
+    if (crate === 'materials') s.stats.materialsWholesaled += amount;
+    else s.stats.potionsWholesaled += amount;
+    ctx.emit({ type: 'wholesale', crate, amount, gold, ...(items && { items }) });
+  };
+
   for (const c of s.cauldrons) {
-    const n = excessOf(s.potions[c.recipe], s.settings.reserve);
+    const pct = cratePct(s, CRATE_FOR[c.recipe]);
+    if (pct <= 0) continue;
+    const n = excessOf(s.potions[c.recipe], s.settings.reserves[c.recipe]);
     if (n <= 0) continue;
     s.potions[c.recipe] -= n;
-    amount += n;
-    gold += n * sellPrice(s, c.recipe) * pct;
+    pay(c.recipe, n, n * sellPrice(s, c.recipe) * pct);
   }
 
-  let materials = 0;
-  if (s.settings.sellMaterials) {
+  const matPct = cratePct(s, CRATE_MATERIALS);
+  if (matPct > 0) {
+    let amount = 0;
+    let gold = 0;
+    const items: Partial<Record<MaterialId, number>> = {};
     for (const m of MATERIAL_IDS) {
+      if (!s.settings.materials[m].sell) continue;
       const n = excessOf(s.materials[m], materialReserve(s, m));
       if (n <= 0) continue;
       s.materials[m] -= n;
-      materials += n;
-      gold += n * PLANTS[m].sellValue * pct;
+      items[m] = n;
+      amount += n;
+      gold += n * PLANTS[m].sellValue * matPct;
     }
+    if (amount > 0) pay('materials', amount, gold, items);
   }
-
-  if (amount <= 0 && materials <= 0) return;
-  s.gold += gold;
-  s.stats.goldEarned += gold;
-  s.stats.potionsWholesaled += amount;
-  s.stats.materialsWholesaled += materials;
-  s.stats.wholesaleGold += gold;
-  ctx.emit({ type: 'wholesale', amount, materials, gold });
 }
 
 // ---------- 看板娘：體力、休息、互動能量 ----------

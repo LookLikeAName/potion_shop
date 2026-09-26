@@ -1,4 +1,6 @@
 // 升級定義。效果一律描述為「修正值 (Mod)」，由 stats.ts 依企劃書第 5 章的疊加規則計算。
+import type { GameState } from '../state';
+import { RECIPES, type PotionId } from './recipes';
 
 export type StatId = 'growthSpeed' | 'brewSpeed' | 'sellPrice' | 'arrivalRate' | 'patience' | 'harvestYield';
 
@@ -27,9 +29,24 @@ export interface GlobalUpgradeDef {
   costTable?: number[];
   maxLevel?: number;
   mods: (level: number) => Mod[];
+  /** 需要滿足條件才會出現、才能購買（例如對應配方已解鎖） */
+  requires?: (s: GameState) => boolean;
 }
 
 const none = () => [];
+
+/** 每種藥水的收購箱 ID */
+export const CRATE_FOR: Record<PotionId, string> = {
+  glow: 'crate_glow', focus: 'crate_focus', elixir: 'crate_elixir',
+};
+export const CRATE_MATERIALS = 'crate_materials';
+
+/** 收購箱價格依藥水階級遞增；微光的維持開局就買得起 */
+const CRATE_COSTS: Record<PotionId, number[]> = {
+  glow: [100, 1500, 6000, 25000],
+  focus: [1000, 15000, 60000, 250000],
+  elixir: [20000, 300000, 1200000, 5000000],
+};
 
 export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
   // ---- 溫室 ----
@@ -106,10 +123,17 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
     desc: '喝醉的冒險者連找零都不要。每筆交易 5% 機率「土豪小費」：金幣 ×2。',
     cost: { base: 40000, growth: 1 }, maxLevel: 1, mods: none,
   },
+  // 商會收購箱：每種藥水各一個（各自設定保留量），原料一個（只有開關）
+  ...(Object.keys(CRATE_FOR) as PotionId[]).map((p): GlobalUpgradeDef => ({
+    id: CRATE_FOR[p], icon: `potion_${p}`, name: `收購箱：${RECIPES[p].name}`, zone: 'counter',
+    desc: `${RECIPES[p].name}超過保留量的部分自動收購。Lv1 收購價 30%，每級 +10%（最高 60%）。`,
+    cost: { base: CRATE_COSTS[p][0], growth: 1 }, costTable: CRATE_COSTS[p], mods: none,
+    requires: (s) => s.cauldrons.some((c) => c.recipe === p),
+  })),
   {
-    id: 'crate', icon: 'upg_crate', name: '商會收購箱', zone: 'counter',
-    desc: '庫存超過保留量的藥水會被自動收購。Lv1 收購價 30%，每級 +10%（最高 60%）。',
-    cost: { base: 100, growth: 1 }, costTable: [100, 1500, 6000, 25000], mods: none,
+    id: CRATE_MATERIALS, icon: 'item_redheart', name: '收購箱：原料', zone: 'counter',
+    desc: '多餘的原料自動收購（每種原料可各自開關、設定保留百分比，預設保留大釜熬 3 輪的量）。Lv1 收購價 30%，每級 +10%（最高 60%）。',
+    cost: { base: 300, growth: 1 }, costTable: [300, 4000, 16000, 64000], mods: none,
   },
   // ---- 系統 ----
   {

@@ -8,6 +8,7 @@ import { Icon } from './Icon';
 import { LumiaModal } from './LumiaModal';
 import { CauldronPanel } from './panels/CauldronPanel';
 import { CounterPanel } from './panels/CounterPanel';
+import { FlowPanel } from './panels/FlowPanel';
 import { GreenhousePanel } from './panels/GreenhousePanel';
 import { LumiaPanel, StoryModal } from './panels/LumiaPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
@@ -38,16 +39,17 @@ function TopBar() {
   return (
     <div class="topbar">
       <div class="res gold" title="金幣"><Icon id="icon_gold" /> {formatNumber(s.gold)}</div>
-      <div class="res-group">
+      {/* 點原料或藥水打開產銷統計 */}
+      <button class="res-group res-btn" title="產銷統計" onClick={() => openDrawer('flow')}>
         {MATERIAL_IDS.filter((m) => planted.has(m) || s.materials[m] >= 1).map((m) => (
           <div class="res" key={m} title={PLANTS[m].name}><Icon id={`item_${m}`} /> {formatNumber(s.materials[m])}</div>
         ))}
-      </div>
-      <div class="res-group">
+      </button>
+      <button class="res-group res-btn" title="產銷統計" onClick={() => openDrawer('flow')}>
         {POTION_IDS.filter((p) => unlocked.has(p) || s.potions[p] >= 1).map((p) => (
           <div class="res" key={p} title={RECIPES[p].name}><Icon id={`potion_${p}`} /> {formatNumber(s.potions[p])}</div>
         ))}
-      </div>
+      </button>
       <button class="res res-btn" title="開心度（點擊打開兌換）" onClick={() => openDrawer('lumia')}>
         <Icon id="icon_happiness" /> {formatHappiness(s.happiness)}
       </button>
@@ -64,11 +66,11 @@ function FeverButton() {
   const game = useGame();
   const s = game.state;
   if (!s.redeemed.vow) return null;
-  if (s.feverLeft > 0) return <div class="fever-btn active">✨ 狂熱中 {Math.ceil(s.feverLeft)}s</div>;
+  if (s.feverLeft > 0) return <div class="fever-btn active"><Icon id="icon_fever" /> 狂熱中 {Math.ceil(s.feverLeft)}s</div>;
   const ready = canStartFever(s, game.today);
   return (
     <button class="fever-btn" disabled={!ready} onClick={() => game.startFever()} title="60 秒內所有生產速度 ×10，每天一次">
-      ✨ {ready ? '狂熱時刻' : '今天已使用'}
+      <Icon id="icon_fever" /> {ready ? '狂熱時刻' : '今天已使用'}
     </button>
   );
 }
@@ -77,6 +79,7 @@ const TABS: { id: DrawerTab; label: string }[] = [
   { id: 'greenhouse', label: '溫室' },
   { id: 'cauldron', label: '大釜' },
   { id: 'counter', label: '櫃台' },
+  { id: 'flow', label: '產銷' },
   { id: 'lumia', label: '露米婭' },
   { id: 'settings', label: '設定' },
 ];
@@ -114,7 +117,7 @@ function Drawer() {
         </div>
         <button class="close" onClick={() => (drawerOpen.value = false)} aria-label="關閉">✕</button>
       </div>
-      {tab !== 'settings' && tab !== 'lumia' && (
+      {tab !== 'settings' && tab !== 'lumia' && tab !== 'flow' && (
         <div class="modes">
           購買數量
           {MODES.map((m) => (
@@ -128,6 +131,7 @@ function Drawer() {
         {tab === 'greenhouse' && <GreenhousePanel />}
         {tab === 'cauldron' && <CauldronPanel />}
         {tab === 'counter' && <CounterPanel />}
+        {tab === 'flow' && <FlowPanel />}
         {tab === 'lumia' && <LumiaPanel />}
         {tab === 'settings' && <SettingsPanel />}
       </div>

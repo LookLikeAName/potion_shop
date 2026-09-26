@@ -7,7 +7,7 @@ import { useGame } from './store';
 function statusOf(def: GlobalUpgradeDef, s: GameState): string | undefined {
   const lvl = s.upgrades[def.id] ?? 0;
   const max = maxLevelOf(def);
-  if (def.id === 'crate') return lvl > 0 ? `收購價 ${Math.round(cratePct(s) * 100)}%` : undefined;
+  if (def.id.startsWith('crate_')) return lvl > 0 ? `收購價 ${Math.round(cratePct(s, def.id) * 100)}%` : undefined;
   if (def.id === 'bell') return lvl > 0 ? `剩 ${s.bellCharges} 次` : undefined;
   if (max === 1) return undefined;
   return Number.isFinite(max) ? `Lv ${lvl}/${max}` : `Lv ${lvl}`;
@@ -17,7 +17,8 @@ function statusOf(def: GlobalUpgradeDef, s: GameState): string | undefined {
 export function GlobalUpgrades({ zone, title }: { zone: Zone; title: string }) {
   const game = useGame();
   const s = game.state;
-  const defs = GLOBAL_UPGRADES.filter((u) => u.zone === zone);
+  // 條件未達成的升級（例如配方還沒解鎖的收購箱）不顯示
+  const defs = GLOBAL_UPGRADES.filter((u) => u.zone === zone && (!u.requires || u.requires(s)));
   if (defs.length === 0) return null;
   return (
     <div class="card" id={`upgrades-${zone}`}>

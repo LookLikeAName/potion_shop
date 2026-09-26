@@ -3,7 +3,7 @@ import type { BuyMode } from '../game/costs';
 import type { Game } from '../game/game';
 import type { OfflineReport } from '../game/offline';
 
-export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'lumia' | 'settings';
+export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'flow' | 'lumia' | 'settings';
 
 /** 遊戲狀態變更計數，UI 讀取它來訂閱更新 */
 export const uiTick = signal(0);

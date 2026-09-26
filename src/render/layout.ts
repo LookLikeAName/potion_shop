@@ -49,7 +49,14 @@ export const PROPS = {
   bell: { x: 1462, y: 848 },
   diffuser: { x: 1088, y: 704 },
   signboard: { x: 1598, y: 540 },
-  crate: { x: 1500, y: 374 },
+};
+
+/** 二樓倉庫的收購箱：每種藥水一個、原料一個（底部中心點） */
+export const CRATE_POS = {
+  glow: { x: 1115, y: 378 },
+  focus: { x: 1255, y: 378 },
+  elixir: { x: 1395, y: 378 },
+  materials: { x: 1535, y: 378 },
 };
 
 /** 拖曳露米婭時的指派區域（放開時落在哪一區就指派到哪裡） */

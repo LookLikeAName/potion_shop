@@ -4,7 +4,9 @@ import { TALENT_FX } from './config/happiness';
 import { MASCOT, OUTFIT_BONUS, type WorkZone } from './config/mascot';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
-import { GLOBAL_UPGRADES, TARGET_UPGRADES, type Mod, type StatId } from './config/upgrades';
+import {
+  CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADES, TARGET_UPGRADES, type Mod, type StatId,
+} from './config/upgrades';
 import type { CauldronState, GameState, SlotState } from './state';
 
 export function combine(mods: Mod[]): number {
@@ -192,16 +194,27 @@ export function drunkChance(s: GameState): number {
   return has(s, 'drunks') ? chance(UPGRADE_FX.drunkChance) : 0;
 }
 
-/** 原料保留量：足夠所有大釜以目前等級熬 N 輪 */
-export function materialReserve(s: GameState, m: MaterialId): number {
-  const perRound = s.cauldrons.reduce((sum, c) => sum + (RECIPES[c.recipe].inputs[m] ?? 0) * c.level, 0);
-  return Math.max(UPGRADE_FX.materialReserveMin, perRound * UPGRADE_FX.materialReserveRounds);
+/** 所有大釜以目前等級熬 1 輪需要多少這種原料 */
+export function materialPerRound(s: GameState, m: MaterialId): number {
+  return s.cauldrons.reduce((sum, c) => sum + (RECIPES[c.recipe].inputs[m] ?? 0) * c.level, 0);
 }
 
-/** 收購箱收購價比例（售價的幾成），沒有收購箱 = 0 */
-export function cratePct(s: GameState): number {
-  const lvl = s.upgrades.crate ?? 0;
+/** 原料保留量：設定的百分比 × 1 輪的量（100% = 1 輪）；設 0% 就不保留，其餘至少保留一點 */
+export function materialReserve(s: GameState, m: MaterialId): number {
+  const pct = s.settings.materials[m].keepPct;
+  if (pct <= 0) return 0;
+  return Math.max(UPGRADE_FX.materialReserveMin, Math.ceil((materialPerRound(s, m) * pct) / 100));
+}
+
+/** 某個收購箱的收購價比例（售價的幾成），沒買 = 0 */
+export function cratePct(s: GameState, crateId: string): number {
+  const lvl = s.upgrades[crateId] ?? 0;
   return lvl > 0 ? UPGRADE_FX.crateBasePct + UPGRADE_FX.crateStepPct * (lvl - 1) : 0;
+}
+
+/** 有沒有任何一個收購箱 */
+export function hasAnyCrate(s: GameState): boolean {
+  return [...Object.values(CRATE_FOR), CRATE_MATERIALS].some((id) => has(s, id));
 }
 
 export function sellPrice(s: GameState, potion: PotionId): number {

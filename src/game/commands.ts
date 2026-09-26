@@ -89,12 +89,19 @@ export function ringBell(s: GameState, ctx: SimContext): 'ok' | 'empty' | 'full'
   return 'ok';
 }
 
-export function setReserve(s: GameState, n: number): void {
-  s.settings.reserve = Math.max(0, Math.min(UPGRADE_FX.reserveMax, Math.round(n)));
+/** 設定某種藥水的收購箱保留量 */
+export function setReserve(s: GameState, potion: PotionId, n: number): void {
+  s.settings.reserves[potion] = Math.max(0, Math.min(UPGRADE_FX.reserveMax, Math.round(n)));
 }
 
-export function setSellMaterials(s: GameState, on: boolean): void {
-  s.settings.sellMaterials = on;
+/** 原料收購箱：某種原料要不要賣 */
+export function setMaterialSell(s: GameState, m: MaterialId, on: boolean): void {
+  s.settings.materials[m].sell = on;
+}
+
+/** 原料收購箱：某種原料的保留百分比（100% = 所有大釜熬 1 輪） */
+export function setMaterialKeep(s: GameState, m: MaterialId, pct: number): void {
+  s.settings.materials[m].keepPct = Math.max(0, Math.min(UPGRADE_FX.materialKeepMax, Math.round(pct)));
 }
 
 // ---------- 看板娘 ----------
@@ -346,7 +353,8 @@ function priceSpec(s: GameState, key: PurchaseKey): PriceSpec | null {
     }
     case 'global': {
       const def = GLOBAL_UPGRADE_MAP[key.id];
-      if (!def) return null;
+      // 條件未達成（例如對應配方還沒解鎖）：不出現、不能買
+      if (!def || (def.requires && !def.requires(s))) return null;
       const owned = s.upgrades[key.id] ?? 0;
       return {
         base: def.cost.base, growth: def.cost.growth, owned,

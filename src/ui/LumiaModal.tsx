@@ -13,11 +13,15 @@ const EXPRESSION: Record<Reaction, string> = {
   idle: 'happy', headpat: 'headpat', poke: 'poke', panic: 'panic', shy: 'shy',
 };
 
-/** 立繪：依服裝與表情挑有正式圖的版本，沒有就退回 Q 版圖 */
+/**
+ * 立繪：依服裝與表情挑有正式圖的版本（服裝 + 表情 → 服裝基本 → 預設服裝表情 → 預設基本），
+ * 都沒有就退回 Q 版圖
+ */
 function portraitUrl(outfit: OutfitId, reaction: Reaction): { url?: string; chibi: boolean } {
+  const expr = EXPRESSION[reaction];
   const candidates = outfit === 'default'
-    ? [`portrait_lumia_${EXPRESSION[reaction]}`, 'portrait_lumia_base']
-    : [`portrait_lumia_${outfit}`, 'portrait_lumia_base'];
+    ? [`portrait_lumia_${expr}`, 'portrait_lumia_base']
+    : [`portrait_lumia_${outfit}_${expr}`, `portrait_lumia_${outfit}`, `portrait_lumia_${expr}`, 'portrait_lumia_base'];
   for (const id of candidates) if (ART_URLS[id]) return { url: ART_URLS[id], chibi: false };
   const chibi = ART_URLS[`lumia_chibi_${outfit}_idle`] ?? ART_URLS.lumia_chibi_idle;
   return { url: chibi, chibi: true };

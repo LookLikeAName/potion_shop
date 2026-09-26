@@ -90,15 +90,16 @@ export const ASSETS: AssetDef[] = [
     a(`lumia_chibi_${o}walk`, 150, 210, 0xe98a4a, `露米婭\n${o}走路`, 'round', -1),
     a(`lumia_chibi_${o}back`, 150, 210, 0xe98a4a, `露米婭\n${o}背影`, 'round', -1),
     a(`lumia_chibi_${o}drag`, 150, 210, 0xe98a4a, `露米婭\n${o}拎起`, 'round', -1),
+    a(`lumia_chibi_${o}sleep`, 170, 120, 0xe98a4a, `露米婭\n${o}睡覺`, 'round', -1),
+    a(`lumia_chibi_${o}tired_walk`, 150, 210, 0xe98a4a, `露米婭\n${o}疲勞`, 'round', -1),
   ]),
-  a('lumia_chibi_sleep', 170, 120, 0xe98a4a, '露米婭\n睡覺', 'round', -1),
-  a('lumia_chibi_tired_walk', 150, 210, 0xe98a4a, '露米婭\n疲勞', 'round', -1),
 
   // 開心度兌換：特權天賦圖示、劇情 CG（CG 在介面中也當縮圖用）
   a('icon_cheer', 64, 64, 0xff8fb8, '聲', 'circle'),
   a('icon_attunement', 64, 64, 0x9ee8ff, '同', 'circle'),
   a('icon_green_thumb', 64, 64, 0x6cc36a, '綠', 'circle'),
   a('icon_telepathy', 64, 64, 0xc9a0ff, '心', 'circle'),
+  a('icon_fever', 64, 64, 0xffc234, '狂', 'circle'),
   a('cg_celebration', 64, 36, 0xd9a441, '宴', 'rect'),
   a('cg_starry_vow', 64, 36, 0x3a4a8a, '誓', 'rect'),
 

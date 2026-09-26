@@ -1,6 +1,9 @@
+import type { MaterialId } from './config/plants';
 import type { PotionId } from './config/recipes';
+import { CRATE_FOR, CRATE_MATERIALS } from './config/upgrades';
 import {
-  createCauldron, createInitialState, createSlot, SAVE_VERSION, type CustomerState, type GameState,
+  createCauldron, createInitialState, createSlot, SAVE_VERSION, type CustomerState, type GameSettings,
+  type GameState,
 } from './state';
 
 const KEY = 'idle-potion-shop/save';
@@ -57,6 +60,32 @@ export function parseSave(json: string): SaveFile | null {
   return migrate(raw);
 }
 
+/** 舊版只有一個「商會收購箱」（收所有藥水與原料）：換成同等級的四個收購箱 */
+function migrateUpgrades(old: Record<string, number>): Record<string, number> {
+  const { crate, ...rest } = old;
+  if (!crate) return { ...rest };
+  const out = { ...rest };
+  for (const id of [...Object.values(CRATE_FOR), CRATE_MATERIALS]) out[id] = Math.max(out[id] ?? 0, crate);
+  return out;
+}
+
+/**
+ * 舊版只有一個共用的保留量：套用到每一種藥水。
+ * 舊版原料收購只有一個總開關（sellMaterials）：套用到每一種原料。
+ */
+function migrateSettings(
+  base: GameSettings, old?: Partial<GameSettings> & { reserve?: number; sellMaterials?: boolean },
+): GameSettings {
+  const shared = old?.reserve;
+  const reserves = { ...base.reserves };
+  if (shared !== undefined) for (const p of Object.keys(reserves) as PotionId[]) reserves[p] = shared;
+  const materials = { ...base.materials };
+  for (const m of Object.keys(materials) as MaterialId[]) {
+    materials[m] = { ...materials[m], ...(old?.sellMaterials === false && { sell: false }), ...old?.materials?.[m] };
+  }
+  return { ...base, reserves: { ...reserves, ...old?.reserves }, materials };
+}
+
 /** 版本遷移，並補上舊存檔缺少的欄位 */
 function migrate(raw: Partial<SaveFile>): SaveFile {
   const base = createInitialState();
@@ -67,9 +96,9 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     version: SAVE_VERSION,
     materials: { ...base.materials, ...st.materials },
     potions: { ...base.potions, ...st.potions },
-    upgrades: { ...st.upgrades },
+    upgrades: migrateUpgrades(st.upgrades ?? {}),
     stats: { ...base.stats, ...st.stats },
-    settings: { ...base.settings, ...st.settings },
+    settings: migrateSettings(base.settings, st.settings),
     mascot: { ...base.mascot, ...st.mascot },
     redeemed: { ...st.redeemed },
     achievements: { ...st.achievements },

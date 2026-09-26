@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { CUSTOMER, UPGRADE_FX } from '../src/game/config/balance';
 import {
   activeCombo, clickCauldron, clickPlant, getQuote, giftAvailable, giftPrice, giveGift, moveCauldron, purchase,
-  ringBell, setReserve, setSellMaterials, unlockRecipe,
+  ringBell, setMaterialKeep, setMaterialSell, setReserve, unlockRecipe,
 } from '../src/game/commands';
+import { parseAmount } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
 import { completeBrew, finishSale, spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
-import { brewPassiveSpeed, cratePct, maxCustomerQty } from '../src/game/stats';
+import { brewPassiveSpeed, cratePct, materialReserve, maxCustomerQty } from '../src/game/stats';
 
 function ctx(rng = () => 0.5): SimContext & { events: GameEvent[] } {
   const events: GameEvent[] = [];
@@ -178,33 +179,52 @@ describe('慷慨的酒鬼體質', () => {
 });
 
 describe('商會收購箱', () => {
-  it('價格表 100/1.5K/6K/25K，收購價 30% → 60%', () => {
+  it('每種藥水與原料各有一個收購箱，各自升級：微光的價格表 100/1.5K/6K/25K，收購價 30% → 60%', () => {
     const s = createInitialState();
     s.gold = 100_000;
-    expect(getQuote(s, { kind: 'global', id: 'crate' }, 1)?.cost).toBe(100);
-    purchase(s, { kind: 'global', id: 'crate' }, 'max');
-    expect(s.upgrades.crate).toBe(4);
+    expect(getQuote(s, { kind: 'global', id: 'crate_glow' }, 1)?.cost).toBe(100);
+    purchase(s, { kind: 'global', id: 'crate_glow' }, 'max');
+    expect(s.upgrades.crate_glow).toBe(4);
     expect(s.gold).toBe(100_000 - 32_600);
-    expect(cratePct(s)).toBeCloseTo(0.6);
-    expect(getQuote(s, { kind: 'global', id: 'crate' }, 1)?.count).toBe(0);
+    expect(cratePct(s, 'crate_glow')).toBeCloseTo(0.6);
+    expect(cratePct(s, 'crate_materials')).toBe(0);
+    expect(getQuote(s, { kind: 'global', id: 'crate_glow' }, 1)?.count).toBe(0);
   });
 
-  it('只收購超過保留量的部分', () => {
+  it('配方沒解鎖時，對應的收購箱不能買', () => {
     const s = createInitialState();
-    own(s, 'crate');
-    setReserve(s, 20);
+    s.gold = 1e9;
+    expect(getQuote(s, { kind: 'global', id: 'crate_focus' }, 1)).toBeNull();
+    unlockRecipe(s, 'focus');
+    expect(getQuote(s, { kind: 'global', id: 'crate_focus' }, 1)?.cost).toBe(1000);
+  });
+
+  it('只收購有收購箱的藥水，並依各自的保留量', () => {
+    const s = createInitialState();
+    s.gold = 1e9;
+    unlockRecipe(s, 'focus');
+    s.gold = 0;
+    own(s, 'crate_glow');
+    setReserve(s, 'glow', 10);
+    setReserve(s, 'focus', 5);
     s.potions.glow = 35;
+    s.potions.focus = 30; // 沒有專注糖漿的收購箱：不收
     s.customerTimer = -1e9;
     const c = ctx();
     run(s, 1.05, c);
-    expect(s.potions.glow).toBe(20);
-    expect(s.gold).toBeCloseTo(15 * 5 * 0.3);
-    expect(c.events).toContainEqual(expect.objectContaining({ type: 'wholesale', amount: 15 }));
+    expect(s.potions.glow).toBe(10);
+    expect(s.potions.focus).toBe(30);
+    expect(s.gold).toBeCloseTo(25 * 5 * 0.3);
+    expect(c.events).toContainEqual(expect.objectContaining({ type: 'wholesale', crate: 'glow', amount: 25 }));
+
+    own(s, 'crate_focus');
+    run(s, 1.05, c);
+    expect(s.potions.focus).toBe(5);
   });
 
-  it('多餘原料也會收購：保留所有大釜熬 3 輪的量，價格 = 基準價 × 收購比例', () => {
+  it('多餘原料需要原料收購箱：保留所有大釜熬 3 輪的量，價格 = 基準價 × 收購比例', () => {
     const s = createInitialState();
-    own(s, 'crate');
+    own(s, 'crate_materials');
     s.cauldrons[0].level = 10; // 微光：每輪 2 × 10 = 20 紅心草 → 保留 60
     s.materials.redheart = 1060;
     s.slots[0].plant = null; // 不讓盆栽在測試中繼續長
@@ -215,26 +235,90 @@ describe('商會收購箱', () => {
     expect(s.materials.redheart).toBe(60);
     expect(s.stats.materialsWholesaled).toBe(980);
     expect(s.gold).toBeCloseTo(980 * 0.5 * 0.3);
-    expect(c.events).toContainEqual(expect.objectContaining({ type: 'wholesale', materials: 980 }));
+    expect(c.events).toContainEqual(expect.objectContaining({ type: 'wholesale', crate: 'materials', amount: 980 }));
   });
 
-  it('關閉「收購原料」後不收原料', () => {
+  it('原料保留量用百分比：100% = 大釜熬 1 輪，0% = 全部收購', () => {
     const s = createInitialState();
-    own(s, 'crate');
-    setSellMaterials(s, false);
+    own(s, 'crate_materials');
+    s.cauldrons[0].level = 30; // 微光：每輪 2 × 30 = 60 紅心草
+    s.slots[0].plant = null;
+    s.customerTimer = -1e9;
+    setMaterialKeep(s, 'redheart', 100);
+    expect(materialReserve(s, 'redheart')).toBe(60);
+    setMaterialKeep(s, 'redheart', 250);
+    expect(materialReserve(s, 'redheart')).toBe(150);
+    setMaterialKeep(s, 'redheart', 10); // 6 份，但至少保留 20
+    expect(materialReserve(s, 'redheart')).toBe(UPGRADE_FX.materialReserveMin);
+    setMaterialKeep(s, 'redheart', -50);
+    expect(s.settings.materials.redheart.keepPct).toBe(0);
+    expect(materialReserve(s, 'redheart')).toBe(0);
+    s.cauldrons = [];
+    s.materials.redheart = 500;
+    run(s, 1.05);
+    expect(s.materials.redheart).toBe(0);
+  });
+
+  it('每種原料可以分別關閉收購；只有藥水收購箱時也不收原料', () => {
+    const s = createInitialState();
+    own(s, 'crate_materials');
+    setMaterialSell(s, 'redheart', false);
     s.materials.redheart = 1000;
+    s.materials.moonshroom = 1000;
     s.slots[0].plant = null;
     s.cauldrons = [];
-    run(s, 1.05);
+    const c = ctx();
+    run(s, 1.05, c);
     expect(s.materials.redheart).toBe(1000);
+    expect(s.materials.moonshroom).toBe(UPGRADE_FX.materialReserveMin);
+    expect(c.events).toContainEqual(expect.objectContaining({
+      type: 'wholesale', crate: 'materials', items: { moonshroom: 1000 - UPGRADE_FX.materialReserveMin },
+    }));
+
+    const t = createInitialState();
+    own(t, 'crate_glow');
+    t.materials.redheart = 1000;
+    t.slots[0].plant = null;
+    t.cauldrons = [];
+    run(t, 1.05);
+    expect(t.materials.redheart).toBe(1000);
   });
 
-  it('保留量限制在 0–999', () => {
+  it('保留量各自設定，可以設到很大的數字，但不會小於 0 或超過上限', () => {
     const s = createInitialState();
-    setReserve(s, -5);
-    expect(s.settings.reserve).toBe(0);
-    setReserve(s, 5000);
-    expect(s.settings.reserve).toBe(999);
+    setReserve(s, 'glow', -5);
+    setReserve(s, 'focus', 25_000);
+    expect(s.settings.reserves.glow).toBe(0);
+    expect(s.settings.reserves.focus).toBe(25_000);
+    setReserve(s, 'focus', 1e12);
+    expect(s.settings.reserves.focus).toBe(UPGRADE_FX.reserveMax);
+    expect(s.settings.reserves.elixir).toBe(UPGRADE_FX.reserveDefault);
+  });
+
+  it('舊存檔：一個收購箱換成四個同等級的，共用保留量套用到每種藥水', () => {
+    const save = parseSave(JSON.stringify({
+      version: 1, savedAt: 1,
+      state: { upgrades: { crate: 2, owl: 1 }, settings: { reserve: 35, sellMaterials: false } },
+    }))!;
+    expect(save.state.upgrades).toMatchObject({ crate_glow: 2, crate_focus: 2, crate_elixir: 2, crate_materials: 2 });
+    expect(save.state.upgrades.crate).toBeUndefined();
+    expect(save.state.settings.reserves).toEqual({ glow: 35, focus: 35, elixir: 35 });
+    // 舊的原料總開關關閉 → 每種原料都不賣，保留量用預設
+    expect(save.state.settings.materials.redheart).toEqual({ sell: false, keepPct: UPGRADE_FX.materialKeepDefault });
+    expect(save.state.settings.materials.moonshroom.sell).toBe(false);
+    expect('sellMaterials' in save.state.settings).toBe(false);
+  });
+});
+
+describe('輸入數量', () => {
+  it('支援 K、M、B 與千分位逗號，看不懂就回傳 null', () => {
+    expect(parseAmount('500')).toBe(500);
+    expect(parseAmount(' 2k ')).toBe(2000);
+    expect(parseAmount('1.5M')).toBe(1_500_000);
+    expect(parseAmount('1.20K')).toBe(1200);
+    expect(parseAmount('1,200')).toBe(1200);
+    expect(parseAmount('abc')).toBeNull();
+    expect(parseAmount('')).toBeNull();
   });
 });
 
@@ -336,8 +420,8 @@ describe('舊存檔相容', () => {
     };
     const save = parseSave(JSON.stringify(old))!;
     expect(save.state.cauldrons[0]).toMatchObject({ level: 3, combo: 0, boil: 0 });
-    expect(save.state.settings.reserve).toBe(UPGRADE_FX.reserveDefault);
-    expect(save.state.settings.sellMaterials).toBe(true);
+    expect(save.state.settings.reserves.glow).toBe(UPGRADE_FX.reserveDefault);
+    expect(save.state.settings.materials.redheart).toEqual({ sell: true, keepPct: UPGRADE_FX.materialKeepDefault });
     expect(save.state.bellCharges).toBe(0);
   });
 });

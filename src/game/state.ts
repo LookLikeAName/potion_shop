@@ -132,11 +132,20 @@ export interface MascotState {
 }
 
 export interface GameSettings {
-  /** 收購箱：每種藥水保留給顧客的庫存量 */
-  reserve: number;
-  /** 收購箱：是否也收購多餘的原料 */
-  sellMaterials: boolean;
+  /** 收購箱：每種藥水各自保留給顧客的庫存量 */
+  reserves: Record<PotionId, number>;
+  /** 原料收購箱：每種原料各自要不要賣、保留多少（百分比，100% = 所有大釜熬 1 輪） */
+  materials: Record<MaterialId, MaterialCrateSetting>;
 }
+
+export interface MaterialCrateSetting {
+  sell: boolean;
+  keepPct: number;
+}
+
+export const defaultMaterialSettings = (): Record<MaterialId, MaterialCrateSetting> =>
+  Object.fromEntries(MATERIAL_IDS.map((m) => [m, { sell: true, keepPct: UPGRADE_FX.materialKeepDefault }])) as
+    Record<MaterialId, MaterialCrateSetting>;
 
 export function createSlot(open: boolean): SlotState {
   return { open, plant: null, level: 1, rain: 0, fairy: false, progress: 0, ready: false, memory: {} };
@@ -181,7 +190,10 @@ export function createInitialState(): GameState {
     bellCharges: 0,
     bellTimer: 0,
     crateTimer: 0,
-    settings: { reserve: UPGRADE_FX.reserveDefault, sellMaterials: true },
+    settings: {
+      reserves: Object.fromEntries(POTION_IDS.map((p) => [p, UPGRADE_FX.reserveDefault])) as Record<PotionId, number>,
+      materials: defaultMaterialSettings(),
+    },
     mascot: createMascot(),
     redeemed: {},
     achievements: {},

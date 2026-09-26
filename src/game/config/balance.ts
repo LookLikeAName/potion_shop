@@ -87,9 +87,13 @@ export const UPGRADE_FX = {
   /** 收購箱多久結算一次（秒） */
   crateInterval: 1,
   reserveDefault: 20,
-  reserveMax: 999,
-  /** 原料保留量：足夠所有大釜熬幾輪（依目前等級自動計算） */
-  materialReserveRounds: 3,
+  reserveMax: 999_000_000,
+  /**
+   * 原料保留量以百分比設定：100% = 所有大釜以目前等級熬 1 輪的量。
+   * 預設 300%（3 輪）；設 0% 就全部收購；設了保留時至少保留 materialReserveMin 份。
+   */
+  materialKeepDefault: 300,
+  materialKeepMax: 100_000,
   materialReserveMin: 20,
   /** 過勞精靈工會合約：離線時模擬每秒點擊次數 */
   contractCps: 5,

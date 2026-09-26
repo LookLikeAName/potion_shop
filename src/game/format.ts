@@ -19,6 +19,22 @@ export function formatNumber(n: number): string {
   return sign + scaled.toFixed(digits) + suffix;
 }
 
+/** 解析玩家輸入的數量：500、2k、1.5M、1,200；看不懂就回傳 null */
+export function parseAmount(input: string): number | null {
+  const m = input.trim().replace(/,/g, '').match(/^(\d+(?:\.\d*)?|\.\d+)\s*([kKmMbB]?)$/);
+  if (!m) return null;
+  const mult = { '': 1, k: 1e3, m: 1e6, b: 1e9 }[m[2].toLowerCase() as '' | 'k' | 'm' | 'b'];
+  return Number(m[1]) * mult;
+}
+
+/** 每秒速率：小數字保留小數（0.35、4.2），大數字同 formatNumber */
+export function formatRate(n: number): string {
+  const v = Math.abs(n);
+  if (v >= 100) return formatNumber(n);
+  if (v < 0.005) return '0';
+  return n.toFixed(v >= 10 ? 1 : 2).replace(/\.?0+$/, '');
+}
+
 export function formatHappiness(n: number): string {
   return n.toFixed(4);
 }
