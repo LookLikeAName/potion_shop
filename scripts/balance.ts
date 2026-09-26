@@ -1,19 +1,35 @@
 // 平衡模擬：讓機器人照簡單規則玩，記錄解鎖時間與收入曲線，對照企劃書的節奏目標。
 // 用法：npm run balance [-- --minutes 180]
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { CUSTOMER, TICK } from '../src/game/config/balance';
+import { dirname } from 'node:path';
+import { CUSTOMER, TICK, UPGRADE_FX } from '../src/game/config/balance';
 import { MATERIAL_IDS, PLANTS, type MaterialId } from '../src/game/config/plants';
 import { RECIPES, type PotionId } from '../src/game/config/recipes';
-import { CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADES } from '../src/game/config/upgrades';
+import {
+  CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADE_MAP, GLOBAL_UPGRADES, REFINE_FOR, SQUIRREL,
+} from '../src/game/config/upgrades';
 import * as cmd from '../src/game/commands';
 import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
-import { missingInputs, tick, type SimContext } from '../src/game/sim';
+import { checkoutByClick, missingInputs, tick, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
-import { arrivalRate, materialReserve } from '../src/game/stats';
+import { arrivalRate, materialReserve, potionReserve } from '../src/game/stats';
 
 const args = process.argv.slice(2);
-const MINUTES = Number(args[args.indexOf('--minutes') + 1]) || 180;
+const argOf = (name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
+const MINUTES = Number(argOf('--minutes')) || 180;
+/** 報告輸出位置（比較不同設定時用，預設 docs/balance-report.md） */
+const OUT = argOf('--out') ?? 'docs/balance-report.md';
+/** 配方精煉的等級上限：數字或 inf（比較不同設計用；不指定 = 照設定檔） */
+const REFINE_MAX = argOf('--refine-max');
+if (REFINE_MAX !== undefined) {
+  for (const id of Object.values(REFINE_FOR)) GLOBAL_UPGRADE_MAP[id].maxLevel = REFINE_MAX === 'inf' ? Infinity : Number(REFINE_MAX);
+}
+/** 顧客買走產量的基礎比例（比較用） */
+if (argOf('--share-base')) CUSTOMER.shareBase = Number(argOf('--share-base'));
+/** 收購價：「基礎,每級」例如 0.2,0.05（比較用） */
+const CRATE = argOf('--crate');
+if (CRATE) [UPGRADE_FX.crateBasePct, UPGRADE_FX.crateStepPct] = CRATE.split(',').map(Number);
 const CHECKPOINTS = [1, 2, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 360].filter((m) => m <= MINUTES);
 
 /** 可重現的亂數 */
@@ -56,8 +72,10 @@ const PROFILES: Profile[] = [
 
 // ---------- 機器人行為 ----------
 
-/** 點擊一下：優先收成熟的植物 → 沒有火蜥蜴的大釜 → 還在長的盆栽 */
+/** 點擊一下：優先幫備好貨的客人結帳 → 收成熟的植物 → 沒有火蜥蜴的大釜 → 還在長的盆栽 */
 function botClick(s: GameState, ctx: SimContext): void {
+  const buyer = s.customers.find((c) => c.status !== 'waiting' && !c.express);
+  if (buyer) return void checkoutByClick(s, buyer.id, ctx);
   const ready = s.slots.findIndex((sl) => sl.plant && sl.ready);
   if (ready >= 0) return void cmd.clickPlant(s, ready, ctx);
   const manual = s.cauldrons.find((c) => c.salamander === 0 && (c.batch > 0 || missingInputs(s, c).length === 0));
@@ -122,14 +140,16 @@ function crateNeeded(s: GameState, label: string): boolean {
     return !s.upgrades[CRATE_MATERIALS] && MATERIAL_IDS.some((m) => s.materials[m] > materialReserve(s, m) * 2);
   }
   const p = s.cauldrons.map((c) => c.recipe).find((r) => label.endsWith(RECIPES[r].name));
-  return !!p && !s.upgrades[CRATE_FOR[p]] && s.potions[p] > s.settings.reserves[p] * 2;
+  return !!p && !s.upgrades[CRATE_FOR[p]] && s.potions[p] > Math.max(20, potionReserve(s, p) * 2);
 }
 
 /** 解鎖、種新植物（以及庫存堆積時對應的收購箱）優先存錢；其他就買最便宜的 */
 function botShop(s: GameState, ctx: SimContext, log: (label: string) => void): void {
   for (let n = 0; n < 200; n++) {
     const list = candidates(s, ctx);
-    const isPriority = (b: Buy) => /^(解鎖|種植|改種)/.test(b.label) || crateNeeded(s, b.label);
+    // 第一隻算盤松鼠（自動結帳）也優先：沒有它時不點擊就賣不出去
+    const isPriority = (b: Buy) => /^(解鎖|種植|改種|fairy)/.test(b.label) || crateNeeded(s, b.label)
+      || (b.label === '算盤松鼠' && !s.upgrades[SQUIRREL]);
     const priority = list.filter(isPriority).sort((a, b) => a.cost - b.cost)[0];
     // 有優先項目時，只買價格低於它 10% 的小東西，其他錢存起來
     const pick = priority && s.gold >= priority.cost
@@ -155,6 +175,12 @@ interface Row {
   wholesale: number;
   /** 各原料庫存 */
   stock: string;
+  /** 上一個記錄點以來，各大釜在等原料的時間比例 */
+  starved: string;
+  /** 上一個記錄點以來，收入中來自收購箱的比例 */
+  crateShare: number;
+  /** 上一個記錄點以來，整張訂單都湊齊的客人比例（部分購買、空手離開都算沒滿足） */
+  satisfied: number;
 }
 
 function simulate(p: Profile) {
@@ -168,9 +194,14 @@ function simulate(p: Profile) {
   const rows: Row[] = [];
   let clickAcc = 0;
   let lastEarned = 0;
+  let lastWholesale = 0;
+  let lastServed = 0;
+  let lastPartial = 0;
+  let lastLost = 0;
   let lastT = 0;
   const end = MINUTES * 60;
   let next = 0;
+  const starved: Partial<Record<PotionId, number>> = {};
 
   while (s.time < end - 1e-9) {
     const t = s.time;
@@ -183,6 +214,7 @@ function simulate(p: Profile) {
     }
     if (p.shopping(t) && Math.floor(t * 10) % 10 === 0) botShop(s, ctx, log);
     tick(s, TICK, ctx);
+    for (const c of s.cauldrons) if (c.batch === 0) starved[c.recipe] = (starved[c.recipe] ?? 0) + TICK;
 
     if (next < CHECKPOINTS.length && s.time >= CHECKPOINTS[next] * 60 - 1e-9) {
       const earned = s.stats.goldEarned;
@@ -191,8 +223,23 @@ function simulate(p: Profile) {
         gold: s.gold,
         earned,
         gps: (earned - lastEarned) / (s.time - lastT),
+        crateShare: earned > lastEarned ? (s.stats.wholesaleGold - lastWholesale) / (earned - lastEarned) : 0,
+        satisfied: (() => {
+          const served = s.stats.customersServed - lastServed;
+          const partial = s.stats.partialSales - lastPartial;
+          const lost = s.stats.customersLost - lastLost;
+          return served + lost > 0 ? (served - partial) / (served + lost) : 1;
+        })(),
         pots: s.slots.filter((x) => x.plant).map((x) => `${PLANTS[x.plant!].name[0]}${x.level}`).join(' '),
-        cauldrons: s.cauldrons.map((c) => `${RECIPES[c.recipe].name[0]}${c.level}/火${c.salamander}`).join(' '),
+        cauldrons: s.cauldrons.map((c) => {
+          const refine = s.upgrades[REFINE_FOR[c.recipe]] ?? 0;
+          return `${RECIPES[c.recipe].name[0]}${c.level}/火${c.salamander}${refine ? `★${refine}` : ''}`;
+        }).join(' '),
+        starved: s.cauldrons.map((c) => {
+          const pct = Math.round(((starved[c.recipe] ?? 0) / (s.time - lastT)) * 100);
+          starved[c.recipe] = 0;
+          return `${RECIPES[c.recipe].name[0]}${pct}%`;
+        }).join(' '),
         sold: s.stats.potionsSold,
         rush: s.stats.rushServed,
         wholesale: s.stats.potionsWholesaled,
@@ -200,11 +247,23 @@ function simulate(p: Profile) {
           .map((m) => `${PLANTS[m].name[0]}${formatNumber(s.materials[m])}`).join(' '),
       });
       lastEarned = earned;
+      lastWholesale = s.stats.wholesaleGold;
+      lastServed = s.stats.customersServed;
+      lastPartial = s.stats.partialSales;
+      lastLost = s.stats.customersLost;
       lastT = s.time;
       next++;
     }
   }
 
+  if (args.includes('--debug')) {
+    console.error(p.name, JSON.stringify({
+      rate: s.potionRate, potions: s.potions, reserve: s.cauldrons.map((c) => potionReserve(s, c.recipe)),
+      customers: s.customers.map((c) => ({ st: c.status, lines: c.lines.map((l) => `${l.potion}:${l.qty}/${l.delivered}`) })),
+      cauldrons: s.cauldrons.map((c) => ({ r: c.recipe, lv: c.level, sal: c.salamander, batch: c.batch })),
+      upgrades: s.upgrades, slots: s.slots.map((x) => [x.plant, x.level, x.fairy]), materials: s.materials, gold: s.gold,
+    }));
+  }
   // 結束時離線 8 小時，看結算收益
   const offline = simulateOffline(structuredClone(s), 8 * 3600);
   return { s, rows, firsts, offline };
@@ -249,10 +308,10 @@ for (const p of PROFILES) {
   out();
   out('### 收入曲線');
   out();
-  out('| 分鐘 | 金幣/秒 | 累計收入 | 盆栽 | 大釜（等級/火蜥蜴） | 原料庫存 | 賣出 | 急單 | 收購 |');
-  out('|---|---|---|---|---|---|---|---|---|');
+  out('| 分鐘 | 金幣/秒 | 收購箱占收入 | 訂單滿足率 | 累計收入 | 盆栽 | 大釜（等級/火蜥蜴/★精煉） | 大釜等原料 | 原料庫存 | 賣出 | 急單 | 收購 |');
+  out('|---|---|---|---|---|---|---|---|---|---|---|---|');
   for (const r of rows) {
-    out(`| ${r.min} | ${formatNumber(r.gps)} | ${formatNumber(r.earned)} | ${r.pots} | ${r.cauldrons} | ${r.stock} | ${formatNumber(r.sold)} | ${formatNumber(r.rush)} | ${formatNumber(r.wholesale)} |`);
+    out(`| ${r.min} | ${formatNumber(r.gps)} | ${Math.round(r.crateShare * 100)}% | ${Math.round(r.satisfied * 100)}% | ${formatNumber(r.earned)} | ${r.pots} | ${r.cauldrons} | ${r.starved} | ${r.stock} | ${formatNumber(r.sold)} | ${formatNumber(r.rush)} | ${formatNumber(r.wholesale)} |`);
   }
   out();
   const demand = (arrivalRate(s) / CUSTOMER.interval) * 60;
@@ -262,6 +321,6 @@ for (const p of PROFILES) {
 }
 
 const report = lines.join('\n') + '\n';
-mkdirSync('docs', { recursive: true });
-writeFileSync('docs/balance-report.md', report);
+mkdirSync(dirname(OUT), { recursive: true });
+writeFileSync(OUT, report);
 console.log(report);

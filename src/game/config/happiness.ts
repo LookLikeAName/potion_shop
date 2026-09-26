@@ -55,7 +55,7 @@ export const HAPPINESS_ITEMS: HappinessItem[] = [
   },
   {
     id: 'green_thumb', tier: 3, kind: 'talent', name: '奇蹟綠手指', icon: 'icon_green_thumb',
-    desc: '解鎖溫室的 2 個浮空盆栽格。', cost: fixed(10), max: 1,
+    desc: '浮空盆栽（用金幣買的第 4、5 格）的收成量 ×2。', cost: fixed(10), max: 1,
   },
   {
     id: 'telepathy', tier: 3, kind: 'talent', name: '心電感應', icon: 'icon_telepathy',

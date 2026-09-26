@@ -1,11 +1,12 @@
 // 數值計算：依企劃書第 5 章「同池相加、異池相乘」。
-import { BOUNTY, CHANCE_CAP, CUSTOMER, MILESTONES, UPGRADE_FX } from './config/balance';
+import { BOUNTY, CHANCE_CAP, CUSTOMER, INITIAL_OPEN_SLOTS, MILESTONES, UPGRADE_FX } from './config/balance';
 import { TALENT_FX } from './config/happiness';
 import { MASCOT, OUTFIT_BONUS, type WorkZone } from './config/mascot';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
 import {
-  CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADES, TARGET_UPGRADES, type Mod, type StatId,
+  CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADE_MAP, GLOBAL_UPGRADES, REFINE_FOR, SQUIRREL, TARGET_UPGRADES, type Mod,
+  type StatId,
 } from './config/upgrades';
 import type { CauldronState, GameState, SlotState } from './state';
 
@@ -60,10 +61,8 @@ export function boilMult(c: CauldronState): number {
   return c.boil > 0 ? UPGRADE_FX.boilMult : 1;
 }
 
-/** 大釜被動熬煮速度倍率，沒有火蜥蜴 = 0 */
-export function brewPassiveSpeed(s: GameState, c: CauldronState): number {
-  // 狂熱時刻：沒有火蜥蜴的大釜也全自動
-  if (c.salamander <= 0 && s.feverLeft <= 0) return 0;
+/** 大釜的熬煮速度（不管有沒有火蜥蜴；沒有時以 Lv1 火蜥蜴的基礎速度計） */
+function brewSpeedOf(s: GameState, c: CauldronState): number {
   const base = c.salamander > 0 ? 0.5 + 0.25 * (c.salamander - 1) : 0.5;
   return base * combine([
     ...globalMods(s, 'brewSpeed'),
@@ -72,10 +71,31 @@ export function brewPassiveSpeed(s: GameState, c: CauldronState): number {
   ]);
 }
 
+/** 大釜被動熬煮速度倍率，沒有火蜥蜴 = 0 */
+export function brewPassiveSpeed(s: GameState, c: CauldronState): number {
+  // 狂熱時刻：沒有火蜥蜴的大釜也全自動
+  if (c.salamander <= 0 && s.feverLeft <= 0) return 0;
+  return brewSpeedOf(s, c);
+}
+
 /** 點擊攪拌的推進量：看板娘指派與狂熱時刻也有效（留聲機只影響被動） */
 export function brewClickAdvance(s: GameState, c: CauldronState): number {
   const mods = [...mascotMods(s, 'brewSpeed'), ...feverMods(s)];
   return RECIPES[c.recipe].clickAdvance * milestoneMult(c.level) * boilMult(c) * combine(mods);
+}
+
+/**
+ * 玩家親手點擊的推進量（秒）：基本點擊量，加上魔力園藝手套／符文攪拌棒的
+ * 「等級 × 0.1 秒」自動產量。過勞精靈工會合約的模擬點擊不吃這個加成。
+ */
+export function plantClickPower(s: GameState, slot: SlotState): number {
+  const bonus = (s.upgrades.garden_gloves ?? 0) * UPGRADE_FX.clickBonusSecPerLevel;
+  return plantClickAdvance(slot) + (slot.plant ? bonus * growthSpeed(s, slot) : 0);
+}
+
+export function brewClickPower(s: GameState, c: CauldronState): number {
+  const bonus = (s.upgrades.rune_stirrer ?? 0) * UPGRADE_FX.clickBonusSecPerLevel;
+  return brewClickAdvance(s, c) + bonus * brewSpeedOf(s, c);
 }
 
 // ---------- 看板娘（M 池）----------
@@ -126,16 +146,80 @@ export function mascotMods(s: GameState, stat: StatId): Mod[] {
       if (zone !== 'counter') return [];
       return outfit === 'maid' ? [m(MASCOT.counterPatienceBonus), m(OUTFIT_BONUS.maidPatience)] : [m(MASCOT.counterPatienceBonus)];
     case 'sellPrice':
-      return zone === 'counter' && outfit === 'maid' ? [m(OUTFIT_BONUS.maidPrice)] : [];
+      // 在櫃台：售價 +25%（女僕裝再 +50%）
+      if (zone !== 'counter') return [];
+      return outfit === 'maid' ? [m(MASCOT.counterPriceBonus), m(OUTFIT_BONUS.maidPrice)] : [m(MASCOT.counterPriceBonus)];
     default:
       return [];
   }
 }
 
-/** 結帳時間：看板娘在櫃台時 -50%（疲勞時只有一半效果） */
+/** 有沒有自動結帳（算盤松鼠）；沒有時要玩家親手點客人結帳 */
+export function hasAutoCheckout(s: GameState): boolean {
+  return has(s, SQUIRREL);
+}
+
+/** 客人從隊伍前面走到櫃台的時間（固定，升級不影響） */
+export const WALK_TIME = CUSTOMER.walkToCounter / CUSTOMER.walkSpeed;
+/** 新客人從門口走到隊伍前面的時間 */
+export const ENTER_TIME = CUSTOMER.doorToQueue / CUSTOMER.walkSpeed;
+
+/** 客人到櫃台後的結帳時間：算盤松鼠 Lv1 為基礎時間，之後每級縮短，滿級時 0（走到櫃台的同時就完成訂單） */
+export function payTime(s: GameState): number {
+  const lvl = Math.max(1, s.upgrades[SQUIRREL] ?? 0);
+  const max = GLOBAL_UPGRADE_MAP[SQUIRREL].maxLevel ?? 1;
+  const left = max > 1 ? Math.max(0, 1 - (lvl - 1) / (max - 1)) : 1;
+  return CUSTOMER.payTime * left;
+}
+
+/** 自動結帳一位客人要多久：走到櫃台（固定）+ 結帳 */
 export function checkoutTime(s: GameState): number {
-  if (workZone(s) !== 'counter') return CUSTOMER.checkout;
-  return CUSTOMER.checkout * (1 - (1 - MASCOT.counterCheckoutMult) * mascotFactor(s));
+  return WALK_TIME + payTime(s);
+}
+
+/**
+ * 顧客會買走產量的幾成：基礎 40%，每秒服務人數每翻倍 +10%（招牌、算盤松鼠、露米婭在櫃台），
+ * 宣傳海報每級 +3%，最高 90%。剩下的交給收購箱。
+ */
+export function customerShare(s: GameState): number {
+  const doublings = Math.log2(Math.max(1, customerThroughput(s) / CUSTOMER.shareRefThroughput));
+  const share = CUSTOMER.shareBase + CUSTOMER.sharePerDoubling * doublings
+    + UPGRADE_FX.posterSharePerLevel * (s.upgrades.poster ?? 0);
+  return Math.min(CUSTOMER.shareMax, share);
+}
+
+/** 平均每位客人點幾瓶「基本量」（訂單種數 × 每種 1–3 瓶），用來把需求換算回每張訂單的大小 */
+function avgBaseBottles(s: GameState): number {
+  const chances = CUSTOMER.linesChance[Math.min(Math.max(1, s.cauldrons.length), 3)] ?? [1];
+  const avgLines = chances.reduce((sum, q, k) => sum + q * (k + 1), 0);
+  return avgLines * ((CUSTOMER.qtyMin + CUSTOMER.qtyMax) / 2);
+}
+
+/**
+ * 訂單量倍率：讓顧客平均買走「這種藥水最近的實際產量 × 顧客比例」。
+ * 跟著實際產量（原料不夠時產量掉，訂單也變小），所以原料分配不均時不會一直湊不齊。
+ */
+export function orderScale(s: GameState, p: PotionId): number {
+  const types = Math.max(1, s.cauldrons.length);
+  // 每位客人平均點到這種藥水幾瓶基本量
+  const perCustomer = avgBaseBottles(s) / types;
+  return Math.max(1, (s.potionRate[p] * customerShare(s)) / (customerThroughput(s) * perCustomer));
+}
+
+/** 店裡站滿、每人都點最多時需要的某種藥水量（藥水保留量 100% 的基準） */
+export function fullShopDemand(s: GameState, p: PotionId): number {
+  return CUSTOMER.queueMax * maxCustomerQty(s) * orderScale(s, p);
+}
+
+/** 藥水保留量：設定的百分比 × 店裡站滿時的最大訂單量（設 0% = 全部收購） */
+export function potionReserve(s: GameState, p: PotionId): number {
+  return Math.ceil((fullShopDemand(s, p) * s.settings.potions[p].keepPct) / 100);
+}
+
+/** 每秒能服務幾位客人：來客速度與自動結帳速度取小（沒有自動結帳時以來客速度估計） */
+export function customerThroughput(s: GameState): number {
+  const arrivals = arrivalRate(s) / CUSTOMER.interval;
+  return hasAutoCheckout(s) ? Math.min(arrivals, 1 / checkoutTime(s)) : arrivals;
 }
 
 // ---------- 開心度兌換（H 池、特殊乘數）----------
@@ -194,9 +278,40 @@ export function drunkChance(s: GameState): number {
   return has(s, 'drunks') ? chance(UPGRADE_FX.drunkChance) : 0;
 }
 
+// ---------- 配方精煉 ----------
+
+export function refineLevel(s: GameState, p: PotionId): number {
+  return s.upgrades[REFINE_FOR[p]] ?? 0;
+}
+
+/** 精煉後每份藥水需要的原料（每級 +50%，可能有小數） */
+export function recipeInputs(s: GameState, p: PotionId): [MaterialId, number][] {
+  const mult = 1 + UPGRADE_FX.refineInputPerLevel * refineLevel(s, p);
+  return (Object.entries(RECIPES[p].inputs) as [MaterialId, number][]).map(([m, n]) => [m, n * mult]);
+}
+
+export function recipeNeeds(s: GameState, p: PotionId, m: MaterialId): number {
+  return recipeInputs(s, p).find(([x]) => x === m)?.[1] ?? 0;
+}
+
+/** 精煉的售價倍率（每級 +60%） */
+export function refinePriceMult(s: GameState, p: PotionId): number {
+  return 1 + UPGRADE_FX.refinePricePerLevel * refineLevel(s, p);
+}
+
+// ---------- 浮空盆栽 ----------
+
+/** 第幾格是浮空盆栽（開局開放的格數之後） */
+export const isFloatingSlot = (i: number) => i >= INITIAL_OPEN_SLOTS;
+
+/** 奇蹟綠手指：浮空盆栽收成量 ×2 */
+export function slotYieldMult(s: GameState, i: number): number {
+  return isFloatingSlot(i) && redeemed(s, 'green_thumb') ? UPGRADE_FX.greenThumbYield : 1;
+}
+
 /** 所有大釜以目前等級熬 1 輪需要多少這種原料 */
 export function materialPerRound(s: GameState, m: MaterialId): number {
-  return s.cauldrons.reduce((sum, c) => sum + (RECIPES[c.recipe].inputs[m] ?? 0) * c.level, 0);
+  return s.cauldrons.reduce((sum, c) => sum + recipeNeeds(s, c.recipe, m) * c.level, 0);
 }
 
 /** 原料保留量：設定的百分比 × 1 輪的量（100% = 1 輪）；設 0% 就不保留，其餘至少保留一點 */
@@ -218,7 +333,7 @@ export function hasAnyCrate(s: GameState): boolean {
 }
 
 export function sellPrice(s: GameState, potion: PotionId): number {
-  return RECIPES[potion].basePrice * combine(globalMods(s, 'sellPrice'));
+  return RECIPES[potion].basePrice * refinePriceMult(s, potion) * combine(globalMods(s, 'sellPrice'));
 }
 
 /** 來客速度倍率 */
@@ -230,8 +345,9 @@ export function customerPatience(s: GameState): number {
   return CUSTOMER.patience * combine(globalMods(s, 'patience'));
 }
 
-export function maxCustomerQty(s: GameState): number {
-  return CUSTOMER.qtyMax + Math.floor((s.upgrades.signboard ?? 0) / 10) + (s.upgrades.poster ?? 0);
+/** 每種藥水的基本數量上限（訂單量另外乘上產量倍率，所以這裡固定） */
+export function maxCustomerQty(_s: GameState): number {
+  return CUSTOMER.qtyMax;
 }
 
 /** 收成量倍率（魔法肥料） */

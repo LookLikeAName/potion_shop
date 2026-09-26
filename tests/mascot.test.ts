@@ -28,12 +28,14 @@ function quiet(s: GameState) {
 }
 
 describe('指派加成', () => {
-  it('溫室 +25% 生長、大釜 +25% 熬煮、櫃台結帳 -50% 與耐心 +25%', () => {
+  it('溫室 +25% 生長、大釜 +25% 熬煮、櫃台售價 +25% 與耐心 +25%（不影響結帳時間）', () => {
     const s = createInitialState();
     s.cauldrons[0].salamander = 1;
     const g0 = growthSpeed(s, s.slots[0]);
     const b0 = brewPassiveSpeed(s, s.cauldrons[0]);
     const p0 = customerPatience(s);
+    const price0 = sellPrice(s, 'glow');
+    const t0 = checkoutTime(s);
 
     assignLumia(s, 'greenhouse');
     expect(growthSpeed(s, s.slots[0])).toBeCloseTo(g0 * 1.25);
@@ -41,7 +43,8 @@ describe('指派加成', () => {
     expect(brewPassiveSpeed(s, s.cauldrons[0])).toBeCloseTo(b0 * 1.25);
     expect(growthSpeed(s, s.slots[0])).toBeCloseTo(g0);
     assignLumia(s, 'counter');
-    expect(checkoutTime(s)).toBeCloseTo(CUSTOMER.checkout * 0.5);
+    expect(sellPrice(s, 'glow')).toBeCloseTo(price0 * 1.25);
+    expect(checkoutTime(s)).toBeCloseTo(t0);
     expect(customerPatience(s)).toBeCloseTo(p0 * 1.25);
   });
 
@@ -66,7 +69,7 @@ describe('自由活動', () => {
     expect(growthSpeed(s, s.slots[0])).toBeCloseTo(g0 * 1.25);
     s.mascot.patrolZone = 'counter';
     expect(growthSpeed(s, s.slots[0])).toBeCloseTo(g0);
-    expect(checkoutTime(s)).toBeCloseTo(CUSTOMER.checkout * 0.5);
+    expect(customerPatience(s)).toBeGreaterThan(CUSTOMER.patience);
   });
 
   it('每隔 25–45 秒換一個有事可做的區域，並且消耗體力', () => {
@@ -76,7 +79,9 @@ describe('自由活動', () => {
     s.slots[0].fairy = true;
     assignLumia(s, 'patrol');
     const seen = new Set<string>();
-    const c = ctx(() => Math.random());
+    // 固定種子的亂數（用 Math.random 偶爾會剛好都沒抽到某一區，測試會不穩定）
+    let seed = 12345;
+    const c = ctx(() => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648));
     for (let k = 0; k < 40; k++) {
       run(s, 5, c);
       if (s.mascot.patrolZone) seen.add(s.mascot.patrolZone);
@@ -217,11 +222,11 @@ describe('開心度兌換', () => {
     expect(sellPrice(s, 'glow')).toBeCloseTo(base * 1.8);
   });
 
-  it('奇蹟綠手指打開浮空盆栽；心電感應延長離線上限；魔力同調加冷凝管機率', () => {
+  it('奇蹟綠手指不再開格子（改用金幣買）；心電感應延長離線上限；魔力同調加冷凝管機率', () => {
     const s = createInitialState();
     s.happiness = 100;
     redeem(s, 'green_thumb');
-    expect(s.slots.every((sl) => sl.open)).toBe(true);
+    expect(s.slots.filter((sl) => sl.open)).toHaveLength(3);
     expect(offlineCapSeconds(s)).toBe(12 * 3600);
     redeem(s, 'telepathy');
     expect(offlineCapSeconds(s)).toBe(72 * 3600);
@@ -255,7 +260,8 @@ describe('服裝', () => {
     equipOutfit(s, 'maid');
     assignLumia(s, 'counter');
     expect(customerPatience(s)).toBeCloseTo(p0 * (1 + 0.25 + 2));
-    expect(sellPrice(s, 'glow')).toBeCloseTo(price0 * 1.5);
+    // 櫃台 +25% 加女僕裝 +50%（同一池相加）
+    expect(sellPrice(s, 'glow')).toBeCloseTo(price0 * 1.75);
   });
 
   it('法袍在大釜區：熬煮 +100%（加上指派的 25%）', () => {
@@ -323,10 +329,11 @@ describe('成就', () => {
   it('達成時給一次開心度，不重複', () => {
     const s = createInitialState();
     s.potions.glow = 10;
+    s.upgrades.abacus_squirrel = 1;
     const c = ctx(() => 0);
     const cust = spawnCustomer(s, c);
-    expect(cust.status).toBe('checkout');
-    run(s, 3, c);
+    expect(cust.status).toBe('ready');
+    run(s, 6, c);
     expect(s.achievements.first_sale).toBe(true);
     const h = s.happiness;
     run(s, 3, c);

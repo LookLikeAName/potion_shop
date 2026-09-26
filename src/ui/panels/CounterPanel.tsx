@@ -1,12 +1,13 @@
-import { useRef, useState } from 'preact/hooks';
 import { CUSTOMER, UPGRADE_FX } from '../../game/config/balance';
 import { MATERIAL_IDS, PLANTS, type MaterialId } from '../../game/config/plants';
 import { RECIPES, type PotionId } from '../../game/config/recipes';
-import { formatNumber, formatSeconds, parseAmount } from '../../game/format';
+import { formatNumber, formatSeconds } from '../../game/format';
 import { CRATE_FOR, CRATE_MATERIALS } from '../../game/config/upgrades';
+import { crateSetting } from '../../game/commands';
 import {
-  arrivalRate, cratePct, customerPatience, has, hasAnyCrate, materialPerRound, materialReserve, maxCustomerQty,
-  sellPrice,
+  arrivalRate, checkoutTime, cratePct, customerPatience, customerShare, has, hasAnyCrate, hasAutoCheckout,
+  materialPerRound,
+  fullShopDemand, materialReserve, maxCustomerQty, orderScale, potionReserve, sellPrice,
 } from '../../game/stats';
 import { GlobalUpgrades } from '../GlobalUpgrades';
 import { Icon } from '../Icon';
@@ -21,18 +22,25 @@ export function CounterPanel() {
         <div class="card-title">營業狀況</div>
         <div class="stats">
           <span>來客間隔 <b>{formatSeconds(CUSTOMER.interval / arrivalRate(s))}</b></span>
-          <span>需求 {CUSTOMER.qtyMin}–{maxCustomerQty(s)} 瓶</span>
+          <span>
+            結帳 <b>{hasAutoCheckout(s) ? `${formatSeconds(checkoutTime(s))}／位` : '要親手點客人'}</b>
+          </span>
+          <span>店裡最多 {CUSTOMER.queueMax} 位</span>
           <span>急單耐心 {formatSeconds(customerPatience(s))}</span>
           <span>急單獎勵 ×{CUSTOMER.rushBonus}</span>
         </div>
         <p class="hint">
-          解鎖多種配方後，顧客的訂單可能包含好幾種藥水（氣泡中綠色 = 庫存夠、紅色 = 還缺）。
-          整張湊齊才全價成交；耐心用完還湊不齊，顧客會買走現有的部分，價格 ×{CUSTOMER.partialPriceMult * 100}%。
+          客人一次一位走到櫃台結帳（走路時間固定）。備好貨的客人頭上會出現金幣，<b>點他</b>就會在走到櫃台的同時完成訂單；
+          買了算盤松鼠後會自動結帳，升級縮短結帳時間，滿級時走到櫃台就完成。
+          客人會買走每種藥水產量的 <b>{Math.round(customerShare(s) * 100)}%</b>（櫃台越快、海報越多比例越高，最高
+          {Math.round(CUSTOMER.shareMax * 100)}%），訂單量跟著實際產量走，其餘交給收購箱。整張湊齊才全價成交；
+          耐心用完還湊不齊，會買走現有的部分，價格 ×{CUSTOMER.partialPriceMult * 100}%。
         </p>
         <div class="stats">
           {s.cauldrons.map((c) => (
             <span key={c.recipe}>
-              <Icon id={`potion_${c.recipe}`} size={1} /> {RECIPES[c.recipe].name} {formatNumber(sellPrice(s, c.recipe))} 金
+              <Icon id={`potion_${c.recipe}`} size={1} /> {RECIPES[c.recipe].name} {formatNumber(sellPrice(s, c.recipe))} 金，
+              每人 {formatNumber(CUSTOMER.qtyMin * orderScale(s, c.recipe))}–{formatNumber(maxCustomerQty(s) * orderScale(s, c.recipe))} 瓶
             </span>
           ))}
         </div>
@@ -44,61 +52,44 @@ export function CounterPanel() {
   );
 }
 
-/** 保留量按鈕的單位：一次加減 1、100 或 1K */
-const UNITS = [1, 100, 1000] as const;
-type Unit = (typeof UNITS)[number];
-
-/** 按鈕上的加減量文字：+100、−1K… */
-const stepLabel = (d: number) => `${d < 0 ? '−' : '+'}${formatNumber(Math.abs(d))}`;
-
-/** 收購箱設定：每種藥水各自的保留量；每種原料各自的開關與保留百分比 */
+/**
+ * 收購箱設定：藥水和原料用同一套邏輯——每種都有「要不要賣」開關，以及保留多少（百分比）。
+ * 藥水 100% = 店裡站滿、每人都點最多時的量；原料 100% = 所有大釜熬 1 輪的量。
+ */
 function CrateCard() {
   const game = useGame();
   const s = game.state;
-  const [unit, setUnit] = useState<Unit>(1);
   const potionCrates = s.cauldrons.map((c) => c.recipe).filter((p) => has(s, CRATE_FOR[p]));
   const matPct = cratePct(s, CRATE_MATERIALS);
   return (
     <div class="card" id="crate-reserve">
       <div class="card-title"><Icon id="upg_crate" /> 收購箱設定</div>
-
-      {potionCrates.length > 0 && (
-        <>
-          <p class="hint">
-            每種藥水保留設定的數量給顧客，超過的部分自動收購。顧客付全價，所以保留量太少會少賺急單與小費。
-            數字可以直接輸入（例如 500、2K、1.5M）。
-          </p>
-          <div class="modes unit-modes">
-            每次加減
-            {UNITS.map((u) => (
-              <button key={u} class={`mode ${unit === u ? 'active' : ''}`} onClick={() => setUnit(u)}>
-                {formatNumber(u)}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      <p class="hint">
+        每種藥水和原料都可以決定<b>要不要賣給收購箱</b>，以及<b>保留多少</b>（超過的才收購；0% = 全部收購）。
+        藥水 100% = 店裡站滿、每人都點最多時的量（先留給付全價的客人）；原料 100% = 所有大釜熬 1 輪的量
+        （保留時至少留 {UPGRADE_FX.materialReserveMin} 份）。收購價很低，能賣給客人、能熬成藥水都比較划算。
+      </p>
 
       {potionCrates.map((p) => (
-        <PotionReserveRow key={p} potion={p} unit={unit} />
+        <CrateRow
+          key={p} item={p} icon={`potion_${p}`} name={RECIPES[p].name}
+          price={`收購價 ${Math.round(cratePct(s, CRATE_FOR[p]) * 100)}%`}
+          keep={`保留 ${formatNumber(potionReserve(s, p))} 瓶`}
+          base={`100% = ${formatNumber(fullShopDemand(s, p))} 瓶`}
+        />
       ))}
 
-      {matPct > 0 && (
-        <div class="crate-row">
-          <div class="crate-name">
-            <Icon id="item_redheart" /> 原料收購
-            <span class="buy-status">收購價 {Math.round(matPct * 100)}%</span>
-          </div>
-          <p class="hint">
-            每種原料可以各自決定要不要賣，以及保留多少：100% = 所有大釜以目前等級熬 1 輪的量
-            （設定保留時至少留 {UPGRADE_FX.materialReserveMin} 份；0% = 全部賣掉）。
-            原料收購價很低，熬成藥水賣會划算得多。
-          </p>
-          {MATERIAL_IDS.filter((m) => shownMaterial(s, m)).map((m) => (
-            <MaterialRow key={m} m={m} />
-          ))}
-        </div>
-      )}
+      {matPct > 0 && MATERIAL_IDS.filter((m) => shownMaterial(s, m)).map((m) => {
+        const perRound = materialPerRound(s, m);
+        return (
+          <CrateRow
+            key={m} item={m} icon={`item_${m}`} name={PLANTS[m].name}
+            price={`每份 ${formatNumber2(PLANTS[m].sellValue * matPct)} 金`}
+            keep={`保留 ${formatNumber(materialReserve(s, m))} 份`}
+            base={perRound > 0 ? `100% = ${formatNumber(perRound)} 份` : '目前沒有大釜用到它'}
+          />
+        );
+      })}
 
       <div class="stats">
         <span>已收購 {formatNumber(s.stats.potionsWholesaled)} 瓶</span>
@@ -114,106 +105,46 @@ function shownMaterial(s: ReturnType<typeof useGame>['state'], m: MaterialId): b
   return s.slots.some((sl) => sl.plant === m) || s.materials[m] >= 1 || materialPerRound(s, m) > 0;
 }
 
-function PotionReserveRow({ potion: p, unit }: { potion: PotionId; unit: Unit }) {
-  const game = useGame();
-  const s = game.state;
-  const reserve = s.settings.reserves[p];
-  return (
-    <div class="crate-row">
-      <div class="crate-name">
-        <Icon id={`potion_${p}`} /> {RECIPES[p].name}
-        <span class="buy-status">收購價 {Math.round(cratePct(s, CRATE_FOR[p]) * 100)}%</span>
-      </div>
-      <div class="row stepper">
-        {[-10 * unit, -unit].map((d) => (
-          <button key={d} class="btn" disabled={reserve <= 0} onClick={() => game.setReserve(p, reserve + d)}>
-            {stepLabel(d)}
-          </button>
-        ))}
-        <AmountInput value={reserve} onCommit={(n) => game.setReserve(p, n)} title="保留量" />
-        {[unit, 10 * unit].map((d) => (
-          <button
-            key={d} class="btn" disabled={reserve >= UPGRADE_FX.reserveMax} onClick={() => game.setReserve(p, reserve + d)}
-          >
-            {stepLabel(d)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const PCT_STEPS = [-100, -10, 10, 100];
 
-function MaterialRow({ m }: { m: MaterialId }) {
+/** 一種藥水或原料的收購設定：要不要賣 + 保留百分比 */
+function CrateRow(props: {
+  item: PotionId | MaterialId; icon: string; name: string; price: string; keep: string; base: string;
+}) {
   const game = useGame();
-  const s = game.state;
-  const set = s.settings.materials[m];
-  const perRound = materialPerRound(s, m);
-  const price = PLANTS[m].sellValue * cratePct(s, CRATE_MATERIALS);
+  const set = crateSetting(game.state, props.item);
   return (
     <div class="mat-row">
       <label class="toggle">
-        <input type="checkbox" checked={set.sell} onChange={(e) => game.setMaterialSell(m, e.currentTarget.checked)} />
-        <Icon id={`item_${m}`} /> {PLANTS[m].name}
-        <span class="buy-status">{set.sell ? `每份 ${formatNumber2(price)} 金` : '不賣'}</span>
+        <input type="checkbox" checked={set.sell} onChange={(e) => game.setCrateSell(props.item, e.currentTarget.checked)} />
+        <Icon id={props.icon} /> {props.name}
+        <span class="buy-status">{set.sell ? props.price : '不賣'}</span>
       </label>
       {set.sell && (
         <>
           <div class="row stepper">
             {PCT_STEPS.slice(0, 2).map((d) => (
-              <button key={d} class="btn" disabled={set.keepPct <= 0} onClick={() => game.setMaterialKeep(m, set.keepPct + d)}>
+              <button key={d} class="btn" disabled={set.keepPct <= 0} onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}>
                 {d}%
               </button>
             ))}
             <span class="stepper-value" title="保留百分比">{set.keepPct}%</span>
             {PCT_STEPS.slice(2).map((d) => (
               <button
-                key={d} class="btn" disabled={set.keepPct >= UPGRADE_FX.materialKeepMax}
-                onClick={() => game.setMaterialKeep(m, set.keepPct + d)}
+                key={d} class="btn" disabled={set.keepPct >= UPGRADE_FX.keepMax}
+                onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}
               >
                 +{d}%
               </button>
             ))}
           </div>
           <div class="stats">
-            <span>保留 <b>{formatNumber(materialReserve(s, m))}</b> 份</span>
-            <span>{perRound > 0 ? `大釜 1 輪用 ${formatNumber(perRound)} 份` : '目前沒有大釜用到它'}</span>
+            <span><b>{props.keep}</b></span>
+            <span>{props.base}</span>
           </div>
         </>
       )}
     </div>
-  );
-}
-
-/** 可以直接輸入的數量（支援 K、M），按 Enter 或離開欄位時生效 */
-function AmountInput({ value, onCommit, title }: { value: number; onCommit: (n: number) => void; title: string }) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const cancelled = useRef(false);
-  const commit = () => {
-    const n = draft === null || cancelled.current ? null : parseAmount(draft);
-    if (n !== null) onCommit(n);
-    cancelled.current = false;
-    setDraft(null);
-  };
-  return (
-    <input
-      class="stepper-value amount-input" title={title} inputMode="decimal"
-      value={draft ?? formatNumber(value)}
-      onFocus={(e) => {
-        setDraft(String(value));
-        requestAnimationFrame(() => e.currentTarget?.select());
-      }}
-      onInput={(e) => setDraft(e.currentTarget.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur();
-        else if (e.key === 'Escape') {
-          cancelled.current = true;
-          e.currentTarget.blur();
-        }
-      }}
-    />
   );
 }
 

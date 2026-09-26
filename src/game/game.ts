@@ -8,12 +8,14 @@ import type { BuyMode } from './costs';
 import { FlowTracker } from './flow';
 import { simulateOffline, type OfflineReport } from './offline';
 import { loadGame, saveGame, type SaveFile } from './save';
-import { tick, type GameEvent, type SimContext } from './sim';
+import { checkoutByClick, tick, type GameEvent, type SimContext } from './sim';
 import { createInitialState, type GameState } from './state';
 
 /** 一次補算最多跑幾個 tick（再多就走離線結算） */
 const MAX_CATCHUP_TICKS = Math.ceil(OFFLINE.reportThreshold / TICK);
 const NOTIFY_INTERVAL_MS = 200;
+/** 等著給畫面顯示的事件最多保留幾個（事件只用來顯示特效與飄字，數值已經算進遊戲裡） */
+const MAX_PENDING_EVENTS = 400;
 
 export class Game {
   state: GameState;
@@ -34,6 +36,8 @@ export class Game {
     offline: false,
     emit: (e) => {
       this.events.push(e);
+      // 畫面沒在更新（背景分頁）時沒人取走事件：只留最近的，避免越積越多、回來時一次處理卡死
+      if (this.events.length > MAX_PENDING_EVENTS * 2) this.events = this.events.slice(-MAX_PENDING_EVENTS);
       this.flow.note(e);
     },
   };
@@ -159,6 +163,12 @@ export class Game {
     return this.run(() => cmd.clickCauldron(this.state, recipe, this.ctx));
   }
 
+  /** 點客人結帳（備好貨的客人立刻成交） */
+  clickCustomer(id: number) {
+    if (this.paused || !this.allowClick()) return false;
+    return this.run(() => checkoutByClick(this.state, id, this.ctx));
+  }
+
   plantSeed(slot: number, m: MaterialId) {
     return this.run(() => cmd.plantSeed(this.state, slot, m));
   }
@@ -207,16 +217,12 @@ export class Game {
     return this.run(() => cmd.moveCauldron(this.state, from, to));
   }
 
-  setReserve(potion: PotionId, n: number) {
-    this.run(() => cmd.setReserve(this.state, potion, n));
+  setCrateSell(item: PotionId | MaterialId, on: boolean) {
+    this.run(() => cmd.setCrateSell(this.state, item, on));
   }
 
-  setMaterialSell(m: MaterialId, on: boolean) {
-    this.run(() => cmd.setMaterialSell(this.state, m, on));
-  }
-
-  setMaterialKeep(m: MaterialId, pct: number) {
-    this.run(() => cmd.setMaterialKeep(this.state, m, pct));
+  setCrateKeep(item: PotionId | MaterialId, pct: number) {
+    this.run(() => cmd.setCrateKeep(this.state, item, pct));
   }
 
   replant(slot: number, m: MaterialId) {

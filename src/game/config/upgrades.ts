@@ -14,7 +14,8 @@ export interface Mod {
   value: number;
 }
 
-export type Zone = 'greenhouse' | 'cauldron' | 'counter' | 'system';
+/** inline = 顯示在各自的卡片裡（浮空盆栽格、配方卡片），不出現在區域的升級清單 */
+export type Zone = 'greenhouse' | 'cauldron' | 'counter' | 'system' | 'inline';
 
 export interface GlobalUpgradeDef {
   id: string;
@@ -41,6 +42,19 @@ export const CRATE_FOR: Record<PotionId, string> = {
 };
 export const CRATE_MATERIALS = 'crate_materials';
 
+/** 算盤松鼠：自動結帳，升級提高結帳與客人走路速度（到上限 ×3 為止） */
+export const SQUIRREL = 'abacus_squirrel';
+
+/** 浮空魔法盆栽：分兩次購買，依序開啟第 4、第 5 格 */
+export const FLOATING_POT = 'floating_pot';
+export const FLOATING_POT_COSTS = [20_000, 500_000];
+
+/** 每種配方的精煉升級 ID（價格依藥水階級遞增） */
+export const REFINE_FOR: Record<PotionId, string> = {
+  glow: 'refine_glow', focus: 'refine_focus', elixir: 'refine_elixir',
+};
+const REFINE_BASE: Record<PotionId, number> = { glow: 5_000, focus: 100_000, elixir: 2_000_000 };
+
 /** 收購箱價格依藥水階級遞增；微光的維持開局就買得起 */
 const CRATE_COSTS: Record<PotionId, number[]> = {
   glow: [100, 1500, 6000, 25000],
@@ -50,6 +64,11 @@ const CRATE_COSTS: Record<PotionId, number[]> = {
 
 export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
   // ---- 溫室 ----
+  {
+    id: FLOATING_POT, icon: 'pot_hidden_slot', name: '浮空魔法盆栽', zone: 'inline',
+    desc: '讓花盆飄在溫室半空中，多一格可以種植物。第 1 次開啟第 4 格，第 2 次開啟第 5 格。',
+    cost: { base: FLOATING_POT_COSTS[0], growth: 1 }, costTable: FLOATING_POT_COSTS, mods: none,
+  },
   {
     id: 'star_can', icon: 'upg_starsilver_can', name: '星銀澆水壺', zone: 'greenhouse',
     desc: '二手市集掏來的魔法水壺，水滴會亂彈。點擊盆栽時，相鄰盆栽也獲得 50% 推進。',
@@ -65,6 +84,11 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
     desc: '露米婭自己調配的發光肥料。所有植物每次收成量 +10%/級（可無限升級）。',
     cost: { base: 1000, growth: 1.6 },
     mods: (l) => [{ stat: 'harvestYield', pool: 'G', value: 0.1 * l }],
+  },
+  {
+    id: 'garden_gloves', icon: 'upg_garden_gloves', name: '魔力園藝手套', zone: 'greenhouse',
+    desc: '戴上就能把魔力注入植物。親手點擊盆栽時，額外推進「0.01 秒 × 等級」的自動生長量（跟著所有生長速度加成變強，可無限升級）。',
+    cost: { base: 800, growth: 2 }, mods: none,
   },
   // ---- 大釜 ----
   {
@@ -89,7 +113,17 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
     desc: '硬接在一起的危險發明。每輪熬煮完成時 15% 機率產出 ×2（原料只扣一份）。',
     cost: { base: 50000, growth: 1 }, maxLevel: 1, mods: none,
   },
+  {
+    id: 'rune_stirrer', icon: 'upg_rune_stirrer', name: '符文攪拌棒', zone: 'cauldron',
+    desc: '刻滿加速符文的攪拌棒。親手攪拌大釜時，額外推進「0.01 秒 × 等級」的被動熬煮量（跟著所有熬煮速度加成變強，沒有火蜥蜴也有效，可無限升級）。',
+    cost: { base: 1200, growth: 2 }, mods: none,
+  },
   // ---- 櫃台 ----
+  {
+    id: SQUIRREL, icon: 'upg_abacus_squirrel', name: '算盤松鼠', zone: 'counter',
+    desc: '抱著小算盤的松鼠店員。Lv1 開始自動幫走到櫃台的客人結帳（一次一位，約 2.1 秒）；之後每級縮短結帳時間，滿級（Lv9）時客人走到櫃台的同時就完成訂單。',
+    cost: { base: 150, growth: 3 }, maxLevel: 9, mods: none,
+  },
   {
     id: 'fortune_owl', icon: 'upg_owl', name: '招財貓頭鷹', zone: 'counter',
     desc: '站在收銀機上的木雕貓頭鷹。藥水售價 +10%/級。',
@@ -98,7 +132,7 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
   },
   {
     id: 'signboard', icon: 'upg_signboard', name: '魔法招牌', zone: 'counter',
-    desc: '會對路人拋媚眼的招牌。來客速度 +15%/級，每 10 級顧客需求上限 +1。',
+    desc: '會對路人拋媚眼的招牌。來客速度 +15%/級。',
     cost: { base: 150, growth: 1.3 },
     mods: (l) => [{ stat: 'arrivalRate', pool: 'G', value: 0.15 * l }],
   },
@@ -110,8 +144,8 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
   },
   {
     id: 'poster', icon: 'upg_poster', name: '宣傳海報', zone: 'counter',
-    desc: '貼滿全鎮的藥水廣告。顧客每種藥水的需求上限 +1/級（可無限升級），讓多出來的產量賣給全價顧客。',
-    cost: { base: 3000, growth: 2 }, mods: none,
+    desc: '貼滿全鎮的藥水廣告。顧客買走的產量比例 +3%/級（最多 10 級），讓更多產量賣給全價顧客。',
+    cost: { base: 3000, growth: 2 }, maxLevel: 10, mods: none,
   },
   {
     id: 'bell', icon: 'upg_bell', name: '叫賣鈴鐺', zone: 'counter',
@@ -135,6 +169,13 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
     desc: '多餘的原料自動收購（每種原料可各自開關、設定保留百分比，預設保留大釜熬 3 輪的量）。Lv1 收購價 30%，每級 +10%（最高 60%）。',
     cost: { base: 300, growth: 1 }, costTable: [300, 4000, 16000, 64000], mods: none,
   },
+  // ---- 配方精煉（顯示在各配方卡片裡）：每級原料需求 +50%、售價 +60%，故意製造原料短缺 ----
+  ...(Object.keys(REFINE_FOR) as PotionId[]).map((p): GlobalUpgradeDef => ({
+    id: REFINE_FOR[p], icon: `potion_${p}`, name: `精煉：${RECIPES[p].name}`, zone: 'inline',
+    desc: '改良配方做出更高級的藥水：每級每份原料需求 +50%、售價 +60%（永久套用，原料不夠時大釜會等原料）。',
+    cost: { base: REFINE_BASE[p], growth: 4 }, maxLevel: 5, mods: none,
+    requires: (s) => s.cauldrons.some((c) => c.recipe === p),
+  })),
   // ---- 系統 ----
   {
     id: 'guild_contract', icon: 'upg_guild_contract', name: '過勞精靈工會合約', zone: 'system',

@@ -7,14 +7,21 @@ import { bulkCost, maxAffordable } from '../src/game/costs';
 import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
 import { exportSave, importSave, parseSave } from '../src/game/save';
-import { harvest, spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
+import {
+  checkoutByClick, customerDemand, harvest, spawnCustomer, tick, type GameEvent, type SimContext,
+} from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
-import { combine, growthSpeed, sellPrice } from '../src/game/stats';
+import {
+  checkoutTime, combine, customerShare, ENTER_TIME, growthSpeed, orderScale, payTime, sellPrice, WALK_TIME,
+} from '../src/game/stats';
 
 function ctx(rng = () => 0.5): SimContext & { events: GameEvent[] } {
   const events: GameEvent[] = [];
   return { rng, offline: false, emit: (e) => events.push(e), events };
 }
+
+/** 新客人沒有升級時自動結帳要多久（從門口走到隊伍前面 + 走到櫃台 + 結帳） */
+const BASE_CHECKOUT = ENTER_TIME + WALK_TIME + CUSTOMER.payTime;
 
 function run(s: GameState, seconds: number, c = ctx()) {
   for (let t = 0; t < seconds; t += 0.1) tick(s, 0.1, c);
@@ -102,24 +109,26 @@ describe('大釜', () => {
 });
 
 describe('顧客', () => {
-  it('庫存足夠時結帳收錢', () => {
+  it('庫存足夠時備好貨排隊；有算盤松鼠就自動結帳收錢', () => {
     const s = createInitialState();
+    s.upgrades.abacus_squirrel = 1;
     s.potions.glow = 10;
     const c = ctx(() => 0);
     const cust = spawnCustomer(s, c);
-    expect(cust.status).toBe('checkout');
-    run(s, CUSTOMER.checkout + 0.2, c);
+    expect(cust.status).toBe('ready');
+    run(s, BASE_CHECKOUT + 0.3, c);
     expect(s.gold).toBeGreaterThan(0);
     expect(s.customers.find((x) => x.id === cust.id)).toBeUndefined();
   });
 
   it('急單：補到貨後成交並有 +50% 獎勵；超時則離開、不扣資源', () => {
     const s = createInitialState();
+    s.upgrades.abacus_squirrel = 1;
     const c = ctx(() => 0); // qty = 1
     const cust = spawnCustomer(s, c);
     expect(cust.rush).toBe(true);
     s.potions.glow = 1;
-    run(s, CUSTOMER.checkout + 0.3, c);
+    run(s, BASE_CHECKOUT + 0.3, c);
     expect(s.gold).toBeCloseTo(5 * 1.5);
 
     const s2 = createInitialState();
@@ -130,7 +139,112 @@ describe('顧客', () => {
     expect(s2.gold).toBe(0);
   });
 
-  it('排隊滿 3 人時暫停來客', () => {
+  it('沒有算盤松鼠時，客人走到櫃台後就等著；玩家點他立刻完成，點還在等貨的沒有反應', () => {
+    const s = createInitialState();
+    s.customerTimer = -1e9;
+    s.potions.glow = 1;
+    const c = ctx(() => 0);
+    const ready = spawnCustomer(s, c);
+    const waiting = spawnCustomer(s, c);
+    run(s, 10, c);
+    expect(ready.status).toBe('serving');
+    expect(ready.walk).toBeLessThanOrEqual(0);
+    expect(s.gold).toBe(0);
+    expect(checkoutByClick(s, waiting.id, c)).toBe(false);
+    expect(checkoutByClick(s, ready.id, c)).toBe(true);
+    expect(s.gold).toBeCloseTo(5);
+    expect(s.customers.some((x) => x.id === ready.id)).toBe(false);
+  });
+
+  it('客人不管怎樣都要走到櫃台：還在路上時點他，走到的同時完成', () => {
+    const s = createInitialState();
+    s.customerTimer = -1e9;
+    s.potions.glow = 1;
+    const c = ctx(() => 0);
+    const cust = spawnCustomer(s, c);
+    tick(s, 0.1, c); // 開始走向櫃台
+    expect(cust.status).toBe('serving');
+    expect(checkoutByClick(s, cust.id, c)).toBe(true);
+    expect(s.gold).toBe(0);
+    run(s, ENTER_TIME + WALK_TIME + 0.1, c);
+    expect(s.gold).toBeCloseTo(5);
+  });
+
+  it('自動結帳一次只服務一位：第二位要等第一位結完', () => {
+    const s = createInitialState();
+    s.customerTimer = -1e9;
+    s.upgrades.abacus_squirrel = 1;
+    s.potions.glow = 10;
+    const c = ctx(() => 0);
+    spawnCustomer(s, c);
+    spawnCustomer(s, c);
+    run(s, BASE_CHECKOUT + 0.25, c);
+    expect(s.stats.customersServed).toBe(1);
+    run(s, BASE_CHECKOUT + 0.2, c);
+    expect(s.stats.customersServed).toBe(2);
+  });
+
+  it('訂單量跟著實際產量：顧客平均買走「產量 × 顧客比例」', () => {
+    const s = createInitialState();
+    s.potionRate.glow = 100;
+    // 沒有松鼠：每秒 0.125 位客人（= 基準）→ 顧客比例 40%；一種藥水時每人平均 2 瓶基本量
+    expect(customerShare(s)).toBeCloseTo(CUSTOMER.shareBase);
+    expect(orderScale(s, 'glow')).toBeCloseTo((100 * 0.4) / (0.125 * 2));
+    expect(customerDemand(s, 'glow')).toBeCloseTo(100 * 0.4);
+    const cust = spawnCustomer(s, ctx(() => 0)); // 基本 1 瓶
+    expect(cust.lines[0].qty).toBe(160);
+  });
+
+  it('客人只點有在產的藥水（原料分配不均、某口大釜停工時不會一直點買不到的）', () => {
+    const s = createInitialState();
+    s.gold = 1e9;
+    unlockRecipe(s, 'focus');
+    s.potionRate.glow = 100;
+    s.potionRate.focus = 0;
+    for (let k = 0; k < 20; k++) {
+      const cust = spawnCustomer(s, ctx(() => (k + 0.5) / 20));
+      expect(cust.lines.map((l) => l.potion)).toEqual(['glow']);
+      s.customers = [];
+    }
+  });
+
+  it('櫃台越快、海報越多，顧客買走的比例越高（最高 90%）', () => {
+    const s = createInitialState();
+    s.upgrades.abacus_squirrel = 9; // 結帳 ×3 → 每秒 1.2 位，但來客速度也要夠
+    s.upgrades.signboard = 100;
+    expect(customerShare(s)).toBeGreaterThan(CUSTOMER.shareBase + 0.3);
+    s.upgrades.poster = 10;
+    expect(customerShare(s)).toBeCloseTo(CUSTOMER.shareMax);
+  });
+
+  it('結帳時間 = 走到櫃台（固定）+ 結帳（松鼠升級縮短，滿級 0）；露米婭不影響結帳時間', () => {
+    const s = createInitialState();
+    s.upgrades.abacus_squirrel = 1;
+    expect(checkoutTime(s)).toBeCloseTo(WALK_TIME + CUSTOMER.payTime);
+    s.upgrades.abacus_squirrel = 5; // Lv5／9：剩一半
+    expect(checkoutTime(s)).toBeCloseTo(WALK_TIME + CUSTOMER.payTime * 0.5);
+    s.mascot.assignment = 'counter';
+    expect(checkoutTime(s)).toBeCloseTo(WALK_TIME + CUSTOMER.payTime * 0.5);
+    s.upgrades.abacus_squirrel = 9;
+    expect(payTime(s)).toBe(0);
+    expect(checkoutTime(s)).toBeCloseTo(WALK_TIME);
+  });
+
+  it('松鼠滿級：客人走到櫃台的同時就完成訂單', () => {
+    const s = createInitialState();
+    s.customerTimer = -1e9;
+    s.upgrades.abacus_squirrel = 9;
+    s.potions.glow = 1;
+    const c = ctx(() => 0);
+    spawnCustomer(s, c);
+    // 新客人要先從門口走進來，還沒走到櫃台前不會成交
+    run(s, ENTER_TIME, c);
+    expect(s.gold).toBe(0);
+    run(s, WALK_TIME + 0.15, c);
+    expect(s.gold).toBeCloseTo(5);
+  });
+
+  it('店裡站滿時暫停來客（結帳完離開的不算）', () => {
     const s = createInitialState();
     run(s, 200, ctx(() => 0.99));
     expect(s.customers.length).toBeLessThanOrEqual(CUSTOMER.queueMax);
@@ -149,6 +263,7 @@ describe('多品項訂單', () => {
     unlockRecipe(s, 'focus');
     unlockRecipe(s, 'elixir');
     s.customerTimer = -1e9;
+    s.upgrades.abacus_squirrel = 1;
     return s;
   };
 
@@ -176,7 +291,7 @@ describe('多品項訂單', () => {
     run(s, 1, c);
     expect(cust.status).toBe('waiting');
     s.potions[cust.lines[1].potion] = 5;
-    run(s, CUSTOMER.checkout + 0.3, c);
+    run(s, BASE_CHECKOUT + 0.3, c);
     const full = cust.lines.reduce((g, l) => g + sellPrice(s, l.potion), 0);
     expect(s.gold - before).toBeCloseTo(full * CUSTOMER.rushBonus);
   });
@@ -189,7 +304,7 @@ describe('多品項訂單', () => {
     const [a, b] = cust.lines;
     expect(a.qty).toBe(3);
     s.potions[a.potion] = 2; // 第一種只有 2 瓶，第二種沒有
-    run(s, CUSTOMER.patience + CUSTOMER.checkout + 0.5, c);
+    run(s, CUSTOMER.patience + BASE_CHECKOUT + 0.5, c);
     expect(s.customers.some((x) => x.id === cust.id)).toBe(false);
     expect(a.delivered).toBe(2);
     expect(b.delivered).toBe(0);
@@ -342,6 +457,7 @@ describe('離線', () => {
     s.slots[0].level = 10;
     s.cauldrons[0].salamander = 3;
     s.cauldrons[0].level = 10;
+    s.upgrades.abacus_squirrel = 1;
     const r = simulateOffline(s, 24 * 3600);
     expect(r.capped).toBe(true);
     expect(r.simulated).toBe(12 * 3600);

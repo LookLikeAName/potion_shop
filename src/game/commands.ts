@@ -1,16 +1,18 @@
 // 玩家指令。UI 與場景只透過這裡改變遊戲狀態。
-import { CUSTOMER, LEVEL_COST_GROWTH, SLOT_NEIGHBORS, TIER_MULT, UPGRADE_FX } from './config/balance';
+import {
+  CUSTOMER, INITIAL_OPEN_SLOTS, LEVEL_COST_GROWTH, SLOT_NEIGHBORS, TIER_MULT, UPGRADE_FX,
+} from './config/balance';
 import { HAPPINESS_MAP, TALENT_FX } from './config/happiness';
 import {
   GIFTS, MASCOT, OUTFITS, type Assignment, type OutfitId, type Reaction, type TouchPart,
 } from './config/mascot';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, POTION_IDS, type PotionId } from './config/recipes';
-import { GLOBAL_UPGRADE_MAP, TARGET_UPGRADES, maxLevelOf } from './config/upgrades';
+import { FLOATING_POT, GLOBAL_UPGRADE_MAP, TARGET_UPGRADES, maxLevelOf } from './config/upgrades';
 import { quote, type BuyMode, type Quote } from './costs';
 import { completeBrew, harvest, settlePlant, spawnCustomer, tryStartBrew, type SimContext } from './sim';
-import { createCauldron, type CauldronState, type GameState } from './state';
-import { brewClickAdvance, has, plantClickAdvance, shearsChance } from './stats';
+import { createCauldron, type CauldronState, type CrateSetting, type GameState } from './state';
+import { brewClickPower, has, plantClickPower, shearsChance } from './stats';
 
 // ---------- 點擊 ----------
 
@@ -32,7 +34,7 @@ export function clickPlant(s: GameState, i: number, ctx: SimContext): PlantClick
     harvest(s, i, 1, ctx);
     result = 'harvest';
   } else {
-    slot.progress += plantClickAdvance(slot);
+    slot.progress += plantClickPower(s, slot);
     settlePlant(s, i, ctx);
     result = 'grow';
   }
@@ -45,7 +47,7 @@ function splash(s: GameState, i: number, ctx: SimContext): void {
   for (const n of SLOT_NEIGHBORS[i] ?? []) {
     const slot = s.slots[n];
     if (!slot?.open || !slot.plant || slot.ready) continue;
-    slot.progress += plantClickAdvance(slot) * UPGRADE_FX.starCanSplash;
+    slot.progress += plantClickPower(s, slot) * UPGRADE_FX.starCanSplash;
     settlePlant(s, n, ctx);
   }
 }
@@ -55,8 +57,15 @@ export function clickCauldron(s: GameState, recipe: PotionId, ctx: SimContext): 
   if (!c) return 'none';
   if (c.batch === 0 && !tryStartBrew(s, c)) return 'missing';
   if (has(s, 'bellows')) countCombo(s, c, ctx);
-  c.progress += brewClickAdvance(s, c);
-  if (c.progress >= RECIPES[c.recipe].brewTime) completeBrew(s, c, ctx);
+  c.progress += brewClickPower(s, c);
+  // 一下點很多（符文攪拌棒）：多出來的進度接著熬下一鍋，直到原料不夠
+  const brewTime = RECIPES[c.recipe].brewTime;
+  for (let guard = 0; guard < 1000 && c.progress >= brewTime; guard++) {
+    const extra = c.progress - brewTime;
+    completeBrew(s, c, ctx);
+    if (!tryStartBrew(s, c)) break;
+    c.progress = extra;
+  }
   return 'brew';
 }
 
@@ -89,19 +98,19 @@ export function ringBell(s: GameState, ctx: SimContext): 'ok' | 'empty' | 'full'
   return 'ok';
 }
 
-/** 設定某種藥水的收購箱保留量 */
-export function setReserve(s: GameState, potion: PotionId, n: number): void {
-  s.settings.reserves[potion] = Math.max(0, Math.min(UPGRADE_FX.reserveMax, Math.round(n)));
+/** 收購箱對某種藥水或原料的設定 */
+export function crateSetting(s: GameState, item: PotionId | MaterialId): CrateSetting {
+  return item in s.settings.potions ? s.settings.potions[item as PotionId] : s.settings.materials[item as MaterialId];
 }
 
-/** 原料收購箱：某種原料要不要賣 */
-export function setMaterialSell(s: GameState, m: MaterialId, on: boolean): void {
-  s.settings.materials[m].sell = on;
+/** 收購箱：某種藥水／原料要不要賣 */
+export function setCrateSell(s: GameState, item: PotionId | MaterialId, on: boolean): void {
+  crateSetting(s, item).sell = on;
 }
 
-/** 原料收購箱：某種原料的保留百分比（100% = 所有大釜熬 1 輪） */
-export function setMaterialKeep(s: GameState, m: MaterialId, pct: number): void {
-  s.settings.materials[m].keepPct = Math.max(0, Math.min(UPGRADE_FX.materialKeepMax, Math.round(pct)));
+/** 收購箱：某種藥水／原料的保留百分比（藥水 100% = 店裡站滿時的最大訂單量；原料 100% = 所有大釜熬 1 輪） */
+export function setCrateKeep(s: GameState, item: PotionId | MaterialId, pct: number): void {
+  crateSetting(s, item).keepPct = Math.max(0, Math.min(UPGRADE_FX.keepMax, Math.round(pct)));
 }
 
 // ---------- 看板娘 ----------
@@ -199,10 +208,15 @@ export function redeem(s: GameState, id: string): boolean {
   if (cost === null || Math.floor(s.happiness + 1e-9) < cost) return false;
   s.happiness -= cost;
   s.redeemed[id] = (s.redeemed[id] ?? 0) + 1;
-  if (id === 'green_thumb') {
-    for (const slot of s.slots) slot.open = true;
-  }
   return true;
+}
+
+/** 依浮空魔法盆栽的購買次數開啟盆栽格（開局 3 格，之後每買一次多一格） */
+export function syncSlots(s: GameState): void {
+  const open = INITIAL_OPEN_SLOTS + (s.upgrades[FLOATING_POT] ?? 0);
+  s.slots.forEach((slot, i) => {
+    if (i < open) slot.open = true;
+  });
 }
 
 export function outfitOwned(s: GameState, o: OutfitId): boolean {
@@ -386,6 +400,7 @@ export function purchase(s: GameState, key: PurchaseKey, mode: BuyMode): boolean
       s.upgrades[key.id] = (s.upgrades[key.id] ?? 0) + n;
       // 剛買的鈴鐺是充滿的
       if (key.id === 'bell') s.bellCharges = UPGRADE_FX.bellMaxCharges;
+      if (key.id === FLOATING_POT) syncSlots(s);
       break;
   }
   return true;

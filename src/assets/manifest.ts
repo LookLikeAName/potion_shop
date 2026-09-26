@@ -79,6 +79,10 @@ export const ASSETS: AssetDef[] = [
   a('upg_fertilizer', 56, 56, 0x8ac06a, '肥料', 'round'),
   a('upg_warm_circle', 56, 56, 0xff9a5a, '魔法陣', 'circle'),
   a('upg_poster', 56, 56, 0xe8c56a, '海報', 'rect'),
+  a('upg_garden_gloves', 56, 56, 0x8ac06a, '手套', 'round'),
+  a('upg_rune_stirrer', 56, 56, 0x9b6fe0, '攪拌棒', 'round'),
+  a('upg_refine', 56, 56, 0xc9a0ff, '精煉', 'round'),
+  a('upg_abacus_squirrel', 56, 56, 0xc98a4a, '松鼠', 'round'),
   // 送給露米婭的禮物
   a('gift_snack', 56, 56, 0xf0b070, '點心', 'round'),
   a('gift_bouquet', 56, 56, 0xff9ec0, '花束', 'round'),

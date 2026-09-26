@@ -35,8 +35,12 @@ export const CAULDRON_Y = 808;
 
 export const COUNTER = { x: 1140, y: 810, w: 360, h: 175 };
 export const DOOR = { x: 1650, y: 520, w: 270, h: 420 };
-export const QUEUE_X = [1570, 1705, 1840];
+/** 結帳的客人站在櫃台前的位置；排隊的客人依序站在後面（往門口排） */
+export const CHECKOUT_X = 1560;
+export const QUEUE_X = [1660, 1725, 1790, 1855, 1920];
 export const QUEUE_Y = 995;
+/** 結帳完離開時走前排一點，從排隊的人前面經過 */
+export const LEAVE_Y = 1015;
 export const OFFSTAGE_X = 2060;
 
 /**

@@ -1,24 +1,32 @@
+import { UPGRADE_FX } from '../../game/config/balance';
 import type { MaterialId } from '../../game/config/plants';
 import { PLANTS } from '../../game/config/plants';
 import { RECIPES, type RecipeDef } from '../../game/config/recipes';
+import { GLOBAL_UPGRADE_MAP, REFINE_FOR, maxLevelOf } from '../../game/config/upgrades';
 import { nextLockedRecipes } from '../../game/commands';
 import { formatNumber, formatSeconds } from '../../game/format';
 import type { CauldronState } from '../../game/state';
-import { brewPassiveSpeed, milestoneMult, nextMilestone, sellPrice } from '../../game/stats';
+import {
+  brewPassiveSpeed, milestoneMult, nextMilestone, recipeInputs, refineLevel, refinePriceMult, sellPrice,
+} from '../../game/stats';
 import { BuyButton } from '../BuyButton';
 import { GlobalUpgrades } from '../GlobalUpgrades';
 import { Icon } from '../Icon';
 import { useGame } from '../store';
 
-function Inputs({ r }: { r: RecipeDef }) {
+/** 每份藥水的原料（已解鎖的配方會套用精煉後的需求） */
+function Inputs({ r, inputs }: { r: RecipeDef; inputs?: [MaterialId, number][] }) {
   return (
     <span class="inputs">
-      {(Object.entries(r.inputs) as [MaterialId, number][]).map(([m, n]) => (
-        <span key={m}><Icon id={`item_${m}`} size={1} />{PLANTS[m].name} ×{n}</span>
+      {(inputs ?? (Object.entries(r.inputs) as [MaterialId, number][])).map(([m, n]) => (
+        <span key={m}><Icon id={`item_${m}`} size={1} />{PLANTS[m].name} ×{formatAmount(n)}</span>
       ))}
     </span>
   );
 }
+
+/** 原料份數：整數照常，精煉後的小數留一位 */
+const formatAmount = (n: number) => (Number.isInteger(n) ? formatNumber(n) : n.toFixed(1));
 
 export function CauldronPanel() {
   const game = useGame();
@@ -60,13 +68,18 @@ function CauldronCard({ c }: { c: CauldronState }) {
   const r = RECIPES[c.recipe];
   const passive = brewPassiveSpeed(s, c);
   const next = nextMilestone(c.level);
+  const refine = refineLevel(s, c.recipe);
+  const refineId = REFINE_FOR[c.recipe];
+  const refineMax = maxLevelOf(GLOBAL_UPGRADE_MAP[refineId]);
   return (
     <div class="card" id={`recipe-${c.recipe}`}>
       <div class="card-title">
-        <Icon id={`potion_${c.recipe}`} /> {r.name} <span class="lv">Lv {c.level}</span>
+        <Icon id={`potion_${c.recipe}`} /> {r.name}
+        {refine > 0 && <span class="refine-stars" title={`精煉 ${refine} 級`}>{'★'.repeat(refine)}</span>}
+        <span class="lv">Lv {c.level}</span>
       </div>
       <div class="stats">
-        <Inputs r={r} />
+        <Inputs r={r} inputs={recipeInputs(s, c.recipe)} />
         <span>一次最多熬 <b>{c.level}</b> 份</span>
         <span>被動熬煮 <b>{passive > 0 ? formatSeconds(r.brewTime / passive) : '無'}</b></span>
         <span>售價 {formatNumber(sellPrice(s, c.recipe))} 金</span>
@@ -76,6 +89,12 @@ function CauldronCard({ c }: { c: CauldronState }) {
       <BuyButton
         k={{ kind: 'salamander', recipe: c.recipe }} title="鍋底火蜥蜴" icon="upg_salamander" status={`Lv ${c.salamander}`}
         desc="Lv1 讓大釜自己熬煮（基礎速度 50%），之後每級 +25%"
+      />
+      <BuyButton
+        k={{ kind: 'global', id: refineId }} title="配方精煉" icon="upg_refine"
+        status={Number.isFinite(refineMax) ? `${refine}/${refineMax} 級` : `${refine} 級`}
+        desc={`每級每份原料 +${UPGRADE_FX.refineInputPerLevel * 100}%、售價 +${UPGRADE_FX.refinePricePerLevel * 100}%（永久套用）。目前原料 ×${formatAmount(1 + UPGRADE_FX.refineInputPerLevel * refine)}、售價 ×${formatAmount(refinePriceMult(s, c.recipe))}`}
+        doneText="已精煉到最高"
       />
     </div>
   );

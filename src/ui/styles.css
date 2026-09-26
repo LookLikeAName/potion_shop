@@ -138,6 +138,7 @@ html, body {
 .card.flash { animation: flash 1.2s ease; }
 @keyframes flash { 0%, 60% { box-shadow: 0 0 0 4px var(--gold); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .card-title { font-weight: 700; font-size: 1.05em; display: flex; align-items: center; gap: 0.35em; margin-bottom: 0.3em; }
+.refine-stars { color: #e8a93a; font-size: 0.85em; letter-spacing: -0.05em; }
 .lv { margin-left: auto; font-size: 0.8em; background: var(--ink); color: var(--parchment); border-radius: 999px; padding: 0.1em 0.6em; }
 .stats { display: flex; flex-wrap: wrap; gap: 0.3em 1em; font-size: 0.78em; color: var(--ink-soft); margin-bottom: 0.4em; }
 .stats b { color: var(--ink); }
@@ -182,20 +183,6 @@ html, body {
 .stepper { align-items: center; }
 .stepper .btn { min-width: 3.2em; padding: 0.3em 0.5em; }
 .stepper-value { min-width: 3em; text-align: center; font-weight: 700; font-size: 1.1em; }
-.amount-input {
-  font: inherit;
-  font-weight: 700;
-  width: 5.5em;
-  padding: 0.15em 0.3em;
-  border: 2px solid var(--parchment-dark);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ink);
-  user-select: text;
-  -webkit-user-select: text;
-}
-.amount-input:focus { outline: none; border-color: var(--teal); }
-.unit-modes { padding: 0.2em 0; border-bottom: none; }
 .mat-row { border-top: 1px dashed var(--parchment-dark); padding: 0.3em 0 0.1em; }
 .mat-row .toggle { margin-top: 0.2em; }
 .btn {
@@ -266,6 +253,17 @@ html, body {
 .flow-grid b { font-size: 1.25em; }
 .flow-grid .plus { color: #3d8a4a; }
 .flow-grid .minus { color: #b0563b; }
+.income-total { font-size: 1.35em; color: var(--ink); }
+.income-bar { display: flex; height: 0.7em; border-radius: 999px; overflow: hidden; background: #f0e4c8; margin: 0.35em 0; }
+.income-bar .seg { height: 100%; }
+.seg-0 { background: #e8a93a; }
+.seg-1 { background: #9a6a3e; }
+.seg-2 { background: #d97a8a; }
+.income-list { display: flex; flex-direction: column; gap: 0.2em; font-size: 0.82em; margin-bottom: 0.4em; }
+.income-list span { display: flex; align-items: center; gap: 0.35em; }
+.income-list b { margin-left: auto; }
+.income-list em { font-style: normal; color: var(--ink-soft); min-width: 3em; text-align: right; }
+.income-list .dot { width: 0.7em; height: 0.7em; border-radius: 50%; display: inline-block; }
 .flow-demand { font-size: 0.72em; color: var(--ink-soft); margin-top: 0.25em; }
 .flow-hint { font-size: 0.75em; margin-top: 0.25em; padding: 0.2em 0.5em; border-radius: 8px; }
 .flow-hint.warn { background: #fbe1d6; color: #9a3a22; }

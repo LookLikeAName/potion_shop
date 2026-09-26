@@ -18,7 +18,7 @@ describe('產銷統計', () => {
     s.cauldrons[0].salamander = 1; // 微光恢復劑 每 8 秒熬 1 瓶，用 2 份紅心草
     s.materials.redheart = 10;
     s.upgrades.crate_glow = 1;
-    s.settings.reserves.glow = 0;
+    s.settings.potions.glow.keepPct = 0;
     const flow = new FlowTracker();
     run(s, 25, flow);
     const r = flow.report(s)!;

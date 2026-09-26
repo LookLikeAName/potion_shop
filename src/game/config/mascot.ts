@@ -8,7 +8,7 @@ export const ASSIGNMENTS: Record<Assignment, { name: string; desc: string }> = {
   patrol: { name: '自由活動', desc: '自己在溫室、大釜區、櫃台之間輪流工作，效果跟著所在的區域，一樣會消耗體力' },
   greenhouse: { name: '溫室', desc: '植物生長速度 +25%' },
   cauldron: { name: '大釜區', desc: '熬煮速度（被動與點擊）+25%' },
-  counter: { name: '櫃台', desc: '結帳時間 -50%、顧客耐心 +25%' },
+  counter: { name: '櫃台', desc: '藥水售價 +25%、顧客耐心 +25%' },
   rest: { name: '休息室', desc: '在坐墊上睡覺：體力回復 ×2，並慢慢產出開心度' },
 };
 
@@ -30,7 +30,8 @@ export const MASCOT = {
   greenhouseBonus: 0.25,
   cauldronBonus: 0.25,
   counterPatienceBonus: 0.25,
-  counterCheckoutMult: 0.5,
+  /** 在櫃台時的售價加成（看板娘池 M，和女僕裝相加） */
+  counterPriceBonus: 0.25,
 
   /** 休息時每小時產出的開心度（家具另計） */
   restHappinessPerHour: 0.05,

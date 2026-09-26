@@ -23,7 +23,26 @@ interface Bucket {
   crate: Counts;
   /** 各配方的大釜等原料（湊不出一份）的秒數 */
   starved: Record<PotionId, number>;
+  income: Income;
+  orders: Orders;
 }
+
+/** 收入來源（金幣） */
+export interface Income {
+  customers: number;
+  cratePotions: number;
+  crateMaterials: number;
+}
+
+/** 顧客：整張湊齊成交、只買走部分、空手離開的人數 */
+export interface Orders {
+  full: number;
+  partial: number;
+  lost: number;
+}
+
+const noIncome = (): Income => ({ customers: 0, cratePotions: 0, crateMaterials: 0 });
+const noOrders = (): Orders => ({ full: 0, partial: 0, lost: 0 });
 
 export interface ItemFlow {
   /** 產量／秒（收成、熬煮完成） */
@@ -42,6 +61,10 @@ export interface FlowReport {
   items: Record<ItemId, ItemFlow>;
   /** 各配方的大釜在等原料的時間比例（0~1） */
   starved: Record<PotionId, number>;
+  /** 每秒平均收入（依來源） */
+  income: Income & { total: number };
+  /** 這段時間的顧客人數（整張成交／部分／空手離開） */
+  orders: Orders;
 }
 
 const stockOf = (s: GameState, i: ItemId) => (i in s.materials ? s.materials[i as MaterialId] : s.potions[i as PotionId]);
@@ -61,9 +84,14 @@ export class FlowTracker {
   note(e: GameEvent): void {
     const b = this.cur;
     if (!b) return;
-    if (e.type === 'harvest') b.made[e.material] += e.amount;
+    if (e.type === 'sale') {
+      b.income.customers += e.gold;
+      b.orders[e.partial ? 'partial' : 'full']++;
+    } else if (e.type === 'customerLeft') b.orders.lost++;
+    else if (e.type === 'harvest') b.made[e.material] += e.amount;
     else if (e.type === 'brewed') b.made[e.recipe] += e.amount;
     else if (e.type === 'wholesale') {
+      b.income[e.crate === 'materials' ? 'crateMaterials' : 'cratePotions'] += e.gold;
       if (e.crate !== 'materials') b.crate[e.crate] += e.amount;
       else for (const m of MATERIAL_IDS) b.crate[m] += e.items?.[m] ?? 0;
     }
@@ -75,7 +103,10 @@ export class FlowTracker {
     if (!b || b.time >= BUCKET_SEC - 1e-6) {
       const stock = zeros();
       for (const i of ITEMS) stock[i] = stockOf(s, i);
-      b = { time: 0, stock, made: zeros(), crate: zeros(), starved: { glow: 0, focus: 0, elixir: 0 } };
+      b = {
+        time: 0, stock, made: zeros(), crate: zeros(), starved: { glow: 0, focus: 0, elixir: 0 },
+        income: noIncome(), orders: noOrders(),
+      };
       this.buckets.push(b);
       if (this.buckets.length > WINDOW) this.buckets.shift();
     }
@@ -102,6 +133,13 @@ export class FlowTracker {
     }
     const starved = { glow: 0, focus: 0, elixir: 0 };
     for (const p of POTION_IDS) starved[p] = this.buckets.reduce((n, b) => n + b.starved[p], 0) / seconds;
-    return { seconds, items, starved };
+    const income = noIncome();
+    const orders = noOrders();
+    for (const b of this.buckets) {
+      for (const k of Object.keys(income) as (keyof Income)[]) income[k] += b.income[k] / seconds;
+      for (const k of Object.keys(orders) as (keyof Orders)[]) orders[k] += b.orders[k];
+    }
+    const total = income.customers + income.cratePotions + income.crateMaterials;
+    return { seconds, items, starved, income: { ...income, total }, orders };
   }
 }

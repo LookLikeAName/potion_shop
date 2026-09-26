@@ -1,5 +1,6 @@
 import { BOUNTY } from '../../game/config/balance';
 import { MATERIAL_IDS, PLANTS } from '../../game/config/plants';
+import { FLOATING_POT } from '../../game/config/upgrades';
 import { replantCost } from '../../game/commands';
 import { formatNumber, formatSeconds } from '../../game/format';
 import type { SlotState } from '../../game/state';
@@ -29,10 +30,19 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
   const id = `slot-${i}`;
 
   if (!slot.open) {
+    // 浮空盆栽格依序開啟：只有下一格可以買
+    const nextToOpen = s.slots.findIndex((x) => !x.open);
     return (
       <div class="card locked" id={id}>
-        <div class="card-title">🔒 隱藏盆栽格 {i + 1}</div>
-        <p class="hint">需要開心度特權「奇蹟綠手指」解鎖（開心度系統將在後續版本開放）。</p>
+        <div class="card-title">🔒 浮空盆栽格 {i + 1}</div>
+        {i === nextToOpen ? (
+          <BuyButton
+            k={{ kind: 'global', id: FLOATING_POT }} title="召喚浮空魔法盆栽" icon="pot_hidden_slot"
+            desc="讓花盆飄在溫室半空中，多一格可以種植物"
+          />
+        ) : (
+          <p class="hint">先開啟第 {nextToOpen + 1} 格，才能召喚這一格。</p>
+        )}
       </div>
     );
   }

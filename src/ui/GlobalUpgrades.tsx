@@ -1,4 +1,6 @@
+import { UPGRADE_FX } from '../game/config/balance';
 import { GLOBAL_UPGRADES, maxLevelOf, type GlobalUpgradeDef, type Zone } from '../game/config/upgrades';
+import { formatRate } from '../game/format';
 import type { GameState } from '../game/state';
 import { cratePct } from '../game/stats';
 import { BuyButton } from './BuyButton';
@@ -9,6 +11,9 @@ function statusOf(def: GlobalUpgradeDef, s: GameState): string | undefined {
   const max = maxLevelOf(def);
   if (def.id.startsWith('crate_')) return lvl > 0 ? `收購價 ${Math.round(cratePct(s, def.id) * 100)}%` : undefined;
   if (def.id === 'bell') return lvl > 0 ? `剩 ${s.bellCharges} 次` : undefined;
+  if (def.id === 'garden_gloves' || def.id === 'rune_stirrer') {
+    return lvl > 0 ? `Lv ${lvl}・每次點擊 +${formatRate(lvl * UPGRADE_FX.clickBonusSecPerLevel)} 秒產量` : undefined;
+  }
   if (max === 1) return undefined;
   return Number.isFinite(max) ? `Lv ${lvl}/${max}` : `Lv ${lvl}`;
 }

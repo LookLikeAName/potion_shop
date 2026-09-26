@@ -37,8 +37,8 @@ export function simulateOffline(s: GameState, seconds: number): OfflineReport {
   // 期望值模式：機率類效果取平均
   const ctx: SimContext = { rng: () => 0.5, offline: true, emit: () => {} };
 
-  // 正在結帳的客人直接成交，等待中的客人離開（無懲罰）
-  for (const c of [...s.customers]) if (c.status === 'checkout') finishSale(s, c, ctx);
+  // 已經備好貨的客人直接成交，等待中的客人離開（無懲罰）
+  for (const c of [...s.customers]) if (c.status !== 'waiting') finishSale(s, c, ctx);
   s.customers = [];
 
   let left = simulated;

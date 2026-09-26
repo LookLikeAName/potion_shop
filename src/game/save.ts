@@ -1,9 +1,10 @@
 import type { MaterialId } from './config/plants';
 import type { PotionId } from './config/recipes';
-import { CRATE_FOR, CRATE_MATERIALS } from './config/upgrades';
+import { INITIAL_OPEN_SLOTS } from './config/balance';
+import { CRATE_FOR, CRATE_MATERIALS, FLOATING_POT } from './config/upgrades';
 import {
   createCauldron, createInitialState, createSlot, SAVE_VERSION, type CustomerState, type GameSettings,
-  type GameState,
+  type GameState, type SlotState,
 } from './state';
 
 const KEY = 'idle-potion-shop/save';
@@ -60,30 +61,45 @@ export function parseSave(json: string): SaveFile | null {
   return migrate(raw);
 }
 
-/** 舊版只有一個「商會收購箱」（收所有藥水與原料）：換成同等級的四個收購箱 */
-function migrateUpgrades(old: Record<string, number>): Record<string, number> {
+/**
+ * 舊版只有一個「商會收購箱」（收所有藥水與原料）：換成同等級的四個收購箱。
+ * 舊版的浮空盆栽由開心度「奇蹟綠手指」開啟：已經開啟的格數換成浮空魔法盆栽的購買次數。
+ */
+function migrateUpgrades(old: Record<string, number>, slots?: Partial<SlotState>[]): Record<string, number> {
   const { crate, ...rest } = old;
-  if (!crate) return { ...rest };
   const out = { ...rest };
-  for (const id of [...Object.values(CRATE_FOR), CRATE_MATERIALS]) out[id] = Math.max(out[id] ?? 0, crate);
+  if (crate) {
+    for (const id of [...Object.values(CRATE_FOR), CRATE_MATERIALS]) out[id] = Math.max(out[id] ?? 0, crate);
+  }
+  const floatingOpen = (slots ?? []).filter((sl, i) => i >= INITIAL_OPEN_SLOTS && sl?.open).length;
+  if (floatingOpen > (out[FLOATING_POT] ?? 0)) out[FLOATING_POT] = floatingOpen;
   return out;
 }
 
 /**
- * 舊版只有一個共用的保留量：套用到每一種藥水。
- * 舊版原料收購只有一個總開關（sellMaterials）：套用到每一種原料。
+ * 收購箱設定的舊版格式：
+ * - 藥水保留量原本是數字（共用的 reserve 或每種各自的 reserves），後來是「保留給客人」開關（keepForCustomers）：
+ *   設成 0／關掉的換成保留 0%（全部收購），其他換成預設的保留 100%。
+ * - 原料收購原本只有一個總開關（sellMaterials）：套用到每一種原料。
  */
 function migrateSettings(
-  base: GameSettings, old?: Partial<GameSettings> & { reserve?: number; sellMaterials?: boolean },
+  base: GameSettings,
+  old?: Partial<GameSettings> & {
+    reserve?: number; reserves?: Partial<Record<PotionId, number>>;
+    keepForCustomers?: Partial<Record<PotionId, boolean>>; sellMaterials?: boolean;
+  },
 ): GameSettings {
-  const shared = old?.reserve;
-  const reserves = { ...base.reserves };
-  if (shared !== undefined) for (const p of Object.keys(reserves) as PotionId[]) reserves[p] = shared;
+  const potions = { ...base.potions };
+  for (const p of Object.keys(potions) as PotionId[]) {
+    const n = old?.reserves?.[p] ?? old?.reserve;
+    const keep = old?.keepForCustomers?.[p] ?? (n === undefined ? undefined : n > 0);
+    potions[p] = { ...potions[p], ...(keep === false && { keepPct: 0 }), ...old?.potions?.[p] };
+  }
   const materials = { ...base.materials };
   for (const m of Object.keys(materials) as MaterialId[]) {
     materials[m] = { ...materials[m], ...(old?.sellMaterials === false && { sell: false }), ...old?.materials?.[m] };
   }
-  return { ...base, reserves: { ...reserves, ...old?.reserves }, materials };
+  return { potions, materials };
 }
 
 /** 版本遷移，並補上舊存檔缺少的欄位 */
@@ -96,7 +112,7 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     version: SAVE_VERSION,
     materials: { ...base.materials, ...st.materials },
     potions: { ...base.potions, ...st.potions },
-    upgrades: migrateUpgrades(st.upgrades ?? {}),
+    upgrades: migrateUpgrades(st.upgrades ?? {}, st.slots),
     stats: { ...base.stats, ...st.stats },
     settings: migrateSettings(base.settings, st.settings),
     mascot: { ...base.mascot, ...st.mascot },
@@ -107,9 +123,15 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     cauldrons: (st.cauldrons ?? base.cauldrons).map((c) => ({ ...createCauldron(c.recipe), ...c })),
     // 舊版顧客只有單一藥水 { potion, qty }：轉成訂單格式
     customers: (st.customers ?? []).map((c) => {
-      const old = c as Partial<CustomerState> & { potion?: PotionId; qty?: number };
-      if (old.lines) return c;
-      return { ...c, partial: false, lines: [{ potion: old.potion ?? 'glow', qty: old.qty ?? 1, delivered: 0 }] };
+      const old = c as Omit<CustomerState, 'status'> & { status: string; potion?: PotionId; qty?: number };
+      // 舊版「結帳中」（大家同時倒數）→ 備好貨排隊等結帳
+      const status: CustomerState['status'] = old.status === 'checkout' ? 'ready' : c.status;
+      const extra = { status, arrive: old.arrive ?? 0, walk: old.walk ?? 0, express: old.express ?? false };
+      if (old.lines) return { ...c, ...extra };
+      return {
+        ...c, ...extra, partial: false,
+        lines: [{ potion: old.potion ?? 'glow', qty: old.qty ?? 1, delivered: status === 'waiting' ? 0 : old.qty ?? 1 }],
+      };
     }),
   };
   return { version: SAVE_VERSION, savedAt: raw.savedAt ?? Date.now(), state };
