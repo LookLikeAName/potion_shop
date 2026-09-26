@@ -51,6 +51,8 @@ export const PROPS = {
   starCan: { x: 512, y: 925 },
   owl: { x: 1255, y: 846 },
   bell: { x: 1462, y: 848 },
+  /** 算盤松鼠蹲在貓頭鷹和鈴鐺中間 */
+  squirrel: { x: 1360, y: 848 },
   diffuser: { x: 1088, y: 704 },
   signboard: { x: 1598, y: 540 },
 };

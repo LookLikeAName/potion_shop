@@ -11,7 +11,7 @@ import { activeCombo, nextLockedRecipes } from '../game/commands';
 import { formatNumber } from '../game/format';
 import type { Game } from '../game/game';
 import { missingInputs, type CrateKind, type GameEvent } from '../game/sim';
-import { CRATE_FOR, CRATE_MATERIALS } from '../game/config/upgrades';
+import { CRATE_FOR, CRATE_MATERIALS, SQUIRREL } from '../game/config/upgrades';
 import type { CustomerState, GameState } from '../game/state';
 import {
   autoHarvest, brewPassiveSpeed, growthSpeed, hasAutoCheckout, payTime, has, isResting, isTired, milestoneCount, recipeInputs, redeemed,
@@ -1456,6 +1456,7 @@ class PropsLayer extends Container {
     };
     add('star_can', 'upg_starsilver_can', PROPS.starCan);
     add('fortune_owl', 'upg_owl', PROPS.owl);
+    add(SQUIRREL, 'upg_abacus_squirrel', PROPS.squirrel, 1);
     add('diffuser', 'upg_diffuser', PROPS.diffuser, 1.5);
     add('signboard', 'upg_signboard', PROPS.signboard, 0, 0);
     // 休息室家具（開心度兌換）
