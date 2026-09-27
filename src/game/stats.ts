@@ -9,7 +9,8 @@ import {
   CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADE_MAP, GLOBAL_UPGRADES, REFINE_FOR, SQUIRREL, TARGET_UPGRADES, type Mod,
   type StatId,
 } from './config/upgrades';
-import type { CauldronState, GameState, SlotState } from './state';
+import { EVENT, EVENTS } from './config/events';
+import type { BuffKind, CauldronState, GameState, SlotState } from './state';
 
 export function combine(mods: Mod[]): number {
   const sum = { G: 0, M: 0, H: 0 };
@@ -28,7 +29,50 @@ export function globalMods(s: GameState, stat: StatId): Mod[] {
     const lvl = s.upgrades[def.id] ?? 0;
     if (lvl > 0) for (const m of def.mods(lvl)) if (m.stat === stat) out.push(m);
   }
-  out.push(...mascotMods(s, stat), ...talentMods(s, stat));
+  out.push(...mascotMods(s, stat), ...talentMods(s, stat), ...eventMods(s, stat));
+  return out;
+}
+
+// ---------- 事件的限時增益與事件簿 ----------
+
+/** 某種增益目前的倍率（沒有 = 1；同種同目標只會有一個） */
+export function buffMult(s: GameState, kind: BuffKind, target?: number | string): number {
+  let m = 1;
+  for (const b of s.events.buffs) if (b.kind === kind && b.time > 0 && b.target === target) m *= b.mult;
+  return m;
+}
+
+/** 事件簿的收集里程碑：每收集 6 個、以及全部收齊時各一次 */
+export function codexMilestones(): number[] {
+  const out: number[] = [];
+  for (let n = EVENT.milestoneEvery; n < EVENTS.length; n += EVENT.milestoneEvery) out.push(n);
+  out.push(EVENTS.length);
+  return out;
+}
+
+/** 事件簿收集了幾種（完成過的事件） */
+export function codexCount(s: GameState): number {
+  return EVENTS.filter((e) => (s.events.codex[e.id]?.done ?? 0) > 0).length;
+}
+
+/** 事件簿的收入倍率（S）：每達成一個里程碑 +3% */
+export function codexIncomeMult(s: GameState): number {
+  const n = codexCount(s);
+  return 1 + EVENT.incomePerMilestone * codexMilestones().filter((m) => n >= m).length;
+}
+
+function eventMods(s: GameState, stat: StatId): Mod[] {
+  const kind: BuffKind | null = stat === 'growthSpeed' ? 'growth' : stat === 'brewSpeed' ? 'brew'
+    : stat === 'arrivalRate' ? 'arrival' : stat === 'sellPrice' ? 'price' : null;
+  const out: Mod[] = [];
+  if (kind) {
+    const m = buffMult(s, kind);
+    if (m !== 1) out.push({ stat, pool: 'S', value: m });
+  }
+  if (stat === 'sellPrice') {
+    const c = codexIncomeMult(s);
+    if (c !== 1) out.push({ stat, pool: 'S', value: c });
+  }
   return out;
 }
 
@@ -50,6 +94,8 @@ export function growthSpeed(s: GameState, slot: SlotState): number {
     ...globalMods(s, 'growthSpeed'),
     { stat: 'growthSpeed', pool: 'G', value: slot.rain * TARGET_UPGRADES.raincloud.perLevel },
     { stat: 'growthSpeed', pool: 'S', value: milestoneMult(slot.level) },
+    // 事件：這一盆的限時加速（朝露、雨雲寶寶、螢光蝴蝶）
+    { stat: 'growthSpeed', pool: 'S', value: buffMult(s, 'potGrowth', s.slots.indexOf(slot)) },
   ]);
 }
 
@@ -78,6 +124,8 @@ function brewSpeedOf(s: GameState, c: CauldronState): number {
     ...globalMods(s, 'brewSpeed'),
     { stat: 'brewSpeed', pool: 'S', value: milestoneMult(c.level) },
     { stat: 'brewSpeed', pool: 'S', value: boilMult(c) },
+    // 事件：這一口大釜的限時加速（精靈學徒）
+    { stat: 'brewSpeed', pool: 'S', value: buffMult(s, 'cauldronBrew', c.recipe) },
   ]);
 }
 
@@ -353,6 +401,11 @@ export function condenserChance(s: GameState): number {
   return chance(UPGRADE_FX.condenserChance + TALENT_FX.attunementChance * redeemed(s, 'attunement'));
 }
 
+/** 某一口大釜的雙倍機率：事件「完美火候」期間每輪都是雙倍 */
+export function doubleChance(s: GameState, c: CauldronState): number {
+  return buffMult(s, 'double', c.recipe) > 1 ? 1 : condenserChance(s);
+}
+
 export function drunkChance(s: GameState): number {
   return has(s, 'drunks') ? chance(UPGRADE_FX.drunkChance) : 0;
 }
@@ -422,7 +475,10 @@ export function materialReserve(s: GameState, m: MaterialId): number {
 /** 某個收購箱的收購價比例（售價的幾成），沒買 = 0 */
 export function cratePct(s: GameState, crateId: string): number {
   const lvl = s.upgrades[crateId] ?? 0;
-  return lvl > 0 ? UPGRADE_FX.crateBasePct + UPGRADE_FX.crateStepPct * (lvl - 1) : 0;
+  if (lvl <= 0) return 0;
+  // 事件「商會緊急收購」：照售價全額收購
+  if (buffMult(s, 'crateFull') > 1) return 1;
+  return UPGRADE_FX.crateBasePct + UPGRADE_FX.crateStepPct * (lvl - 1);
 }
 
 /** 有沒有任何一個收購箱 */

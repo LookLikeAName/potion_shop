@@ -31,8 +31,8 @@ async function main() {
     if (r.seconds >= 60) offlineReport.value = r;
   };
   game.subscribe(() => uiTick.value++);
-  // 開發模式下方便在瀏覽器主控台檢查狀態
-  if (import.meta.env.DEV) Object.assign(window, { __game: game });
+  // 開發模式：主控台指令（__game、__events.help()）。正式建置時這段與 devCommands 整個被拿掉
+  if (import.meta.env.DEV) void import('./dev/devCommands').then((m) => m.installDevCommands(game));
   if (!hasLock) {
     game.pause();
     lockState.value = 'blocked';

@@ -11,7 +11,7 @@ import {
 import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
 import { tick, type SimContext } from '../src/game/sim';
-import { botClick, botShop, DEFAULT_BOT, mulberry32, type BotOptions } from './bot';
+import { botClick, botEvent, botShop, DEFAULT_BOT, mulberry32, type BotOptions } from './bot';
 import { createInitialState } from '../src/game/state';
 import {
   arrivalRate, cauldronOutputPerSec, potOutputPerSec, potionReserve, recipeNeeds,
@@ -100,6 +100,8 @@ interface Row {
 
 /** 藥水收購設定（比較用）：--potion-keep 保留百分比；--potion-sell 0 = 不賣給收購箱 */
 const POTION_KEEP = argOf('--potion-keep');
+/** --no-events：機器人不理突發事件（比較事件帶來多少收入） */
+const NO_EVENTS = args.includes('--no-events');
 const POTION_SELL = argOf('--potion-sell');
 
 function simulate(p: Profile) {
@@ -131,7 +133,8 @@ function simulate(p: Profile) {
     if (p.clicking(t)) {
       clickAcc += p.cps * TICK;
       while (clickAcc >= 1) {
-        botClick(s, ctx, BOT);
+        // 有突發事件時先處理事件（--no-events：不理事件，比較用）
+        if (NO_EVENTS || !botEvent(s, ctx)) botClick(s, ctx, BOT);
         clickAcc -= 1;
       }
     }
@@ -246,6 +249,10 @@ for (const p of PROFILES) {
   const demand = (arrivalRate(s) / CUSTOMER.interval) * 60;
   out(`- 結束時來客數：每分鐘約 ${demand.toFixed(1)} 位；庫存：${
     s.cauldrons.map((c) => `${RECIPES[c.recipe].name} ${formatNumber(s.potions[c.recipe])}`).join('、')}`);
+  const done = Object.values(s.events.codex).reduce((n, e) => n + (e?.seen ?? 0), 0);
+  out(`- 突發事件：出現 ${done} 次、完成 ${s.stats.eventsDone} 次（每小時 ${(done / (MINUTES / 60)).toFixed(1)} 次），`
+    + `事件直接給的金幣占累計收入 ${((s.stats.eventGold / Math.max(1, s.stats.goldEarned)) * 100).toFixed(1)}%，`
+    + `事件簿 ${Object.values(s.events.codex).filter((e) => e && e.done > 0).length} 種`);
   out(`- 結束後離線 8 小時：獲得 ${formatNumber(offline.gold)} 金幣（在線最後一段每秒 ${formatNumber(rows.at(-1)!.gps)}，離線平均每秒 ${formatNumber(offline.gold / offline.simulated)}）`);
 }
 

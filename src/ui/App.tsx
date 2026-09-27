@@ -15,19 +15,28 @@ import { FlowPanel } from './panels/FlowPanel';
 import { GreenhousePanel } from './panels/GreenhousePanel';
 import { LumiaPanel, StoryModal } from './panels/LumiaPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
+import { BuffBar, EventBanner, LetterModal } from './Events';
+import { EventBookPanel } from './panels/EventBookPanel';
 import {
-  buyMode, drawerFocus, drawerOpen, drawerTab, lockState, offlineReport, openDrawer, requestTakeover, toast,
-  useGame, type DrawerTab,
+  buyMode, drawerFocus, drawerOpen, drawerTab, letterOpen, lockState, lumiaOpen, offlineReport, openDrawer,
+  requestTakeover, storyId, toast, useGame, type DrawerTab,
 } from './store';
 
 export function App() {
+  const game = useGame();
+  // 劇情、信件、離線報告、互動視窗開著時，事件的計時暫停（不會在看劇情時錯過事件）
+  const hold = !!storyId.value || letterOpen.value !== null || !!offlineReport.value || lumiaOpen.value || lockState.value !== 'ok';
+  useEffect(() => game.setEventHold(hold), [hold]);
   return (
     <>
       <TopBar />
       <WishCard />
+      <EventBanner />
+      <BuffBar />
       <Drawer />
       <LumiaModal />
       <StoryModal />
+      <LetterModal />
       <OfflineModal />
       <LockOverlay />
       <DragGhost />
@@ -119,14 +128,14 @@ function Drawer() {
       <div class="drawer-head">
         <div class="tabs">
           {TABS.map((t) => (
-            <button key={t.id} class={`tab ${tab === t.id || (t.id === 'lumia' && tab === 'decor') ? 'active' : ''}`} onClick={() => (drawerTab.value = t.id)}>
+            <button key={t.id} class={`tab ${tab === t.id || (t.id === 'lumia' && (tab === 'decor' || tab === 'events')) ? 'active' : ''}`} onClick={() => (drawerTab.value = t.id)}>
               {t.label}
             </button>
           ))}
         </div>
         <button class="close" onClick={() => (drawerOpen.value = false)} aria-label="關閉">✕</button>
       </div>
-      {tab !== 'settings' && tab !== 'lumia' && tab !== 'flow' && tab !== 'decor' && (
+      {tab !== 'settings' && tab !== 'lumia' && tab !== 'flow' && tab !== 'decor' && tab !== 'events' && (
         <div class="modes">
           購買數量
           {MODES.map((m) => (
@@ -143,6 +152,7 @@ function Drawer() {
         {tab === 'flow' && <FlowPanel />}
         {tab === 'lumia' && <LumiaPanel />}
         {tab === 'decor' && <DecorPanel />}
+        {tab === 'events' && <EventBookPanel />}
         {tab === 'settings' && <SettingsPanel />}
       </div>
     </aside>

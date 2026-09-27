@@ -34,6 +34,7 @@ RULES = [
     ('upg_', 'upgrades', 256),
     ('gift_', 'gifts', 160),
     ('furn_', 'furniture', 360),
+    ('evt_', 'events', 420),
     ('fx_', 'fx', 256),
     ('ui_', 'ui', 1024),
     ('app_icon', 'ui', 512),

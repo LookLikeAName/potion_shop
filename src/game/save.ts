@@ -121,6 +121,7 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     achievements: { ...st.achievements },
     gifts: { ...st.gifts },
     decor: base.decor.map((d, i) => st.decor?.[i] ?? d),
+    events: { ...base.events, ...st.events, codex: { ...st.events?.codex }, cooldowns: { ...st.events?.cooldowns } },
     materialRate: { ...base.materialRate, ...st.materialRate },
     harvestedThisTick: { ...base.harvestedThisTick, ...st.harvestedThisTick },
     slots: base.slots.map((d, i) => ({ ...createSlot(d.open), ...d, ...st.slots?.[i] })),
@@ -141,6 +142,8 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
   // 舊版的每日送禮紀錄已經不用了
   delete (state as Partial<GameState> & { giftDay?: string }).giftDay;
   delete (state as Partial<GameState> & { giftsToday?: unknown }).giftsToday;
+  // 版本 3：焦晶移除了（從來沒有取得途徑，丟掉欄位就好）
+  delete (state as Partial<GameState> & { charCrystal?: number }).charCrystal;
   if ((st.version ?? 1) < 2) migrateHappiness(state);
   return { version: SAVE_VERSION, savedAt: raw.savedAt ?? Date.now(), state };
 }

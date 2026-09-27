@@ -5,7 +5,8 @@ import { HAPPINESS_ITEMS, STORIES, type HappinessItem } from '../../game/config/
 import { MASCOT } from '../../game/config/mascot';
 import { redeemCost } from '../../game/commands';
 import { formatHappiness } from '../../game/format';
-import { bondLevel, happyMult, renownLevel, restHappinessPerSec } from '../../game/stats';
+import { EVENTS } from '../../game/config/events';
+import { bondLevel, codexCount, happyMult, renownLevel, restHappinessPerSec } from '../../game/stats';
 import { fmtHeart } from '../Happiness';
 import { Icon } from '../Icon';
 import { MascotControls, StaminaBar, mascotStatus } from '../LumiaModal';
@@ -85,6 +86,9 @@ function BondCard() {
         休息時每小時約 +{fmtHeart(rest)} ♥（離線也算，但離開越久越少，{MASCOT.offlineHappyHours} 小時後不再增加）；已完成 {s.stats.wishesDone} 個小心願。
       </p>
       <button class="btn primary" onClick={() => openDrawer('decor')}>🎁 禮物圖鑑與休息室擺設</button>
+      <button class="btn primary" onClick={() => openDrawer('events')}>
+        📖 事件簿（{codexCount(s)}/{EVENTS.length}）
+      </button>
     </div>
   );
 }

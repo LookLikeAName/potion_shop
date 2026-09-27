@@ -58,7 +58,7 @@ export const ASSETS: AssetDef[] = [
   a('potion_elixir', 64, 64, 0xc9a0ff, '羽化', 'round'),
   a('icon_gold', 64, 64, 0xe8b93a, '金', 'circle'),
   a('icon_happiness', 64, 64, 0xff8fb8, '♥', 'circle'),
-  a('icon_charcrystal', 64, 64, 0x2b2230, '晶', 'circle'),
+  a('icon_event_book', 64, 64, 0x6a8fd0, '簿', 'round'),
 
   // 升級道具（場景內顯示）
   a('upg_raincloud', 80, 54, 0x8a9bb0, '雨雲', 'round'),
@@ -117,6 +117,26 @@ export const ASSETS: AssetDef[] = [
   a('furn_slime_doll', 50, 44, 0xff9ec0, '史萊姆', 'circle'),
   a('furn_gramophone', 76, 80, 0xc59a3c, '留聲機', 'round'),
   a('furn_tea_set', 100, 100, 0xd9b38c, '紅茶組', 'round'),
+
+  // 突發事件：場景裡的訪客與道具（同時也是事件簿的縮圖；見 ArtAssetPrompts_Events.md）
+  a('evt_goblin', 90, 100, 0x7a9a4a, '地精', 'round', -1),
+  a('evt_dew', 44, 52, 0xbfe8ff, '朝露', 'circle'),
+  a('evt_raincloud', 100, 68, 0xa8c0e0, '雲寶寶', 'round'),
+  a('evt_butterfly', 52, 44, 0x9ef0d8, '蝶', 'round'),
+  a('evt_spark', 40, 40, 0xffa040, '火', 'circle'),
+  a('evt_bubble', 120, 120, 0xd8c8ff, '泡泡', 'circle'),
+  a('evt_heat', 64, 64, 0xffb347, '火候', 'round'),
+  a('evt_apprentice', 90, 120, 0x9ad0a0, '精靈\n學徒', 'round', -1),
+  a('evt_hero', 157, 190, 0xd9a441, '土豪\n勇者', 'round', -1),
+  a('evt_merchant', 157, 190, 0x9a7a5a, '流浪\n行商', 'round', -1),
+  a('evt_princess', 145, 183, 0xffb3d0, '公主', 'round', -1),
+  a('evt_guild', 64, 64, 0xe8c56a, '商會', 'round'),
+  a('evt_dream', 64, 64, 0xc8d8ff, '夢', 'circle'),
+  a('evt_letter', 96, 80, 0x8a5a36, '信鴿\n貓頭鷹', 'round', -1),
+  a('evt_fortune', 145, 183, 0x7a5ab0, '占卜\n婆婆', 'round', -1),
+  a('evt_card_back', 90, 130, 0x5a3a8a, '★', 'rect'),
+  a('evt_meteor', 64, 64, 0xfff0a0, '流星', 'circle'),
+  a('evt_slime', 80, 64, 0x8fe0a0, '史萊姆', 'round'),
 
   // 顧客（原圖都朝左）：比露米婭的 Q 版圖稍大一點就好
   a('npc_novice_adventurer', 145, 183, 0x8f7a5a, '新手\n冒險者', 'round', -1),

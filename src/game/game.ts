@@ -11,6 +11,7 @@ import { loadGame, saveGame, type SaveFile } from './save';
 import { checkoutByClick, tick, type GameEvent, type SimContext } from './sim';
 import { createInitialState, type GameState } from './state';
 import { DisplayQueue } from './displayQueue';
+import { eventAction, type EventAction, type EventActionResult } from './events';
 
 /** 一次補算最多跑幾個 tick（再多就走離線結算） */
 const MAX_CATCHUP_TICKS = Math.ceil(OFFLINE.reportThreshold / TICK);
@@ -71,6 +72,8 @@ export class Game {
     }
 
     this.acc += elapsed;
+    // 流星雨看現實時間
+    this.ctx.hour = new Date(now).getHours();
     let n = 0;
     while (this.acc >= TICK && n < MAX_CATCHUP_TICKS) {
       tick(this.state, TICK, this.ctx);
@@ -197,9 +200,22 @@ export class Game {
     return this.run(() => cmd.setDecor(this.state, slot, id));
   }
 
-  /** 分頁在前景與否（小心願只在前景進行） */
+  /** 分頁在前景與否（小心願與事件只在前景進行） */
   setForeground(on: boolean): void {
     this.ctx.foreground = on;
+  }
+
+  /** 劇情、信件、離線報告等視窗開著時，事件暫停 */
+  setEventHold(on: boolean): void {
+    this.ctx.eventHold = on;
+  }
+
+  /** 對進行中的事件操作（點中、拖曳放下、三選一） */
+  eventAction(action: EventAction): EventActionResult {
+    if (this.paused) return { ok: false };
+    // 連點型（土豪勇者、流星）也受每秒點擊上限限制
+    if (action.type === 'hit' && !this.allowClick()) return { ok: false };
+    return this.run(() => eventAction(this.state, action, this.ctx));
   }
 
   redeem(id: string) {

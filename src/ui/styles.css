@@ -504,6 +504,81 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: pointer; }
 .wish-foot { display: flex; justify-content: space-between; margin-top: 0.25em; font-size: 0.9em; color: var(--ink-soft); }
 .wish-reward { color: #c0487a; font-weight: 700; }
 
+/* 突發事件：畫面上方中央的橫幅（魔導書打開時往左讓） */
+.event-banner {
+  position: absolute;
+  top: calc(76px * var(--uiz) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(560px * var(--uiz));
+  max-width: calc(100% - 24px);
+  background: rgba(255, 250, 240, 0.96);
+  border: 3px solid #6a8fd0;
+  border-radius: 14px;
+  padding: 0.45em 0.7em 0.5em;
+  font-size: 0.8em;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  pointer-events: none !important;
+  animation: event-in 0.3s ease;
+}
+.event-banner.shift { left: calc((100% - min(calc(640px * var(--uiz)), 100%)) / 2); }
+.event-banner.rarity-1 { border-color: #9a7cff; }
+.event-banner.rarity-2 { border-color: #ffc93c; animation: event-in 0.3s ease, wish-shine 1.4s ease-in-out infinite alternate; }
+@keyframes event-in { from { opacity: 0; transform: translate(-50%, -12px); } }
+.event-head { display: flex; align-items: center; gap: 0.35em; font-weight: 700; color: #3a5a9a; }
+.event-rarity { font-size: 0.72em; background: #e3ebf8; color: #3a5a9a; border-radius: 999px; padding: 0 0.6em; }
+.rarity-1 .event-rarity { background: #ece6ff; color: #6a4fd0; }
+.rarity-2 .event-rarity { background: #fff1c8; color: #b07a00; }
+.event-time { margin-left: auto; color: var(--ink-soft); font-size: 0.9em; }
+.event-time.urgent { color: var(--danger); }
+.event-prompt { margin: 0.2em 0 0.25em; color: var(--ink); font-weight: 700; }
+.event-progress { font-size: 0.9em; color: var(--teal); font-weight: 700; }
+.event-bar { height: 0.5em; background: #e6e0d6; border-radius: 999px; overflow: hidden; margin-top: 0.3em; }
+.event-fill { height: 100%; background: linear-gradient(90deg, #9ec0f0, #5a82d0); transition: width 0.25s linear; }
+.event-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4em; margin-top: 0.35em; }
+.event-choice {
+  pointer-events: auto;
+  font: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 0.15em;
+  padding: 0.4em 0.3em;
+  border: 2px solid var(--gold); border-radius: 10px;
+  background: #fff7e2; color: var(--ink); cursor: pointer;
+}
+.event-choice:hover { background: #ffeec0; transform: translateY(-2px); }
+.event-choice b { font-size: 0.9em; }
+.event-choice small { font-size: 0.72em; color: var(--ink-soft); line-height: 1.35; }
+.event-choice.card-back { background: linear-gradient(160deg, #6a4ab0, #3a2a6a); color: #fff1c8; border-color: #c9a0ff; min-height: 5.5em; justify-content: center; }
+.event-choice.card-back small { color: #d8c8ff; }
+.card-star { font-size: 1.8em; }
+
+/* 事件的限時增益（畫面左上角） */
+.buff-bar {
+  position: absolute;
+  top: calc(76px * var(--uiz) + 12px);
+  left: calc(16px * var(--uiz));
+  display: flex; flex-direction: column; gap: 0.25em;
+  font-size: 0.66em;
+  pointer-events: none !important;
+}
+.buff { display: flex; align-items: center; gap: 0.35em; background: rgba(43, 29, 20, 0.85); color: #f6e3b4; border: 2px solid var(--gold); border-radius: 999px; padding: 0.15em 0.7em 0.15em 0.3em; }
+.buff b { color: #ffe066; margin-left: 0.2em; }
+
+/* 來信 */
+.modal.letter { background: #fffaf0; }
+.letter-body { text-align: left; line-height: 1.7; font-size: 0.9em; margin-bottom: 0.6em; }
+.letter-body p { margin: 0.3em 0; }
+
+/* 事件簿 */
+.milestones { display: flex; flex-direction: column; gap: 0.2em; font-size: 0.78em; }
+.milestone { color: var(--ink-soft); }
+.milestone.done { color: var(--teal); font-weight: 700; }
+.event-rarity-chip { border-radius: 999px; padding: 0 0.6em; letter-spacing: 0; background: #e3ebf8; color: #3a5a9a; }
+.event-rarity-chip.r1 { background: #ece6ff; color: #6a4fd0; }
+.event-rarity-chip.r2 { background: #fff1c8; color: #b07a00; }
+.event-lumia { font-size: 0.66em; color: #c0487a; font-weight: 700; text-align: left; }
+.event-count { font-size: 0.62em; color: var(--ink-soft); }
+.event-letters { display: flex; flex-wrap: wrap; gap: 0.3em; justify-content: center; }
+
 /* 名聲與羈絆、休息室擺設 */
 .bond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4em; }
 .bond-grid span { display: flex; flex-direction: column; background: #f6ecd6; border-radius: 10px; padding: 0.3em 0.6em; }

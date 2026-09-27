@@ -4,7 +4,7 @@ import type { ItemId } from '../game/flow';
 import type { Game } from '../game/game';
 import type { OfflineReport } from '../game/offline';
 
-export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'flow' | 'lumia' | 'decor' | 'settings';
+export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'flow' | 'lumia' | 'decor' | 'events' | 'settings';
 
 /** 遊戲狀態變更計數，UI 讀取它來訂閱更新 */
 export const uiTick = signal(0);
@@ -24,6 +24,8 @@ export const flowDetail = signal<ItemId | 'income' | null>(null);
 export const dragGhost = signal<{ icon: string; x: number; y: number } | null>(null);
 /** 正在播放的劇情 ID */
 export const storyId = signal<string | null>(null);
+/** 正在讀的師父來信（第幾封） */
+export const letterOpen = signal<number | null>(null);
 
 let game: Game | null = null;
 let takeoverFn: (() => Promise<void>) | null = null;
@@ -53,11 +55,11 @@ export function openDrawer(tab: DrawerTab, focus: string | null = null): void {
 
 let toastId = 0;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
-export function showToast(text: string): void {
+export function showToast(text: string, ms = 2200): void {
   const id = ++toastId;
   toast.value = { id, text };
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     if (toast.value?.id === id) toast.value = null;
-  }, 2200);
+  }, ms);
 }

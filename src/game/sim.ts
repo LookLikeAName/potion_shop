@@ -8,11 +8,13 @@ import { MATERIAL_IDS, PLANTS, type MaterialId } from './config/plants';
 import { POTION_IDS, RECIPES, type PotionId } from './config/recipes';
 import type { CauldronState, CustomerState, GameState, OrderLine } from './state';
 import {
-  arrivalRate, autoHarvest, bountyChance, brewClickAdvance, brewPassiveSpeed, condenserChance,
+  arrivalRate, autoHarvest, bountyChance, brewClickAdvance, brewPassiveSpeed, buffMult, codexIncomeMult, doubleChance,
   cratePct, customerPatience, customerThroughput, drunkChance, growthSpeed, harvestYield, has, hasAnyCrate,
   decorFx, hasAutoCheckout, isResting, maidQtyCut, materialReserve, maxCustomerQty, orderScale, patrolZones, plantClickAdvance, potYield,
   ENTER_TIME, payTime, potionReserve, recipeInputs, restHappinessPerSec, sellPrice, slotYieldMult, WALK_TIME,
 } from './stats';
+import type { EventId } from './config/events';
+import { tickEvents } from './events';
 import { noteWish, tickWish } from './wishes';
 
 export type GameEvent =
@@ -27,7 +29,12 @@ export type GameEvent =
   | { type: 'mascot'; kind: 'exhausted' | 'woke' }
   | { type: 'achievement'; id: string }
   /** 小心願：出現、完成、時間到（reward = 實際拿到的開心度，出現時為完成可得的量） */
-  | { type: 'wish'; result: 'new' | 'done' | 'fail'; reward: number };
+  | { type: 'wish'; result: 'new' | 'done' | 'fail'; reward: number }
+  /**
+   * 突發事件：出現、完成、沒完成就離開。text = 完成時的獎勵說明；
+   * first = 第一次完成（事件簿新增一頁）；letter = 師父的來信是第幾封
+   */
+  | { type: 'event'; id: EventId; result: 'start' | 'done' | 'leave'; text?: string; first?: boolean; letter?: number };
 
 /** 收購箱種類：每種藥水一個、原料一個 */
 export type CrateKind = PotionId | 'materials';
@@ -40,6 +47,10 @@ export interface SimContext {
   foreground?: boolean;
   /** 離線結算：這一步開始時已經離開幾秒（開心度的離線衰退用） */
   offlineElapsed?: number;
+  /** 劇情或對話視窗開著：事件的檢定計時與進行中的事件暫停 */
+  eventHold?: boolean;
+  /** 現實時間的小時（0–23，流星雨用）；沒給 = 白天 */
+  hour?: number;
   emit: (e: GameEvent) => void;
 }
 
@@ -58,6 +69,7 @@ export function tick(s: GameState, dt: number, ctx: SimContext): void {
   tickMascot(s, dt, ctx);
   tickAchievements(s, dt, ctx);
   tickWish(s, dt, ctx);
+  tickEvents(s, dt, ctx);
   s.feverLeft = Math.max(0, s.feverLeft - dt);
   // 平滑的每秒收入、收購箱收入（指數移動平均）
   const smooth = Math.min(1, dt / INCOME_SMOOTHING);
@@ -178,7 +190,7 @@ function fullBatches(s: GameState, c: CauldronState): number {
 
 /** 一次結算 n 輪、每輪 batch 瓶：雙口冷凝管的雙倍輪數依機率抽（離線取期望值），最多送出兩個事件（一般、雙倍） */
 function completeBatches(s: GameState, c: CauldronState, n: number, batch: number, ctx: SimContext): void {
-  const p = condenserChance(s);
+  const p = doubleChance(s, c);
   let normal = n * batch;
   let doubled = 0;
   if (p > 0) {
@@ -223,7 +235,7 @@ export function tryStartBrew(s: GameState, c: CauldronState): boolean {
 
 /** 完成一輪；雙口冷凝管有機率產出 ×2（離線取期望值） */
 export function completeBrew(s: GameState, c: CauldronState, ctx: SimContext): void {
-  const p = condenserChance(s);
+  const p = doubleChance(s, c);
   let amount = c.batch;
   let double = false;
   if (p > 0) {
@@ -258,7 +270,10 @@ function tickMarket(s: GameState, dt: number, ctx: SimContext): void {
     m.target = ctx.offline ? 1 : MARKET.min + ctx.rng() * (MARKET.max - MARKET.min);
     m.timer = MARKET.holdMin + ctx.rng() * (MARKET.holdMax - MARKET.holdMin);
   }
-  m.value += (m.target - m.value) * Math.min(1, dt / MARKET.smoothing);
+  // 事件（土豪勇者到處宣傳）：熱度往指定的值靠過去
+  const hype = buffMult(s, 'market');
+  const target = hype > 1 ? Math.max(m.target, hype) : m.target;
+  m.value += (target - m.value) * Math.min(1, dt / MARKET.smoothing);
 }
 
 // ---------- 顧客 ----------
@@ -507,7 +522,7 @@ function tickCrate(s: GameState, dt: number, ctx: SimContext): void {
       s.materials[m] -= n;
       items[m] = n;
       amount += n;
-      gold += n * PLANTS[m].sellValue * matPct;
+      gold += n * PLANTS[m].sellValue * matPct * codexIncomeMult(s);
     }
     if (amount > 0) pay('materials', amount, gold, items);
   }

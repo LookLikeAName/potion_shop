@@ -20,7 +20,9 @@ import {
   decorSlots,
   refineLevel, workZone,
 } from '../game/stats';
-import { lumiaOpen, openDrawer, showToast } from '../ui/store';
+import { letterOpen, lumiaOpen, openDrawer, showToast } from '../ui/store';
+import { EVENT_LINES, EVENT_MAP } from '../game/config/events';
+import { EventLayer } from './eventLayer';
 import {
   ASSIGN_ZONES, CAULDRON_X, CAULDRON_Y, CHECKOUT_X, COUNTER, DOOR, FLOATING_SLOT_FROM, FLOOR_1F_Y, FLOOR_2F_Y, LEAVE_Y,
   CRATE_PANEL_Y, CRATE_POS, DECOR_POS, FLOOR_SPLIT_Y, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT, LUMIA_COUNTER, OFFSTAGE_X, PROPS,
@@ -1002,8 +1004,17 @@ class CustomerLayer extends Container {
   }
 
   private tap = (id: number) => {
+    // 事件「微服出巡的公主」：點中那位客人就認出她
+    const ev = this.game.state.events.active;
+    if (ev?.id === 'princess' && ev.customer === id) this.game.eventAction({ type: 'hit', customer: id });
     if (!this.game.clickCustomer(id)) this.views.get(id)?.nudge();
   };
+
+  /** 客人腳底的位置 */
+  feetOf(id: number) {
+    const v = this.views.get(id);
+    return v && !v.leaving ? { x: v.x, y: v.y } : null;
+  }
 
   update(s: GameState, dt: number): void {
     // 結帳中的客人站在櫃台前；備好貨的排在隊伍前面（下一位就是排第一的，走到櫃台的時間才對得上），
@@ -1769,6 +1780,11 @@ class PropsLayer extends Container {
     }
   }
 
+  /** 看得到的收購箱（底部中心） */
+  visibleCrates(): { x: number; y: number }[] {
+    return [...this.crates.values()].filter((c) => c.box.visible).map((c) => ({ x: c.box.x, y: c.box.y }));
+  }
+
   /** 收購時讓對應的箱子彈一下，並回傳飄字位置 */
   bumpCrate(kind: CrateKind): { x: number; y: number } | null {
     const c = this.crates.get(kind);
@@ -1985,7 +2001,12 @@ interface FloatOpts {
   launch?: number;
   /** 左右散開的幅度倍率 */
   spread?: number;
+  /** 事件的回饋字：事件進行中不跟著變淡 */
+  bright?: boolean;
 }
+
+/** 事件進行中，事件區域裡的飄字淡到這個透明度（讓要點的東西看得清楚） */
+const FLOAT_DIM_ALPHA = 0.3;
 
 interface FloatItem {
   t: BitmapText;
@@ -1998,6 +2019,7 @@ interface FloatItem {
   /** 來源；以及時間流速（來源冒字越快，字動得越快、越早消失） */
   key: string;
   speed: number;
+  bright: boolean;
 }
 
 class FloatLayer extends Container {
@@ -2016,9 +2038,13 @@ class FloatLayer extends Container {
   /** 各來源：估計的每秒字數、上次冒字的時間、這一幀新增了幾個、目前有幾個字 */
   private sources = new Map<string, { rate: number; last: number; frame: number; count: number }>();
   private now = 0;
+  /** 事件進行中的區域：裡面的飄字變淡（null = 不變淡）；dimK 是漸變的程度 */
+  dimRect: { x: number; y: number; w: number; h: number } | null = null;
+  private dimK = 0;
+  private lastDim: { x: number; y: number; w: number; h: number } | null = null;
 
   spawn(s: string, x: number, y: number, color: number, opts: FloatOpts = {}): void {
-    const { big = false, always = big, key = 'misc', launch = 1, spread = 1 } = opts;
+    const { big = false, always = big, key = 'misc', launch = 1, spread = 1, bright = false } = opts;
     let src = this.sources.get(key);
     if (!src) {
       src = { rate: 0, last: this.now, frame: 0, count: 0 };
@@ -2048,6 +2074,7 @@ class FloatLayer extends Container {
       spin: (Math.random() - 0.5) * 0.25,
       key,
       speed: Math.max(1, Math.min(FLOAT_MAX_SPEEDUP, src.rate / FLOAT_RATE_OK)),
+      bright,
     });
   }
 
@@ -2062,6 +2089,11 @@ class FloatLayer extends Container {
   update(realDt: number): void {
     this.now += realDt;
     for (const src of this.sources.values()) src.frame = 0;
+    // 事件開始／結束時慢慢變淡／恢復
+    if (this.dimRect) this.lastDim = this.dimRect;
+    this.dimK = Math.max(0, Math.min(1, this.dimK + (this.dimRect ? 1 : -1) * realDt * 4));
+    const r = this.lastDim;
+    const dim = 1 - (1 - FLOAT_DIM_ALPHA) * this.dimK;
     for (const it of this.items) {
       // 整條軌跡照同樣的形狀跑，只是時間流速變快
       const dt = realDt * it.speed;
@@ -2082,6 +2114,9 @@ class FloatLayer extends Container {
       const pop = age < 0.18 ? 0.6 + (age / 0.18) * 0.55 : Math.max(1, 1.15 - (age - 0.18) * 1.5);
       it.t.scale.set(it.size * pop);
       it.t.alpha = Math.min(1, it.life / FLOAT_FADE);
+      if (r && this.dimK > 0 && !it.bright && it.t.x >= r.x && it.t.x <= r.x + r.w && it.t.y >= r.y && it.t.y <= r.y + r.h) {
+        it.t.alpha *= dim;
+      }
     }
     sweep(this.items, (it) => {
       this.pool.put(it.t);
@@ -2161,6 +2196,22 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   lumiaLayer.addChild(lumia);
   const lumiaDrag = new LumiaDrag(app, game, lumia, highlight, (dragging) =>
     (dragging ? dragLayer : lumiaLayer).addChild(lumia));
+  // 突發事件：畫在飄字、粒子、對話泡泡上面，要點的東西不會被擋住
+  const events = new EventLayer(app, tex, game, {
+    potPos: (i) => ({ x: pots[i].x, y: pots[i].y }),
+    cauldronX: (recipe) => {
+      const idx = game.state.cauldrons.findIndex((c) => c.recipe === recipe);
+      return idx >= 0 ? cauldrons[idx].x : null;
+    },
+    cauldronY: CAULDRON_Y,
+    customerPos: (id) => customers.feetOf(id),
+    lumiaPos: () => ({ x: lumia.x, y: lumia.y }),
+    crates: () => props.visibleCrates(),
+    float: (s, x, y, color, big = false) => floats.spawn(s, x, y, color, { big, always: true, key: 'event', bright: true }),
+    burst: (x, y, color, count, power) => particles.burst(x, y, color, count, power),
+    ring: (x, y, color, size) => particles.ring(x, y, color, size),
+    setDim: (r) => (floats.dimRect = r),
+  });
   // 後排（y 較小）的盆栽先畫，才會被前排擋住
   const potsByDepth = [...pots].sort((p, q) => p.y - q.y);
   app.stage.addChild(
@@ -2168,7 +2219,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     // 她的點擊判定也在這些之上：重疊時優先抓得到她（擋住了就把她拖到別處）
     buildBackground(tex), props, ...potsByDepth, ...cauldrons, particles,
     ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud),
-    lumiaLayer, lumiaDrag.hit, customers, floats, ...cauldrons.map((c) => c.top), speechLayer, props.tip, fever, highlight, dragLayer,
+    lumiaLayer, lumiaDrag.hit, customers, floats, ...cauldrons.map((c) => c.top), speechLayer, events, props.tip, fever, highlight, dragLayer,
   );
 
   const onEvent = (e: GameEvent, s: GameState) => {
@@ -2236,6 +2287,20 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         }
         break;
       }
+      case 'event': {
+        events.note(e);
+        const def = EVENT_MAP[e.id];
+        if (e.result === 'start') {
+          lumia.say(EVENT_LINES.start[Math.floor(Math.random() * EVENT_LINES.start.length)]);
+        } else if (e.result === 'done') {
+          const book = e.first ? '　📖 事件簿新增一頁！' : '';
+          showToast(`🎉 ${def.name}：${e.text ?? ''}${book}`, 5000);
+          if (e.letter !== undefined) letterOpen.value = e.letter;
+        } else {
+          showToast(`${def.name}離開了…下次再來吧`);
+        }
+        break;
+      }
       case 'mascot': {
         showToast(e.kind === 'exhausted' ? '露米婭累壞了，去休息室睡一下…' : '露米婭睡飽了，回去工作囉！');
         const lines = LINES[e.kind];
@@ -2260,6 +2325,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     lumia.update(s, dt);
     lumiaDrag.update(s, dt);
     fever.update(s, dt);
+    events.update(s, dt);
     for (const e of game.drainEvents()) onEvent(e, s);
     particles.update(dt);
     floats.update(dt);

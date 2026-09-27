@@ -3,10 +3,11 @@ import { DECOR } from './config/gifts';
 import { MASCOT, type Assignment, type OutfitId, type WorkZone } from './config/mascot';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
+import { EVENT, type EventId } from './config/events';
 import { WISH, type WishKind } from './config/wishes';
 
-/** 2：開心度系統重做（家具改成禮物與擺設、魔力同調改成 5 級） */
-export const SAVE_VERSION = 2;
+/** 2：開心度系統重做（家具改成禮物與擺設、魔力同調改成 5 級）；3：突發事件重做（移除焦晶） */
+export const SAVE_VERSION = 3;
 
 /** 盆栽對某種植物的培育紀錄（改種後再種回來會恢復） */
 export interface PlotMemory {
@@ -96,6 +97,9 @@ export interface GameStats {
   /** 完成／沒完成的小心願數 */
   wishesDone: number;
   wishesFailed: number;
+  /** 完成的事件數、事件給的金幣 */
+  eventsDone: number;
+  eventGold: number;
 }
 
 export interface GameState {
@@ -104,7 +108,6 @@ export interface GameState {
   time: number;
   gold: number;
   happiness: number;
-  charCrystal: number;
   materials: Record<MaterialId, number>;
   potions: Record<PotionId, number>;
   slots: SlotState[];
@@ -150,6 +153,73 @@ export interface GameState {
   /** 目前的小心願；沒有時 wishTimer = 距離下一個心願的秒數 */
   wish: WishState | null;
   wishTimer: number;
+  /** 突發事件：檢定計時、進行中的事件、圖鑑、限時增益 */
+  events: EventsState;
+}
+
+/** 事件給的限時增益種類 */
+export type BuffKind =
+  /** 所有盆栽生長、某一盆生長（target = 盆栽格）、所有大釜熬煮、某一口大釜熬煮（target = 配方） */
+  | 'growth' | 'potGrowth' | 'brew' | 'cauldronBrew'
+  /** 某一口大釜每輪都是雙倍（target = 配方）、收購箱照全價收購 */
+  | 'double' | 'crateFull'
+  /** 來客速度、售價、市場熱度（mult = 熱度目標） */
+  | 'arrival' | 'price' | 'market';
+
+export interface Buff {
+  kind: BuffKind;
+  mult: number;
+  /** 剩餘秒數、總秒數 */
+  time: number;
+  max: number;
+  target?: number | string;
+  /** 哪個事件給的（顯示用） */
+  source: EventId;
+}
+
+export interface ActiveEvent {
+  id: EventId;
+  /** 剩餘秒數（只在前景時減少）、總時限 */
+  time: number;
+  timeMax: number;
+  /** 點中的次數、時機題已經用掉的機會 */
+  hits: number;
+  tries: number;
+  /** 目標：盆栽格、大釜配方、客人 */
+  slot?: number;
+  recipe?: PotionId;
+  customer?: number;
+  /** 三選一的選項（流浪行商的商品、占卜婆婆的牌） */
+  options?: string[];
+  /** 師父的來信：第幾封 */
+  letter?: number;
+  /** 螢光蝴蝶：每一隻停在哪一盆 */
+  landed?: number[];
+}
+
+export interface CodexEntry {
+  seen: number;
+  done: number;
+}
+
+export interface EventsState {
+  /** 距離下一次檢定的秒數（前景時間） */
+  timer: number;
+  active: ActiveEvent | null;
+  last: EventId | null;
+  /** 各事件的個別冷卻（秒） */
+  cooldowns: Partial<Record<EventId, number>>;
+  codex: Partial<Record<EventId, CodexEntry>>;
+  /** 已經收到幾封師父的來信 */
+  letters: number;
+  buffs: Buff[];
+}
+
+export function createEventsState(): EventsState {
+  return {
+    timer: EVENT.checkMin + EVENT.checkRand / 2,
+    active: null, last: null, cooldowns: {}, codex: {}, letters: 0, buffs: [],
+  };
 }
 
 export interface WishState {
@@ -234,7 +304,6 @@ export function createInitialState(): GameState {
     time: 0,
     gold: 0,
     happiness: 0,
-    charCrystal: 0,
     materials: zeroRecord(MATERIAL_IDS),
     potions: zeroRecord(POTION_IDS),
     slots,
@@ -267,9 +336,11 @@ export function createInitialState(): GameState {
     decor: Array.from({ length: DECOR.maxSlots }, () => null),
     wish: null,
     wishTimer: WISH.firstDelay,
+    events: createEventsState(),
     stats: {
       potionsSold: 0, goldEarned: 0, customersServed: 0, rushServed: 0, partialSales: 0, customersLost: 0,
       potionsWholesaled: 0, materialsWholesaled: 0, wholesaleGold: 0, wishesDone: 0, wishesFailed: 0,
+      eventsDone: 0, eventGold: 0,
     },
   };
 }

@@ -3,6 +3,8 @@ import { MATERIAL_IDS, PLANTS, type MaterialId } from '../src/game/config/plants
 import { RECIPES, type PotionId } from '../src/game/config/recipes';
 import { CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADES, SQUIRREL } from '../src/game/config/upgrades';
 import * as cmd from '../src/game/commands';
+import { EVENT_MAP } from '../src/game/config/events';
+import { eventAction } from '../src/game/events';
 import { checkoutByClick, missingInputs, type SimContext } from '../src/game/sim';
 import type { GameState } from '../src/game/state';
 import { materialReserve, potionReserve } from '../src/game/stats';
@@ -69,6 +71,33 @@ function wishClick(s: GameState, ctx: SimContext): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * 處理進行中的突發事件（點一下）：點目標、拖到第一個盆栽／大釜、時機題 60% 命中、三選一選第一個。
+ * 沒有事件時回傳 false
+ */
+export function botEvent(s: GameState, ctx: SimContext): boolean {
+  const a = s.events.active;
+  if (!a) return false;
+  const def = EVENT_MAP[a.id];
+  switch (def.kind) {
+    case 'tap':
+    case 'count':
+      eventAction(s, { type: 'hit', customer: a.customer }, ctx);
+      break;
+    case 'drag':
+      if (a.id === 'raincloud') eventAction(s, { type: 'drop', slot: s.slots.findIndex((sl) => sl.plant) }, ctx);
+      else eventAction(s, { type: 'drop', recipe: s.cauldrons[0]?.recipe }, ctx);
+      break;
+    case 'timing':
+      eventAction(s, { type: ctx.rng() < 0.6 ? 'hit' : 'miss' }, ctx);
+      break;
+    case 'choice':
+      eventAction(s, { type: 'choose', index: 0 }, ctx);
+      break;
+  }
+  return true;
 }
 
 /** 點擊一下：（小心願）→ 幫備好貨的客人結帳 → 收成熟的植物 → 沒有火蜥蜴的大釜 → 還在長的盆栽 */
