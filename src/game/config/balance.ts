@@ -41,7 +41,7 @@ export const CUSTOMER = {
   shareBase: 0.4,
   sharePerDoubling: 0.1,
   shareRefThroughput: 0.125,
-  shareMax: 0.9,
+  shareMax: 1.1,
   /** 每秒產量的平滑時間（秒） */
   rateSmoothing: 20,
   /** 客人只點有在產的藥水：產量至少是最多那種的這個比例（庫存有的也可以點）；最多那種低於 minOrderRate 時全部都可以點 */
@@ -57,6 +57,19 @@ export const CUSTOMER = {
   linesChance: { 1: [1], 2: [0.65, 0.35], 3: [0.6, 0.3, 0.1] } as Record<number, number[]>,
   /** 時間到只湊到部分訂單：整筆價格倍率 */
   partialPriceMult: 0.8,
+};
+
+/**
+ * 市場熱度：顧客訂單量再乘上這個倍率。每 holdMin～holdMax 秒隨機換一個 min～max 的目標，花約 smoothing 秒慢慢靠過去。
+ * 熱度高時需求超過產量（有囤貨才能全價賣掉），低時產量有剩（囤起來或給收購箱），讓保留量與收購箱有取捨。
+ * 離線時取平均 1。
+ */
+export const MARKET = {
+  min: 0.7,
+  max: 1.4,
+  holdMin: 30,
+  holdMax: 90,
+  smoothing: 12,
 };
 
 export const OFFLINE = {
@@ -93,6 +106,12 @@ export const UPGRADE_FX = {
   /** 配方精煉：每級每份原料需求 +50%、售價 +60% */
   refineInputPerLevel: 0.5,
   refinePricePerLevel: 0.6,
+  /**
+   * 盆栽採收量曲線：每輪 = 等級 × (1 + 等級 / 這個值)；0 = 每級固定 +1。
+   * 平衡模擬比較（精煉全滿時紅心草供給 ÷ 大釜全速需求）：0 → 10–13%、25 → 50–65%、20 → 75–85%、15 → 90–100%。
+   * 選 20：精煉還是會造成一點原料短缺、讓玩家回頭升盆栽，但不會永遠追不上。
+   */
+  potYieldCurve: 20,
   /** 奇蹟綠手指：浮空盆栽收成量倍率 */
   greenThumbYield: 2,
   /** 魔力園藝手套／符文攪拌棒：每級讓親手點擊額外推進幾秒的自動產量 */

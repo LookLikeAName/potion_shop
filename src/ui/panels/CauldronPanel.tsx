@@ -4,10 +4,11 @@ import { PLANTS } from '../../game/config/plants';
 import { RECIPES, type RecipeDef } from '../../game/config/recipes';
 import { GLOBAL_UPGRADE_MAP, REFINE_FOR, maxLevelOf } from '../../game/config/upgrades';
 import { nextLockedRecipes } from '../../game/commands';
-import { formatNumber, formatSeconds } from '../../game/format';
+import { formatCycle, formatNumber, formatRate } from '../../game/format';
 import type { CauldronState } from '../../game/state';
 import {
-  brewPassiveSpeed, milestoneMult, nextMilestone, recipeInputs, refineLevel, refinePriceMult, sellPrice,
+  brewPassiveSpeed, cauldronOutputPerSec, milestoneMult, nextMilestone, recipeInputs, refineLevel, refinePriceMult,
+  sellPrice,
 } from '../../game/stats';
 import { BuyButton } from '../BuyButton';
 import { GlobalUpgrades } from '../GlobalUpgrades';
@@ -71,6 +72,11 @@ function CauldronCard({ c }: { c: CauldronState }) {
   const refine = refineLevel(s, c.recipe);
   const refineId = REFINE_FOR[c.recipe];
   const refineMax = maxLevelOf(GLOBAL_UPGRADE_MAP[refineId]);
+  // 原料足夠時每秒熬出幾瓶，以及再升一級會多多少
+  const perSec = cauldronOutputPerSec(s, c);
+  const gainLevel = cauldronOutputPerSec(s, { ...c, level: c.level + 1 }) - perSec;
+  const gainSal = cauldronOutputPerSec(s, { ...c, salamander: c.salamander + 1 }) - perSec;
+  const nextText = (gain: number) => (gain > 0 ? `（下一級：每秒 +${formatRate(gain)} 瓶）` : '');
   return (
     <div class="card" id={`recipe-${c.recipe}`}>
       <div class="card-title">
@@ -81,14 +87,17 @@ function CauldronCard({ c }: { c: CauldronState }) {
       <div class="stats">
         <Inputs r={r} inputs={recipeInputs(s, c.recipe)} />
         <span>一次最多熬 <b>{c.level}</b> 份</span>
-        <span>被動熬煮 <b>{passive > 0 ? formatSeconds(r.brewTime / passive) : '無'}</b></span>
+        <span>被動熬煮 <b>{passive > 0 ? formatCycle(r.brewTime / passive) : '無'}</b></span>
+        {passive > 0 && <span>原料足夠時每秒約 <b>{formatRate(perSec)}</b> 瓶</span>}
         <span>售價 {formatNumber(sellPrice(s, c.recipe))} 金</span>
         {next && <span>Lv {next} 時速度 ×{milestoneMult(next) / milestoneMult(c.level)}</span>}
       </div>
-      <BuyButton k={{ kind: 'cauldronLevel', recipe: c.recipe }} title="升級大釜" desc="每級批量 +1" />
+      <BuyButton
+        k={{ kind: 'cauldronLevel', recipe: c.recipe }} title="升級大釜" desc={`每級批量 +1${nextText(gainLevel)}`}
+      />
       <BuyButton
         k={{ kind: 'salamander', recipe: c.recipe }} title="鍋底火蜥蜴" icon="upg_salamander" status={`Lv ${c.salamander}`}
-        desc="Lv1 讓大釜自己熬煮（基礎速度 50%），之後每級 +25%"
+        desc={`Lv1 讓大釜自己熬煮（基礎速度 50%），之後每級 +25%${nextText(gainSal)}`}
       />
       <BuyButton
         k={{ kind: 'global', id: refineId }} title="配方精煉" icon="upg_refine"

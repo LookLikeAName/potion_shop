@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { CUSTOMER } from '../src/game/config/balance';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { CUSTOMER, MARKET, UPGRADE_FX } from '../src/game/config/balance';
 import {
   clickCauldron, clickPlant, getQuote, plantSeed, purchase, replant, replantCost, unlockRecipe,
 } from '../src/game/commands';
@@ -12,8 +12,13 @@ import {
 } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
 import {
-  checkoutTime, combine, customerShare, ENTER_TIME, growthSpeed, orderScale, payTime, sellPrice, WALK_TIME,
+  checkoutTime, combine, customerShare, ENTER_TIME, growthSpeed, orderScale, payTime, potYield, sellPrice, WALK_TIME,
 } from '../src/game/stats';
+
+// 這個檔案的測試驗證的是其他機制：採收量先用「每級 +1」（盆栽採收量曲線另外測）
+const POT_CURVE = UPGRADE_FX.potYieldCurve;
+beforeAll(() => { UPGRADE_FX.potYieldCurve = 0; });
+afterAll(() => { UPGRADE_FX.potYieldCurve = POT_CURVE; });
 
 function ctx(rng = () => 0.5): SimContext & { events: GameEvent[] } {
   const events: GameEvent[] = [];
@@ -26,6 +31,47 @@ const BASE_CHECKOUT = ENTER_TIME + WALK_TIME + CUSTOMER.payTime;
 function run(s: GameState, seconds: number, c = ctx()) {
   for (let t = 0; t < seconds; t += 0.1) tick(s, 0.1, c);
 }
+
+describe('市場熱度', () => {
+  it('每隔一段時間換目標，數值在 min～max 之間起伏；訂單量跟著乘上熱度', () => {
+    const s = createInitialState();
+    s.customerTimer = -1e9;
+    let seed = 7;
+    const c = ctx(() => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648));
+    const seen: number[] = [];
+    for (let k = 0; k < 60; k++) {
+      run(s, 10, c);
+      seen.push(s.market.value);
+    }
+    expect(Math.min(...seen)).toBeGreaterThanOrEqual(MARKET.min - 1e-9);
+    expect(Math.max(...seen)).toBeLessThanOrEqual(MARKET.max + 1e-9);
+    expect(Math.max(...seen) - Math.min(...seen)).toBeGreaterThan(0.2);
+
+    s.potionRate.glow = 100;
+    s.market.value = 1;
+    const base = orderScale(s, 'glow');
+    s.market.value = 1.3;
+    expect(orderScale(s, 'glow')).toBeCloseTo(base * 1.3);
+  });
+
+  it('離線時熱度回到平均 1', () => {
+    const s = createInitialState();
+    s.market = { value: 1.4, target: 1.4, timer: 0 };
+    tick(s, 60, { rng: () => 0.9, offline: true, emit: () => {} });
+    expect(s.market.target).toBe(1);
+  });
+});
+
+describe('盆栽採收量曲線', () => {
+  it('每輪 = 等級 × (1 + 等級 / k)：每升一級增加的量會隨等級變大', () => {
+    UPGRADE_FX.potYieldCurve = 20;
+    expect(potYield(10)).toBeCloseTo(15);
+    expect(potYield(100)).toBeCloseTo(600);
+    expect(potYield(101) - potYield(100)).toBeGreaterThan(potYield(11) - potYield(10));
+    UPGRADE_FX.potYieldCurve = 0;
+    expect(potYield(100)).toBe(100);
+  });
+});
 
 describe('溫室', () => {
   it('沒有花妖精時，植物長滿會停在成熟狀態，需要手動採收', () => {

@@ -82,7 +82,8 @@ describe('自由活動', () => {
     // 固定種子的亂數（用 Math.random 偶爾會剛好都沒抽到某一區，測試會不穩定）
     let seed = 12345;
     const c = ctx(() => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648));
-    for (let k = 0; k < 40; k++) {
+    // 觀察 400 秒（約 10 次換區）；市場熱度等其他系統也會用到亂數，時間太短可能剛好沒抽到某一區
+    for (let k = 0; k < 80; k++) {
       run(s, 5, c);
       if (s.mascot.patrolZone) seen.add(s.mascot.patrolZone);
       s.mascot.stamina = 100; // 只觀察換區，不讓她累倒

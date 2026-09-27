@@ -3,18 +3,18 @@ import {
 } from 'pixi.js';
 import { ACHIEVEMENTS } from '../game/config/achievements';
 import { CUSTOMER, UPGRADE_FX } from '../game/config/balance';
-import { ASSIGNMENTS, LINES, MUTTER, type Assignment } from '../game/config/mascot';
+import { ASSIGNMENTS, LINES, MUTTER, MUTTER_LINES, type Assignment } from '../game/config/mascot';
 import { pickMutter } from '../game/mutter';
 import { PLANTS } from '../game/config/plants';
 import { RECIPES, type PotionId } from '../game/config/recipes';
 import { activeCombo, nextLockedRecipes } from '../game/commands';
-import { formatNumber } from '../game/format';
+import { formatFull, formatNumber } from '../game/format';
 import type { Game } from '../game/game';
 import { missingInputs, type CrateKind, type GameEvent } from '../game/sim';
 import { CRATE_FOR, CRATE_MATERIALS, SQUIRREL } from '../game/config/upgrades';
 import type { CustomerState, GameState } from '../game/state';
 import {
-  autoHarvest, brewPassiveSpeed, growthSpeed, hasAutoCheckout, payTime, has, isResting, isTired, milestoneCount, recipeInputs, redeemed,
+  autoHarvest, brewPassiveSpeed, growthSpeed, hasAutoCheckout, payTime, has, isRelaxing, isResting, isSleeping, isTired, milestoneCount, recipeInputs, redeemed,
   refineLevel, workZone,
 } from '../game/stats';
 import { lumiaOpen, openDrawer, showToast } from '../ui/store';
@@ -54,9 +54,9 @@ function fastTier(cycle: number): FastTier {
 
 /** 各級高速模式的表現參數 */
 const TIER_FX = {
-  1: { plantCycle: 0.22, burst: 6, power: 1, sway: 0.07, bubbles: 4, bubbleSpeed: 3, flash: 0.35, ring: false, mark: '⚡', size: 16 },
-  2: { plantCycle: 0.15, burst: 9, power: 1.2, sway: 0.1, bubbles: 5, bubbleSpeed: 5, flash: 0.6, ring: true, mark: '⚡⚡', size: 18 },
-  3: { plantCycle: 0.1, burst: 12, power: 1.45, sway: 0.13, bubbles: 6, bubbleSpeed: 8, flash: 0.9, ring: true, mark: '⚡⚡⚡', size: 20 },
+  1: { plantCycle: 0.22, burst: 6, power: 1, sway: 0.07, bubbles: 4, bubbleSpeed: 3, flash: 0.35, ring: false, size: 16 },
+  2: { plantCycle: 0.15, burst: 9, power: 1.2, sway: 0.1, bubbles: 5, bubbleSpeed: 5, flash: 0.6, ring: true, size: 18 },
+  3: { plantCycle: 0.1, burst: 12, power: 1.45, sway: 0.13, bubbles: 6, bubbleSpeed: 8, flash: 0.9, ring: true, size: 20 },
 } as const;
 
 /** 彩虹色（3 級高速模式用） */
@@ -166,7 +166,7 @@ class ParticleLayer extends Container {
 }
 
 
-/** 高速模式的速率字：級數越高 ⚡ 越多、字越大，3 級變彩虹色並跟著節奏跳動 */
+/** 高速模式的速率字（實際每秒產量）：級數越高字越大，3 級變彩虹色並跟著節奏跳動 */
 function setRateText(label: Text, tier: FastTier, rate: number, time: number): void {
   if (tier === 0) {
     label.text = '';
@@ -177,7 +177,7 @@ function setRateText(label: Text, tier: FastTier, rate: number, time: number): v
   const last = rateTextAt.get(label) ?? -1;
   if (time - last >= 0.25 || time < last || label.text === '') {
     rateTextAt.set(label, time);
-    label.text = `${fx.mark}${formatNumber(rate)}/秒`;
+    label.text = `${formatNumber(rate)}/秒`;
   }
   label.tint = tier === 3 ? rainbow(time * 0.8) : 0xffe066;
   const beat = tier >= 2 ? 1 + 0.07 * Math.abs(Math.sin(time * 9)) : 1;
@@ -987,6 +987,8 @@ interface Station {
   /** back = 背對鏡頭站在盆栽/大釜前工作；sleep = 在坐墊上睡覺 */
   pose: 'back' | 'idle' | 'sleep';
   dir: 1 | -1;
+  /** 走到這裡時可能說的話（休息室的家具旁邊） */
+  talk?: string[];
 }
 
 const LUMIA_SPEED = 120;
@@ -1112,6 +1114,7 @@ class LumiaView extends Container {
 
   /** 依目前的指派，可以去的地方 */
   private stations(s: GameState): Station[] {
+    if (isRelaxing(s)) return this.relaxStations(s);
     if (isResting(s)) return [{ ...REST_POS, pose: 'sleep', dir: -1 }];
     const pots: Station[] = s.slots.flatMap((slot, i) => (slot.plant && i < FLOATING_SLOT_FROM
       ? [{ x: SLOT_POS[i].x + LUMIA_AT_POT.dx, y: SLOT_POS[i].y + LUMIA_AT_POT.dy, pose: 'back' as const, dir: -1 as const }]
@@ -1163,7 +1166,7 @@ class LumiaView extends Container {
     }
     this.mutterIn -= dt;
     if (this.mutterIn > 0) return;
-    const sleeping = isResting(s);
+    const sleeping = isSleeping(s);
     this.mutterIn = sleeping
       ? MUTTER.sleepIntervalMin + Math.random() * (MUTTER.sleepIntervalMax - MUTTER.sleepIntervalMin)
       : MUTTER.intervalMin + Math.random() * (MUTTER.intervalMax - MUTTER.intervalMin);
@@ -1211,7 +1214,8 @@ class LumiaView extends Container {
     const tired = isTired(s) && !isResting(s);
 
     // 指派或休息狀態改變：馬上出發去新的地方
-    const key = `${s.mascot.assignment}:${workZone(s)}:${isResting(s)}:${s.cauldrons.length}:${s.slots.filter((x) => x.plant).length}`;
+    // 睡飽了（體力滿）也算狀態改變：起床開始在休息室走動
+    const key = `${s.mascot.assignment}:${workZone(s)}:${isResting(s)}:${isRelaxing(s)}:${s.cauldrons.length}:${s.slots.filter((x) => x.plant).length}`;
     if (key !== this.stateKey) {
       this.stateKey = key;
       this.target = null;
@@ -1293,11 +1297,32 @@ class LumiaView extends Container {
     this.doll.setPose(this.poseId(s, pose));
     this.doll.mode = st.pose === 'back' ? 'work' : 'idle';
     this.doll.dir = st.dir;
+    // 休息室的家具旁邊：有機率說一句跟它有關的話
+    if (st.talk && Math.random() < 0.7) this.say(st.talk[Math.floor(Math.random() * st.talk.length)]);
+  }
+
+  /**
+   * 體力滿了還在休息室：在房間裡走來走去，兌換過的家具旁邊也是停留點
+   * （史萊姆娃娃在坐墊旁、留聲機與紅茶組在邊桌）
+   */
+  private relaxStations(s: GameState): Station[] {
+    const y = FLOOR_2F_Y - 6;
+    const spots: Station[] = [
+      { x: 190, y, pose: 'idle', dir: -1 },
+      { x: REST_POS.x - 40, y, pose: 'idle', dir: 1 },
+      { x: 880, y, pose: 'idle', dir: -1 },
+    ];
+    for (const [id, pos] of Object.entries(FURNITURE)) {
+      if (redeemed(s, id) <= 0) continue;
+      const talk = MUTTER_LINES.furniture[id];
+      spots.push({ x: pos.x + (pos.x > REST_POS.x + 200 ? -10 : 50), y, pose: 'idle', dir: pos.x > REST_POS.x + 200 ? 1 : -1, talk });
+    }
+    return spots;
   }
 
   /** 睡覺或疲勞時頭上冒 zZ */
   private updateZz(s: GameState, _dt: number): void {
-    const sleepy = isResting(s) || isTired(s);
+    const sleepy = isSleeping(s) || (isTired(s) && !isResting(s));
     this.zz.visible = sleepy && !this.dragging;
     if (!this.zz.visible) return;
     const h = this.doll.pic.texture.height * this.doll.pic.baseScale;
@@ -1545,6 +1570,10 @@ class PropsLayer extends Container {
 
 /** 長按 0.3 秒後左右拖曳大釜，放開時移到最近的位置 */
 class CauldronDrag {
+  /** 拖曳中把大釜與它的名稱、等級等資訊搬到這個最上層，才看得到自己拿起了哪一口 */
+  topLayer: Container | null = null;
+  /** 被搬上去的物件原本的位置，放開後放回去 */
+  private lifted: { obj: Container; parent: Container; index: number }[] = [];
   private view: CauldronView | null = null;
   private downAt = 0;
   private startX = 0;
@@ -1586,6 +1615,7 @@ class CauldronDrag {
       }
       if (performance.now() - this.downAt < 300) return;
       this.dragging = true;
+      this.lift(v);
     }
     const n = this.game.state.cauldrons.length;
     v.dragX = Math.max(CAULDRON_X[0], Math.min(CAULDRON_X[n - 1], this.pointerX));
@@ -1602,7 +1632,27 @@ class CauldronDrag {
       if (Math.abs(CAULDRON_X[k] - v.dragX!) < Math.abs(CAULDRON_X[to] - v.dragX!)) to = k;
     }
     v.dragX = null;
+    this.drop();
     if (this.game.moveCauldron(v.i, to)) showToast('已調整大釜順序：左邊的大釜優先取得原料');
+  }
+
+  /** 拿起來：大釜本體與資訊層都移到最上層 */
+  private lift(v: CauldronView): void {
+    if (!this.topLayer) return;
+    for (const obj of [v, v.hud]) {
+      const parent = obj.parent;
+      if (!parent) continue;
+      this.lifted.push({ obj, parent, index: parent.getChildIndex(obj) });
+      this.topLayer.addChild(obj);
+    }
+  }
+
+  /** 放下：放回原本的圖層與順序 */
+  private drop(): void {
+    for (const { obj, parent, index } of this.lifted) {
+      parent.addChildAt(obj, Math.min(index, parent.children.length));
+    }
+    this.lifted = [];
   }
 }
 
@@ -1752,6 +1802,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   // 露米婭平常畫在盆栽與大釜前面；被拎起來時移到最上層
   const lumiaLayer = new Container();
   const dragLayer = new Container();
+  drag.topLayer = dragLayer;
   lumiaLayer.addChild(lumia);
   const lumiaDrag = new LumiaDrag(app, game, lumia, highlight, (dragging) =>
     (dragging ? dragLayer : lumiaLayer).addChild(lumia));
@@ -1805,7 +1856,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       case 'sale': {
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
         const note = e.tip ? '（土豪小費！）' : e.rush ? '（急單！）' : e.partial ? '（部分購買）' : '';
-        floats.spawn(`+${formatNumber(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, e.rush || e.tip, true);
+        floats.spawn(`+${formatFull(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, e.rush || e.tip, true);
         break;
       }
       case 'wholesale': {
@@ -1813,7 +1864,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         const p = props.bumpCrate(e.crate);
         if (!p) break;
         const what = e.crate === 'materials' ? `${formatNumber(e.amount)} 份原料` : `${formatNumber(e.amount)} 瓶`;
-        floats.spawn(`+${formatNumber(e.gold)} 金（收購 ${what}）`, p.x, p.y, 0xe8c56a, false, true);
+        floats.spawn(`+${formatFull(e.gold)} 金（收購 ${what}）`, p.x, p.y, 0xe8c56a, false, true);
         break;
       }
       case 'achievement': {

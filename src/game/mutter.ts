@@ -3,7 +3,7 @@ import { CUSTOMER } from './config/balance';
 import { MUTTER_LINES } from './config/mascot';
 import { missingInputs } from './sim';
 import type { GameState } from './state';
-import { isResting, isTired, workZone } from './stats';
+import { isRelaxing, isResting, isTired, workZone } from './stats';
 
 /** 從一堆（權重, 台詞表）裡抽一句 */
 function pickWeighted(groups: [number, string[]][], rng: () => number): string {
@@ -19,11 +19,12 @@ function pickWeighted(groups: [number, string[]][], rng: () => number): string {
 }
 
 /**
- * 挑一句自言自語。睡覺時只說夢話；工作時混合：
+ * 挑一句自言自語。睡覺時只說夢話、體力滿了在休息室晃時說放鬆的話；工作時混合：
  * 店裡狀況（有才會出現、權重最高）、目前的工作區、疲勞、服裝、一般台詞。
  */
 export function pickMutter(s: GameState, rng: () => number = Math.random): string {
   const L = MUTTER_LINES;
+  if (isRelaxing(s)) return pickWeighted([[3, L.relax], [1, L.outfit[s.mascot.outfit]], [1, L.global]], rng);
   if (isResting(s)) return pickWeighted([[1, L.sleep]], rng);
   const zone = workZone(s);
   const starved = s.cauldrons.some((c) => c.batch === 0 && missingInputs(s, c).length > 0);
@@ -32,6 +33,8 @@ export function pickMutter(s: GameState, rng: () => number = Math.random): strin
     [s.feverLeft > 0 ? 5 : 0, L.fever],
     [starved && zone !== 'counter' ? 2 : 0, L.starved],
     [crowded ? 2 : 0, L.crowded],
+    [s.market.value >= 1.2 ? 2 : 0, L.marketHot],
+    [s.market.value <= 0.8 ? 2 : 0, L.marketCold],
     [isTired(s) ? 4 : 0, L.tired],
     [zone ? 3 : 0, zone ? L[zone] : []],
     [s.mascot.assignment === 'patrol' ? 1 : 0, L.patrol],

@@ -26,6 +26,7 @@ export function CounterPanel() {
             結帳 <b>{hasAutoCheckout(s) ? `${formatSeconds(checkoutTime(s))}／位` : '要親手點客人'}</b>
           </span>
           <span>店裡最多 {CUSTOMER.queueMax} 位</span>
+          <MarketHeat />
           <span>急單耐心 {formatSeconds(customerPatience(s))}</span>
           <span>急單獎勵 ×{CUSTOMER.rushBonus}</span>
         </div>
@@ -52,6 +53,19 @@ export function CounterPanel() {
   );
 }
 
+/** 市場熱度：客人訂單量的倍率，箭頭表示正在變熱或變冷 */
+export function MarketHeat() {
+  const game = useGame();
+  const m = game.state.market;
+  const arrow = m.target > m.value + 0.02 ? '▲' : m.target < m.value - 0.02 ? '▼' : '';
+  const tone = m.value >= 1.15 ? 'hot' : m.value <= 0.85 ? 'cold' : '';
+  return (
+    <span class={`market ${tone}`} title="市場熱度：客人訂單量的倍率，每隔一陣子會變。熱的時候需求超過產量，有囤貨才賣得完；冷的時候產量有剩。">
+      市場熱度 <b>×{m.value.toFixed(2)}</b>{arrow}
+    </span>
+  );
+}
+
 /**
  * 收購箱設定：藥水和原料用同一套邏輯——每種都有「要不要賣」開關，以及保留多少（百分比）。
  * 藥水 100% = 店裡站滿、每人都點最多時的量；原料 100% = 所有大釜熬 1 輪的量。
@@ -66,7 +80,8 @@ function CrateCard() {
       <div class="card-title"><Icon id="upg_crate" /> 收購箱設定</div>
       <p class="hint">
         每種藥水和原料都可以決定<b>要不要賣給收購箱</b>，以及<b>保留多少</b>（超過的才收購；0% = 全部收購）。
-        藥水 100% = 店裡站滿、每人都點最多時的量（先留給付全價的客人）；原料 100% = 所有大釜熬 1 輪的量
+        藥水 100% = 店裡站滿、每人都點最多時的量（先留給付全價的客人；市場熱度高時需求會超過產量，
+        沒囤貨就湊不齊；囤太多則錢卡在庫存）；原料 100% = 所有大釜熬 1 輪的量
         （保留時至少留 {UPGRADE_FX.materialReserveMin} 份）。收購價很低，能賣給客人、能熬成藥水都比較划算。
       </p>
 

@@ -13,7 +13,9 @@ import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
 import { checkoutByClick, missingInputs, tick, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
-import { arrivalRate, materialReserve, potionReserve } from '../src/game/stats';
+import {
+  arrivalRate, cauldronOutputPerSec, materialReserve, potOutputPerSec, potionReserve, recipeNeeds,
+} from '../src/game/stats';
 
 const args = process.argv.slice(2);
 const argOf = (name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
@@ -27,6 +29,12 @@ if (REFINE_MAX !== undefined) {
 }
 /** 顧客買走產量的基礎比例（比較用） */
 if (argOf('--share-base')) CUSTOMER.shareBase = Number(argOf('--share-base'));
+/** 盆栽採收量曲線（比較用，0 = 每級固定 +1） */
+if (argOf('--pot-curve') !== undefined) UPGRADE_FX.potYieldCurve = Number(argOf('--pot-curve'));
+/** 各植物每輪採收量倍率：「紅心草,月光菇,星光藤蔓」例如 1,2,4（比較用） */
+if (argOf('--plant-yield')) {
+  argOf('--plant-yield')!.split(',').map(Number).forEach((v, k) => (PLANTS[MATERIAL_IDS[k]].yieldMult = v));
+}
 /** 收購價：「基礎,每級」例如 0.2,0.05（比較用） */
 const CRATE = argOf('--crate');
 if (CRATE) [UPGRADE_FX.crateBasePct, UPGRADE_FX.crateStepPct] = CRATE.split(',').map(Number);
@@ -86,11 +94,17 @@ function botClick(s: GameState, ctx: SimContext): void {
   if (any >= 0) cmd.clickPlant(s, any, ctx);
 }
 
-/** 盆栽的目標植物：第 2 格種月光菇（解鎖專注糖漿後）、第 3 格種星光藤蔓（解鎖羽化靈藥後），其他種紅心草 */
+/**
+ * 盆栽分配：--alloc 用字串指定 5 格各種什麼（R 紅心草、M 月光菇、S 星光藤蔓），預設 RMSRR
+ * （第 2 格月光菇、第 3 格星光藤蔓、其他紅心草）。配方還沒解鎖時先種用得到的：S → M → R。
+ */
+const ALLOC = (argOf('--alloc') ?? 'RMSRR').toUpperCase();
+
 function wantedPlant(s: GameState, i: number): MaterialId {
   const has = (p: PotionId) => s.cauldrons.some((c) => c.recipe === p);
-  if (i === 1 && has('focus')) return 'moonshroom';
-  if (i === 2 && has('elixir')) return 'starvine';
+  const want = ALLOC[i] ?? 'R';
+  if (want === 'S' && has('elixir')) return 'starvine';
+  if ((want === 'S' || want === 'M') && has('focus')) return 'moonshroom';
   return 'redheart';
 }
 
@@ -144,7 +158,23 @@ function crateNeeded(s: GameState, label: string): boolean {
 }
 
 /** 解鎖、種新植物（以及庫存堆積時對應的收購箱）優先存錢；其他就買最便宜的 */
+/**
+ * 大釜順序：預設（--cauldron-order value）把高價配方拖到最左邊優先拿原料（靈藥 → 專注 → 微光），
+ * 像真的玩家會做的；--cauldron-order unlock 則維持解鎖順序（微光在最左邊）
+ */
+const CAULDRON_ORDER = argOf('--cauldron-order') ?? 'value';
+const VALUE_ORDER: PotionId[] = ['elixir', 'focus', 'glow'];
+
+function botArrange(s: GameState): void {
+  if (CAULDRON_ORDER !== 'value') return;
+  VALUE_ORDER.filter((p) => s.cauldrons.some((c) => c.recipe === p)).forEach((p, to) => {
+    const from = s.cauldrons.findIndex((c) => c.recipe === p);
+    if (from !== to) cmd.moveCauldron(s, from, to);
+  });
+}
+
 function botShop(s: GameState, ctx: SimContext, log: (label: string) => void): void {
+  botArrange(s);
   for (let n = 0; n < 200; n++) {
     const list = candidates(s, ctx);
     // 第一隻算盤松鼠（自動結帳）也優先：沒有它時不點擊就賣不出去
@@ -181,10 +211,20 @@ interface Row {
   crateShare: number;
   /** 上一個記錄點以來，整張訂單都湊齊的客人比例（部分購買、空手離開都算沒滿足） */
   satisfied: number;
+  /** 各原料：所有盆栽全速產量 ÷ 所有大釜全速需求 */
+  supply: string;
 }
+
+/** 藥水收購設定（比較用）：--potion-keep 保留百分比；--potion-sell 0 = 不賣給收購箱 */
+const POTION_KEEP = argOf('--potion-keep');
+const POTION_SELL = argOf('--potion-sell');
 
 function simulate(p: Profile) {
   const s = createInitialState();
+  for (const set of Object.values(s.settings.potions)) {
+    if (POTION_KEEP !== undefined) set.keepPct = Number(POTION_KEEP);
+    if (POTION_SELL !== undefined) set.sell = POTION_SELL !== '0';
+  }
   const ctx: SimContext = { rng: mulberry32(42), offline: false, emit: () => {} };
   const firsts = new Map<string, number>();
   const log = (label: string) => {
@@ -235,6 +275,12 @@ function simulate(p: Profile) {
           const refine = s.upgrades[REFINE_FOR[c.recipe]] ?? 0;
           return `${RECIPES[c.recipe].name[0]}${c.level}/火${c.salamander}${refine ? `★${refine}` : ''}`;
         }).join(' '),
+        supply: MATERIAL_IDS.map((m) => {
+          const need = s.cauldrons.reduce((n, c) => n + recipeNeeds(s, c.recipe, m) * cauldronOutputPerSec(s, c), 0);
+          if (need <= 0) return '';
+          const made = s.slots.reduce((n, sl, i) => n + (sl.plant === m && sl.fairy ? potOutputPerSec(s, i) : 0), 0);
+          return `${Math.round((made / need) * 100)}%`;
+        }).filter(Boolean).join(' '),
         starved: s.cauldrons.map((c) => {
           const pct = Math.round(((starved[c.recipe] ?? 0) / (s.time - lastT)) * 100);
           starved[c.recipe] = 0;
@@ -308,10 +354,10 @@ for (const p of PROFILES) {
   out();
   out('### 收入曲線');
   out();
-  out('| 分鐘 | 金幣/秒 | 收購箱占收入 | 訂單滿足率 | 累計收入 | 盆栽 | 大釜（等級/火蜥蜴/★精煉） | 大釜等原料 | 原料庫存 | 賣出 | 急單 | 收購 |');
-  out('|---|---|---|---|---|---|---|---|---|---|---|---|');
+  out('| 分鐘 | 金幣/秒 | 收購箱占收入 | 訂單滿足率 | 累計收入 | 盆栽 | 大釜（等級/火蜥蜴/★精煉） | 大釜等原料 | 原料供需 | 原料庫存 | 賣出 | 急單 | 收購 |');
+  out('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
   for (const r of rows) {
-    out(`| ${r.min} | ${formatNumber(r.gps)} | ${Math.round(r.crateShare * 100)}% | ${Math.round(r.satisfied * 100)}% | ${formatNumber(r.earned)} | ${r.pots} | ${r.cauldrons} | ${r.starved} | ${r.stock} | ${formatNumber(r.sold)} | ${formatNumber(r.rush)} | ${formatNumber(r.wholesale)} |`);
+    out(`| ${r.min} | ${formatNumber(r.gps)} | ${Math.round(r.crateShare * 100)}% | ${Math.round(r.satisfied * 100)}% | ${formatNumber(r.earned)} | ${r.pots} | ${r.cauldrons} | ${r.starved} | ${r.supply} | ${r.stock} | ${formatNumber(r.sold)} | ${formatNumber(r.rush)} | ${formatNumber(r.wholesale)} |`);
   }
   out();
   const demand = (arrivalRate(s) / CUSTOMER.interval) * 60;

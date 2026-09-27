@@ -1,7 +1,7 @@
 // 核心模擬。純邏輯，不碰畫面；在線、背景補算、離線結算、測試共用。
 import { ACHIEVEMENTS } from './config/achievements';
 import { CRATE_FOR, CRATE_MATERIALS } from './config/upgrades';
-import { BOUNTY, CUSTOMER, UPGRADE_FX } from './config/balance';
+import { BOUNTY, CUSTOMER, MARKET, UPGRADE_FX } from './config/balance';
 import { TALENT_FX } from './config/happiness';
 import { INCOME_SMOOTHING, MASCOT } from './config/mascot';
 import { MATERIAL_IDS, PLANTS, type MaterialId } from './config/plants';
@@ -10,7 +10,7 @@ import type { CauldronState, CustomerState, GameState, OrderLine } from './state
 import {
   arrivalRate, autoHarvest, bountyChance, brewClickAdvance, brewPassiveSpeed, condenserChance,
   cratePct, customerPatience, customerThroughput, drunkChance, growthSpeed, harvestYield, has, hasAnyCrate,
-  hasAutoCheckout, isResting, materialReserve, maxCustomerQty, orderScale, patrolZones, plantClickAdvance,
+  hasAutoCheckout, isResting, materialReserve, maxCustomerQty, orderScale, patrolZones, plantClickAdvance, potYield,
   ENTER_TIME, payTime, potionReserve, recipeInputs, redeemed, sellPrice, slotYieldMult, WALK_TIME,
 } from './stats';
 
@@ -42,6 +42,7 @@ export function tick(s: GameState, dt: number, ctx: SimContext): void {
   if (ctx.offline && has(s, 'guild_contract')) contractClicks(s, dt, ctx);
   tickPlants(s, dt, ctx);
   tickCauldrons(s, dt, ctx);
+  tickMarket(s, dt, ctx);
   if (ctx.offline) tickCustomersOffline(s, dt);
   else tickCustomers(s, dt, ctx);
   tickBell(s, dt);
@@ -91,11 +92,12 @@ export function settlePlant(s: GameState, i: number, ctx: SimContext): void {
 export function harvest(s: GameState, i: number, times: number, ctx: SimContext, crit = false): void {
   const slot = s.slots[i];
   const material = slot.plant!;
-  let amount = times * slot.level;
+  const perRound = potYield(slot.level) * PLANTS[material].yieldMult;
+  let amount = times * perRound;
   let bounty = false;
   if (!crit) {
     const p = bountyChance(s);
-    const extra = Math.max(1, Math.round(slot.level * BOUNTY.bonus));
+    const extra = Math.max(1, Math.round(perRound * BOUNTY.bonus));
     if (ctx.offline || times > 50) {
       // 離線或一次收很多輪：取期望值
       amount += times * p * extra;
@@ -172,6 +174,19 @@ export function missingInputs(s: GameState, c: CauldronState): MaterialId[] {
   return recipeInputs(s, c.recipe)
     .filter(([m, need]) => s.materials[m] < need)
     .map(([m]) => m);
+}
+
+// ---------- 市場熱度 ----------
+
+/** 每隔一段時間隨機換一個熱度目標，慢慢靠過去（離線取平均 1） */
+function tickMarket(s: GameState, dt: number, ctx: SimContext): void {
+  const m = s.market;
+  m.timer -= dt;
+  if (m.timer <= 0) {
+    m.target = ctx.offline ? 1 : MARKET.min + ctx.rng() * (MARKET.max - MARKET.min);
+    m.timer = MARKET.holdMin + ctx.rng() * (MARKET.holdMax - MARKET.holdMin);
+  }
+  m.value += (m.target - m.value) * Math.min(1, dt / MARKET.smoothing);
 }
 
 // ---------- 顧客 ----------

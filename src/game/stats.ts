@@ -52,6 +52,15 @@ export function growthSpeed(s: GameState, slot: SlotState): number {
   ]);
 }
 
+/**
+ * 盆栽每輪的基本採收量：等級 × (1 + 等級 / potYieldCurve)。每升一級增加的量會隨等級變大，
+ * 讓盆栽追得上有湯勺、保溫魔法陣、精煉加成的大釜（平衡模擬：原本同等級時原料只夠大釜全速的 5–22%）。
+ */
+export function potYield(level: number): number {
+  const k = UPGRADE_FX.potYieldCurve;
+  return k > 0 ? level * (1 + level / k) : level;
+}
+
 export function plantClickAdvance(slot: SlotState): number {
   return slot.plant ? PLANTS[slot.plant].clickAdvance * milestoneMult(slot.level) : 0;
 }
@@ -99,6 +108,17 @@ export function brewClickPower(s: GameState, c: CauldronState): number {
 }
 
 // ---------- 看板娘（M 池）----------
+
+/** 被指派到休息室、但體力已經滿了：不睡覺，在休息室悠閒地走動、玩擺設 */
+export function isRelaxing(s: GameState): boolean {
+  const m = s.mascot;
+  return m.assignment === 'rest' && !m.autoRest && m.stamina >= MASCOT.staminaMax - 1e-9;
+}
+
+/** 正在休息室睡覺（回復體力中） */
+export function isSleeping(s: GameState): boolean {
+  return isResting(s) && !isRelaxing(s);
+}
 
 export function isResting(s: GameState): boolean {
   return s.mascot.assignment === 'rest' || s.mascot.autoRest;
@@ -203,7 +223,8 @@ export function orderScale(s: GameState, p: PotionId): number {
   const types = Math.max(1, s.cauldrons.length);
   // 每位客人平均點到這種藥水幾瓶基本量
   const perCustomer = avgBaseBottles(s) / types;
-  return Math.max(1, (s.potionRate[p] * customerShare(s)) / (customerThroughput(s) * perCustomer));
+  // 市場熱度讓需求起伏：熱的時候客人買得比產量多（囤貨有用），冷的時候有剩（收購箱有用）
+  return Math.max(1, (s.potionRate[p] * customerShare(s) * s.market.value) / (customerThroughput(s) * perCustomer));
 }
 
 /** 店裡站滿、每人都點最多時需要的某種藥水量（藥水保留量 100% 的基準） */
@@ -307,6 +328,25 @@ export const isFloatingSlot = (i: number) => i >= INITIAL_OPEN_SLOTS;
 /** 奇蹟綠手指：浮空盆栽收成量 ×2 */
 export function slotYieldMult(s: GameState, i: number): number {
   return isFloatingSlot(i) && redeemed(s, 'green_thumb') ? UPGRADE_FX.greenThumbYield : 1;
+}
+
+// ---------- 每秒產量（面板顯示與平衡分析用） ----------
+
+/** 一盆每次採收的量（不含豐收）：等級 × 魔法肥料 × 浮空盆栽綠手指 */
+export function harvestPerRound(s: GameState, i: number, slot: SlotState = s.slots[i]): number {
+  const mult = slot.plant ? PLANTS[slot.plant].yieldMult : 1;
+  return potYield(slot.level) * mult * harvestYield(s) * slotYieldMult(s, i);
+}
+
+/** 一盆自動採收時的每秒產量（不含豐收）；slot 可以傳「升級後」的副本來算下一級的效果 */
+export function potOutputPerSec(s: GameState, i: number, slot: SlotState = s.slots[i]): number {
+  if (!slot.plant) return 0;
+  return (harvestPerRound(s, i, slot) * growthSpeed(s, slot)) / PLANTS[slot.plant].growTime;
+}
+
+/** 一口大釜原料足夠時每秒熬出幾瓶；c 可以傳「升級後」的副本 */
+export function cauldronOutputPerSec(s: GameState, c: CauldronState): number {
+  return (c.level * brewPassiveSpeed(s, c)) / RECIPES[c.recipe].brewTime;
 }
 
 /** 所有大釜以目前等級熬 1 輪需要多少這種原料 */

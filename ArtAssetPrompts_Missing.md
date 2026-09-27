@@ -3,7 +3,6 @@
 整理目前遊戲裡**還在用佔位圖**的所有素材，共 25 張，一次列在這裡。
 舊文件裡寫過的（[`ArtAssetPrompts.md`](ArtAssetPrompts.md) 第 6 章、[`ArtAssetPrompts_Economy.md`](ArtAssetPrompts_Economy.md)、[`ArtAssetPrompts_ClickUpgrades.md`](ArtAssetPrompts_ClickUpgrades.md)）也收進來了，並依照**現在場景的實際擺放方式**調整描述；以這份為準即可。
 
-* **放置位置：** 升級道具放 `IdlePotionShop_ArtAssets/public/assets/upgrades/`，禮物放 `IdlePotionShop_ArtAssets/public/assets/icons/`，檔名 = 資源 ID（例如 `upg_owl.png`）。放好後執行 `python3 scripts/import_art.py`（或跟我說一聲）。
 * **去背：** 純白背景生成後去背；白色或很淺的物件改用純綠色背景 `#00FF00`（表格有標註）。
 * **比例：** 全部 1:1。原圖邊長 1024 以上即可，匯入時會自動裁邊、縮圖。
 
@@ -73,11 +72,13 @@ Japanese anime style, kawaii and heartwarming, 2D fantasy game art, cozy and whi
 遊戲現在沒有用到，等對應的功能做出來再生成即可，prompt 已經寫在 [`ArtAssetPrompts.md`](ArtAssetPrompts.md)：
 
 * **M4 隨機事件特效**（第 9 章）：`fx_stardust_dew`（星塵朝露）、`fx_explosion_smoke`（大釜爆炸）、`fx_spark`、`fx_heart`、`fx_sleep_bubble`。
-* **魔導書 UI 質感**（第 10 章）：`ui_paper_texture`、`ui_leather_cover`、`ui_corner_ornament`、`ui_grimoire_open`。目前介面是 CSS 畫的，換成貼圖會更有質感，但不是必要。
+* **魔導書 UI 質感**（第 10 章）：`ui_paper_texture`、`ui_leather_cover`、`ui_corner_ornament`、`ui_grimoire_open`。
 * **其他**：`bg_dollhouse_night`（夜晚背景）、`ui_logo`、`app_icon`。
 
 ## 生成進度檢查表
 
-- [ ] A. 場景道具（11）：雨雲、花妖精、澆水壺、火蜥蜴、湯勺、貓頭鷹、算盤松鼠、鈴鐺、擴香儀、招牌、收購箱
-- [ ] B. 清單圖示（11）：園藝剪、肥料、手套、保溫魔法陣、風箱、冷凝管、攪拌棒、精煉、酒杯、海報、工會合約
-- [ ] C. 禮物（3）：點心、花束、髮飾
+- [x] A. 場景道具（11）：雨雲、花妖精、澆水壺、火蜥蜴、湯勺、貓頭鷹、算盤松鼠、鈴鐺、擴香儀、招牌、收購箱
+- [x] B. 清單圖示（11）：園藝剪、肥料、手套、保溫魔法陣、風箱、冷凝管、攪拌棒、精煉、酒杯、海報、工會合約
+- [x] C. 禮物（3）：點心、花束、髮飾
+
+> A～C 已全部補齊（原圖放在 `IdlePotionShop_ArtAssets/public/assets/upgrades/`、`gifts/`，已用 `scripts/import_art.py` 匯入）。目前只剩 D 還沒做。

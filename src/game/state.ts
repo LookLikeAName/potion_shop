@@ -1,4 +1,4 @@
-import { CUSTOMER, INITIAL_OPEN_SLOTS, SLOT_COUNT, UPGRADE_FX } from './config/balance';
+import { CUSTOMER, INITIAL_OPEN_SLOTS, MARKET, SLOT_COUNT, UPGRADE_FX } from './config/balance';
 import { MASCOT, type Assignment, type OutfitId, type WorkZone } from './config/mascot';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
@@ -125,6 +125,8 @@ export interface GameState {
   feverDay: string;
   /** 平滑後的每秒收入（禮物價格用） */
   incomeRate: number;
+  /** 市場熱度：顧客訂單量的倍率，每隔一段時間隨機換目標、慢慢靠過去（value 目前、target 目標、timer 距離換目標的秒數） */
+  market: { value: number; target: number; timer: number };
   /** 各藥水平滑後的每秒產量（顧客訂單量用），以及這個 tick 熬好的量 */
   potionRate: Record<PotionId, number>;
   brewedThisTick: Record<PotionId, number>;
@@ -223,6 +225,7 @@ export function createInitialState(): GameState {
     feverLeft: 0,
     feverDay: '',
     incomeRate: 0,
+    market: { value: 1, target: 1, timer: MARKET.holdMin },
     potionRate: zeroRecord(POTION_IDS),
     brewedThisTick: zeroRecord(POTION_IDS),
     giftDay: '',

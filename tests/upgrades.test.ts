@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CUSTOMER, UPGRADE_FX } from '../src/game/config/balance';
 import {
   activeCombo, clickCauldron, clickPlant, getQuote, giftAvailable, giftPrice, giveGift, moveCauldron, purchase,
   ringBell, setCrateKeep, setCrateSell, unlockRecipe,
 } from '../src/game/commands';
-import { FLOATING_POT, FLOATING_POT_COSTS, REFINE_FOR } from '../src/game/config/upgrades';
+import { FLOATING_POT, FLOATING_POT_COSTS, REFINE_FOR, SIGNBOARD_MAX } from '../src/game/config/upgrades';
 import { simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
 import {
@@ -12,9 +12,14 @@ import {
 } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
 import {
-  brewPassiveSpeed, cratePct, customerShare, fullShopDemand, materialReserve, maxCustomerQty, orderScale, potionReserve, recipeInputs,
+  arrivalRate, brewPassiveSpeed, checkoutTime, cratePct, customerShare, fullShopDemand, materialReserve, maxCustomerQty, orderScale, potionReserve, recipeInputs,
   sellPrice,
 } from '../src/game/stats';
+
+// 這個檔案的測試驗證的是其他機制：採收量先用「每級 +1」（盆栽採收量曲線另外測）
+const POT_CURVE = UPGRADE_FX.potYieldCurve;
+beforeAll(() => { UPGRADE_FX.potYieldCurve = 0; });
+afterAll(() => { UPGRADE_FX.potYieldCurve = POT_CURVE; });
 
 function ctx(rng = () => 0.5): SimContext & { events: GameEvent[] } {
   const events: GameEvent[] = [];
@@ -469,6 +474,18 @@ describe('無限升級（金幣出口）', () => {
     const b0 = brewPassiveSpeed(s, s.cauldrons[0]);
     s.upgrades.warm_circle = 2;
     expect(brewPassiveSpeed(s, s.cauldrons[0])).toBeCloseTo(b0 * 1.3);
+  });
+
+  it('魔法招牌有上限：最高等級時來客速度等於櫃台最快的結帳速度', () => {
+    const s = createInitialState();
+    s.upgrades.signboard = SIGNBOARD_MAX;
+    s.gold = 1e300;
+    expect(getQuote(s, { kind: 'global', id: 'signboard' }, 1)!.count).toBe(0);
+    s.upgrades.abacus_squirrel = 9; // 滿級：結帳只剩走到櫃台的時間
+    const arrivals = arrivalRate(s) / CUSTOMER.interval;
+    expect(arrivals).toBeLessThanOrEqual(1 / checkoutTime(s) + 1e-9);
+    s.upgrades.signboard = SIGNBOARD_MAX + 1;
+    expect(arrivalRate(s) / CUSTOMER.interval).toBeGreaterThan(1 / checkoutTime(s));
   });
 
   it('宣傳海報：顧客買走的比例 +3%/級（最多 10 級），價格每級 ×2', () => {

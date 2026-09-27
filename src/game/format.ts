@@ -19,12 +19,29 @@ export function formatNumber(n: number): string {
   return sign + scaled.toFixed(digits) + suffix;
 }
 
+/** 一輪的時間：1 秒以上顯示秒數；更快時改顯示「每秒幾輪」（小數點後兩位已經看不出差異） */
+export function formatCycle(sec: number): string {
+  if (!Number.isFinite(sec)) return '無';
+  if (sec >= 1) return formatSeconds(sec);
+  return `每秒 ${formatRate(1 / sec)} 輪`;
+}
+
 /** 每秒速率：小數字保留小數（0.35、4.2），大數字同 formatNumber */
 export function formatRate(n: number): string {
   const v = Math.abs(n);
   if (v >= 100) return formatNumber(n);
   if (v < 0.005) return '0';
   return n.toFixed(v >= 10 ? 1 : 2).replace(/\.?0+$/, '');
+}
+
+/**
+ * 完整數字加千分位（12,345,678），不用 K/M 縮寫：成交與收購的金額用這個，讓玩家感覺數字很大。
+ * 小於 100 的非整數留一位小數（收購原料可能只有零點幾金）。
+ */
+export function formatFull(n: number): string {
+  if (!Number.isFinite(n)) return '∞';
+  if (Math.abs(n) < 100 && !Number.isInteger(n)) return n.toFixed(1).replace(/\.0$/, '');
+  return Math.floor(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
 export function formatHappiness(n: number): string {

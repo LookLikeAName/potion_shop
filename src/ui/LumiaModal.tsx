@@ -3,7 +3,7 @@ import { ART_URLS } from '../assets/manifest';
 import { ASSIGNMENTS, LINES, MASCOT, OUTFITS, type Assignment, type OutfitId, type Reaction, type TouchPart } from '../game/config/mascot';
 import { outfitOwned } from '../game/commands';
 import { formatHappiness } from '../game/format';
-import { isResting, isTired, workZone } from '../game/stats';
+import { isRelaxing, isResting, isSleeping, isTired, workZone } from '../game/stats';
 import type { GameState } from '../game/state';
 import { lumiaOpen, useGame } from './store';
 
@@ -31,6 +31,7 @@ function portraitUrl(outfit: OutfitId, reaction: Reaction): { url?: string; chib
 export function mascotStatus(s: GameState): string {
   const m = s.mascot;
   if (m.autoRest) return '累壞了，正在休息室睡覺（體力回滿後會回去工作）';
+  if (isRelaxing(s)) return '體力滿滿，在休息室悠閒地晃來晃去';
   if (m.assignment === 'rest') return '在休息室的坐墊上睡得很香';
   const here = workZone(s);
   const zone = here ? ASSIGNMENTS[here].name : '店裡';
@@ -118,7 +119,7 @@ export function LumiaModal() {
   };
 
   const energyPct = (s.mascot.energy / MASCOT.energyMax) * 100;
-  const resting = isResting(s);
+  const resting = isSleeping(s);
 
   return (
     <div class="modal-back" onClick={(e) => e.target === e.currentTarget && (lumiaOpen.value = false)}>

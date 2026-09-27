@@ -1,8 +1,8 @@
-import { UPGRADE_FX } from '../game/config/balance';
+import { CUSTOMER, UPGRADE_FX } from '../game/config/balance';
 import { GLOBAL_UPGRADES, maxLevelOf, type GlobalUpgradeDef, type Zone } from '../game/config/upgrades';
 import { formatRate } from '../game/format';
 import type { GameState } from '../game/state';
-import { cratePct } from '../game/stats';
+import { arrivalRate, checkoutTime, cratePct, hasAutoCheckout } from '../game/stats';
 import { BuyButton } from './BuyButton';
 import { useGame } from './store';
 
@@ -11,6 +11,10 @@ function statusOf(def: GlobalUpgradeDef, s: GameState): string | undefined {
   const max = maxLevelOf(def);
   if (def.id.startsWith('crate_')) return lvl > 0 ? `收購價 ${Math.round(cratePct(s, def.id) * 100)}%` : undefined;
   if (def.id === 'bell') return lvl > 0 ? `剩 ${s.bellCharges} 次` : undefined;
+  if (def.id === 'signboard' && hasAutoCheckout(s) && arrivalRate(s) / CUSTOMER.interval > 1 / checkoutTime(s)) {
+    // 客人來得比櫃台結帳快：再升招牌只會讓客人卡在門外
+    return `Lv ${lvl}/${max}・客人來得比結帳快，先升級算盤松鼠`;
+  }
   if (def.id === 'garden_gloves' || def.id === 'rune_stirrer') {
     return lvl > 0 ? `Lv ${lvl}・每次點擊 +${formatRate(lvl * UPGRADE_FX.clickBonusSecPerLevel)} 秒產量` : undefined;
   }

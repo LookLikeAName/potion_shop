@@ -1,5 +1,6 @@
 // 升級定義。效果一律描述為「修正值 (Mod)」，由 stats.ts 依企劃書第 5 章的疊加規則計算。
 import type { GameState } from '../state';
+import { CUSTOMER } from './balance';
 import { RECIPES, type PotionId } from './recipes';
 
 export type StatId = 'growthSpeed' | 'brewSpeed' | 'sellPrice' | 'arrivalRate' | 'patience' | 'harvestYield';
@@ -41,6 +42,12 @@ export const CRATE_FOR: Record<PotionId, string> = {
   glow: 'crate_glow', focus: 'crate_focus', elixir: 'crate_elixir',
 };
 export const CRATE_MATERIALS = 'crate_materials';
+
+/** 魔法招牌：每級來客速度 +15%。上限讓來客速度剛好等於櫃台最快的結帳速度（松鼠滿級時只剩走到櫃台的時間），再高客人只會卡在門外 */
+const SIGNBOARD_PER_LEVEL = 0.15;
+export const SIGNBOARD_MAX = Math.floor(
+  ((CUSTOMER.interval * CUSTOMER.walkSpeed) / CUSTOMER.walkToCounter - 1) / SIGNBOARD_PER_LEVEL,
+);
 
 /** 算盤松鼠：自動結帳，升級提高結帳與客人走路速度（到上限 ×3 為止） */
 export const SQUIRREL = 'abacus_squirrel';
@@ -132,9 +139,9 @@ export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
   },
   {
     id: 'signboard', icon: 'upg_signboard', name: '魔法招牌', zone: 'counter',
-    desc: '會對路人拋媚眼的招牌。來客速度 +15%/級。',
-    cost: { base: 150, growth: 1.3 },
-    mods: (l) => [{ stat: 'arrivalRate', pool: 'G', value: 0.15 * l }],
+    desc: `會對路人拋媚眼的招牌。來客速度 +15%/級（最高 Lv ${SIGNBOARD_MAX}：來客速度等於櫃台最快的結帳速度）。`,
+    cost: { base: 150, growth: 1.3 }, maxLevel: SIGNBOARD_MAX,
+    mods: (l) => [{ stat: 'arrivalRate', pool: 'G', value: SIGNBOARD_PER_LEVEL * l }],
   },
   {
     id: 'diffuser', icon: 'upg_diffuser', name: '迷幻擴香儀', zone: 'counter',

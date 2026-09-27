@@ -32,6 +32,7 @@ RULES = [
     ('potion_', 'icons', 160),
     ('icon_', 'icons', 160),
     ('upg_', 'upgrades', 256),
+    ('gift_', 'gifts', 160),
     ('furn_', 'furniture', 360),
     ('fx_', 'fx', 256),
     ('ui_', 'ui', 1024),

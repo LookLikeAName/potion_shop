@@ -253,6 +253,8 @@ html, body {
 .flow-grid b { font-size: 1.25em; }
 .flow-grid .plus { color: #3d8a4a; }
 .flow-grid .minus { color: #b0563b; }
+.market.hot b { color: #d0452e; }
+.market.cold b { color: #3f7fbf; }
 .income-total { font-size: 1.35em; color: var(--ink); }
 .income-bar { display: flex; height: 0.7em; border-radius: 999px; overflow: hidden; background: #f0e4c8; margin: 0.35em 0; }
 .income-bar .seg { height: 100%; }

@@ -14,6 +14,7 @@ describe('露米婭自言自語', () => {
   it('睡覺時只說夢話', () => {
     const s = createInitialState();
     s.mascot.assignment = 'rest';
+    s.mascot.stamina = 40; // 體力沒滿才會睡覺（滿了會在休息室悠閒地晃）
     for (const line of sample(s)) expect(MUTTER_LINES.sleep).toContain(line);
   });
 

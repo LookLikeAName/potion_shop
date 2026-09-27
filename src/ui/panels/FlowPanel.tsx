@@ -4,8 +4,9 @@ import type { FlowReport, ItemFlow } from '../../game/flow';
 import { formatNumber, formatRate } from '../../game/format';
 import { customerDemand } from '../../game/sim';
 import type { GameState } from '../../game/state';
-import { brewPassiveSpeed, customerShare, recipeNeeds } from '../../game/stats';
+import { brewPassiveSpeed, customerShare, recipeNeeds, sellPrice } from '../../game/stats';
 import { Icon } from '../Icon';
+import { MarketHeat } from './CounterPanel';
 import { useGame } from '../store';
 
 /** 大釜以目前速度全速熬煮時，每秒需要多少這種原料（只算有自動熬煮的大釜） */
@@ -35,7 +36,13 @@ function materialHint(s: GameState, m: MaterialId, f: ItemFlow, r: FlowReport): 
 
 function potionHint(s: GameState, p: PotionId, f: ItemFlow, r: FlowReport): [Tone, string] | null {
   const starved = r.starved[p];
-  if (starved > 0.15) return ['warn', `大釜有 ${Math.round(starved * 100)}% 的時間在等原料：先補原料產量`];
+  if (starved > 0.15) {
+    // 左邊的大釜先拿原料：這口大釜比左邊的更值錢時，建議把它拖到更左邊
+    const idx = s.cauldrons.findIndex((c) => c.recipe === p);
+    const cheaperLeft = s.cauldrons.slice(0, idx).some((c) => sellPrice(s, c.recipe) < sellPrice(s, p));
+    const tip = cheaperLeft ? '，或在場景中把這口大釜拖到更左邊（左邊的先拿原料）' : '';
+    return ['warn', `大釜有 ${Math.round(starved * 100)}% 的時間在等原料：先補原料產量${tip}`];
+  }
   if (s.potions[p] < 1 && f.made < customerDemand(s, p) * 0.9) return ['warn', '賣得比熬得快：升級大釜'];
   if (f.crate > 0) return ['ok', '有剩：多的由收購箱收購。可以提升來客、升級售價'];
   return null;
@@ -107,6 +114,7 @@ function IncomeCard({ r }: { r: FlowReport }) {
       </div>
       <div class="stats">
         <span>顧客買走產量的 <b>{Math.round(customerShare(s) * 100)}%</b>（其餘給收購箱）</span>
+        <MarketHeat />
         {served > 0 && (
           <span>
             訂單湊齊 <b>{Math.round((orders.full / served) * 100)}%</b>
