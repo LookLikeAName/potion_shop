@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { ART_URLS } from '../../assets/manifest';
 import { ACHIEVEMENTS } from '../../game/config/achievements';
 import { HAPPINESS_ITEMS, STORIES, type HappinessItem } from '../../game/config/happiness';
+import { MASCOT } from '../../game/config/mascot';
 import { redeemCost } from '../../game/commands';
 import { formatHappiness } from '../../game/format';
 import { bondLevel, happyMult, renownLevel, restHappinessPerSec } from '../../game/stats';
@@ -81,7 +82,7 @@ function BondCard() {
       </div>
       <p class="hint">
         小心願、休息、摸頭戳臉頰得到的開心度都乘上倍率（成就與禮物固定）。
-        休息時每小時約 +{fmtHeart(rest)} ♥（離線也算）；已完成 {s.stats.wishesDone} 個小心願。
+        休息時每小時約 +{fmtHeart(rest)} ♥（離線也算，但離開越久越少，{MASCOT.offlineHappyHours} 小時後不再增加）；已完成 {s.stats.wishesDone} 個小心願。
       </p>
       <button class="btn primary" onClick={() => openDrawer('decor')}>🎁 禮物圖鑑與休息室擺設</button>
     </div>

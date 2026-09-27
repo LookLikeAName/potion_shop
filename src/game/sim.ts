@@ -38,6 +38,8 @@ export interface SimContext {
   offline: boolean;
   /** 分頁在前景（小心願只在前景進行）；沒給 = 視為在前景 */
   foreground?: boolean;
+  /** 離線結算：這一步開始時已經離開幾秒（開心度的離線衰退用） */
+  offlineElapsed?: number;
   emit: (e: GameEvent) => void;
 }
 
@@ -132,24 +134,79 @@ export function harvest(s: GameState, i: number, times: number, ctx: SimContext,
 function tickCauldrons(s: GameState, dt: number, ctx: SimContext): void {
   // 陣列順序 = 由左到右，左邊的大釜先拿原料
   for (const c of s.cauldrons) {
+    // 沒有火蜥蜴的大釜也先把原料放進去（等玩家點擊）
+    if (c.batch === 0) tryStartBrew(s, c);
     const speed = brewPassiveSpeed(s, c);
-    const brewTime = RECIPES[c.recipe].brewTime;
-    let t = dt;
-    for (let guard = 0; guard < 1000; guard++) {
-      if (c.batch === 0 && !tryStartBrew(s, c)) break;
-      if (speed <= 0 || t <= 0) break;
-      const need = (brewTime - c.progress) / speed;
-      if (need <= t) {
-        t -= need;
-        completeBrew(s, c, ctx);
-      } else {
-        c.progress += speed * t;
-        t = 0;
-      }
-    }
+    if (speed > 0) advanceBrew(s, c, speed * dt, ctx);
     c.boil = Math.max(0, c.boil - dt);
     c.boilCooldown = Math.max(0, c.boilCooldown - dt);
   }
+}
+
+/**
+ * 讓大釜的進度前進 adv（熬煮秒數；被動 = 速度 × 時間，點擊 = 點擊推進量），完成的輪數依序結算、接著開下一輪。
+ * 進度多到夠好幾輪時（高速模式、極速沸騰），原料夠開滿批量的那幾輪一次結算，
+ * 不會卡在「每個 tick 最多處理幾輪」的上限（以前一個 tick 最多 1000 輪，產量高時極速沸騰只剩 4 倍左右）
+ */
+export function advanceBrew(s: GameState, c: CauldronState, adv: number, ctx: SimContext): void {
+  const brewTime = RECIPES[c.recipe].brewTime;
+  for (let guard = 0; guard < 100 && adv > 1e-12; guard++) {
+    if (c.batch === 0 && !tryStartBrew(s, c)) return;
+    const need = brewTime - c.progress;
+    if (adv < need) {
+      c.progress += adv;
+      return;
+    }
+    adv -= need;
+    completeBrew(s, c, ctx);
+    // 剩下的進度還夠好幾輪：原料夠開滿批量的部分一次做完
+    const n = Math.min(Math.floor(adv / brewTime), fullBatches(s, c));
+    if (n > 0) {
+      for (const [m, per] of recipeInputs(s, c.recipe)) s.materials[m] -= per * c.level * n;
+      completeBatches(s, c, n, c.level, ctx);
+      adv -= n * brewTime;
+    }
+  }
+}
+
+/** 目前的原料夠開幾輪滿批量（批量 = 大釜等級） */
+function fullBatches(s: GameState, c: CauldronState): number {
+  let n = Infinity;
+  for (const [m, per] of recipeInputs(s, c.recipe)) n = Math.min(n, Math.floor(s.materials[m] / (per * c.level) + 1e-9));
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+/** 一次結算 n 輪、每輪 batch 瓶：雙口冷凝管的雙倍輪數依機率抽（離線取期望值），最多送出兩個事件（一般、雙倍） */
+function completeBatches(s: GameState, c: CauldronState, n: number, batch: number, ctx: SimContext): void {
+  const p = condenserChance(s);
+  let normal = n * batch;
+  let doubled = 0;
+  if (p > 0) {
+    if (ctx.offline) normal *= 1 + p;
+    else {
+      const d = sampleBinomial(n, p, ctx.rng);
+      normal = (n - d) * batch;
+      doubled = d * batch * 2;
+    }
+  }
+  const amount = normal + doubled;
+  s.potions[c.recipe] += amount;
+  s.brewedThisTick[c.recipe] += amount;
+  if (normal > 0) ctx.emit({ type: 'brewed', recipe: c.recipe, amount: normal, double: false });
+  if (doubled > 0) ctx.emit({ type: 'brewed', recipe: c.recipe, amount: doubled, double: true });
+  noteWish(s, ctx, 'brew', amount, c.recipe);
+}
+
+/** n 次、每次機率 p 的成功次數：次數少時逐次抽，多時用常態近似 */
+export function sampleBinomial(n: number, p: number, rng: () => number): number {
+  if (n <= 40) {
+    let k = 0;
+    for (let i = 0; i < n; i++) if (rng() < p) k++;
+    return k;
+  }
+  const u = Math.max(1e-12, rng());
+  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng());
+  return Math.max(0, Math.min(n, Math.round(n * p + z * Math.sqrt(n * p * (1 - p)))));
 }
 
 /** 批量 = min(等級, 湊得出的份數)；湊不出 1 份就不開工 */
@@ -469,7 +526,7 @@ function tickMascot(s: GameState, dt: number, ctx: SimContext): void {
     const mult = (!ctx.offline && m.assignment === 'rest' ? MASCOT.playerRestMult : 1)
       * (decorFx(s, 'restRegen') ? GIFT_FX.restRegen : 1);
     m.stamina = Math.min(MASCOT.staminaMax, m.stamina + (MASCOT.restRegenPerMin / 60) * mult * dt);
-    s.happiness += restHappinessPerSec(s) * dt;
+    s.happiness += restHappinessPerSec(s) * dt * (ctx.offline ? offlineHappyFactor(ctx.offlineElapsed ?? 0, dt) : 1);
     if (m.autoRest && m.stamina >= MASCOT.staminaMax) {
       m.autoRest = false;
       ctx.emit({ type: 'mascot', kind: 'woke' });
@@ -484,6 +541,15 @@ function tickMascot(s: GameState, dt: number, ctx: SimContext): void {
     m.autoRest = true;
     ctx.emit({ type: 'mascot', kind: 'exhausted' });
   }
+}
+
+/**
+ * 離線時開心度產出的平均倍率（這一步 elapsed ~ elapsed+dt 秒）：剛離開 100%，線性降到 MASCOT.offlineHappyHours 時 0
+ */
+export function offlineHappyFactor(elapsed: number, dt: number): number {
+  const limit = MASCOT.offlineHappyHours * 3600;
+  const mid = elapsed + dt / 2;
+  return Math.max(0, 1 - mid / limit);
 }
 
 /** 自由活動：每隔一段時間自己換一個有事可做的區域工作 */
@@ -534,7 +600,6 @@ function contractClicks(s: GameState, dt: number, ctx: SimContext): void {
   }
   for (const c of s.cauldrons) {
     if (c.batch === 0 && !tryStartBrew(s, c)) continue;
-    c.progress += brewClickAdvance(s, c) * each;
-    if (c.progress >= RECIPES[c.recipe].brewTime) completeBrew(s, c, ctx);
+    advanceBrew(s, c, brewClickAdvance(s, c) * each, ctx);
   }
 }

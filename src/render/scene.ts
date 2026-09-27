@@ -117,6 +117,12 @@ interface Ring { g: Graphics; life: number; max: number; from: number; to: numbe
 
 /** 簡單的粒子：從某點噴出、受重力落下、淡出；另有擴散的光環（都用物件池） */
 class ParticleLayer extends Container {
+  constructor() {
+    super();
+    // 純顯示，不擋點擊
+    this.eventMode = 'none';
+  }
+
   private items: Particle[] = [];
   private rings: Ring[] = [];
   private dots = new Pool(this, () => new Graphics(DOT));
@@ -312,6 +318,7 @@ class PotView extends Container {
     this.rateText.anchor.set(0.5, 0.5);
     this.rateText.y = 64;
     this.hud.addChild(this.bar, this.lv.view, this.hint, this.ready, this.rateText);
+    for (const o of [this.bar, this.hint, this.ready, this.rateText]) o.eventMode = 'none';
 
     this.eventMode = 'static';
     this.cursor = 'pointer';
@@ -528,7 +535,11 @@ class CauldronView extends Container {
   /** 火蜥蜴的呼吸相位（每口氣 +1） */
   private breath = Math.random();
   private ladle: Pic;
-  private combo = text('', 22, 0xffb347);
+  /** 龍息風箱的連擊／沸騰／冷卻字：放在鍋身上、畫在飄字上面（獨立圖層 top），才不會被產出的字擋住 */
+  readonly top = new Container();
+  private combo = text('', 26, 0xffb347);
+  private comboPop = 0;
+  private wasBoiling = false;
   private comboFill = 0xffb347;
   /** 高速模式：進度條顯示相位、距離上次完成的秒數、實際產量 */
   private visPhase = 0;
@@ -582,7 +593,11 @@ class CauldronView extends Container {
     this.addChild(this.aura, this.body, this.liquid, ...this.bubbles, this.flash, this.salamander, this.ladle);
     // 進度條、徽章、需求等資訊放在獨立圖層，畫在角色前面
     this.hud.position.copyFrom(this.position);
-    this.hud.addChild(this.bar, this.lv.view, this.title, this.info, this.needs, this.combo, this.rateText);
+    this.hud.addChild(this.bar, this.lv.view, this.title, this.info, this.needs, this.rateText);
+    this.top.addChild(this.combo);
+    this.top.eventMode = 'none';
+    // 資訊層只有等級徽章可以點，其他文字與進度條都不擋點擊
+    for (const o of [this.bar, this.title, this.info, this.needs, this.rateText]) o.eventMode = 'none';
 
     this.eventMode = 'static';
     this.cursor = 'pointer';
@@ -748,9 +763,17 @@ class CauldronView extends Container {
     this.title.text = refine > 0 ? `${def.name} ${'★'.repeat(refine)}` : def.name;
     this.info.y = -bh - 22;
 
-    // 龍息風箱：連擊數、沸騰倒數、冷卻
+    // 龍息風箱：連擊數、沸騰倒數、冷卻（放在鍋身中間；圖層跟著資訊層移動、縮放）
+    this.top.position.copyFrom(this.hud.position);
+    this.top.scale.copyFrom(this.hud.scale);
+    this.top.visible = this.hud.visible;
+    // 開始沸騰時字彈一下
+    if (boiling && !this.wasBoiling) this.comboPop = 1;
+    this.wasBoiling = boiling;
+    this.comboPop = Math.max(0, this.comboPop - dt * 2.5);
+    this.combo.scale.set(1 + Math.sin(this.comboPop * Math.PI) * 0.35);
     if (has(s, 'bellows')) {
-      this.combo.y = -bh - 52;
+      this.combo.y = -bh * 0.5;
       const n = activeCombo(s, c);
       if (boiling) this.combo.text = `🔥 極速沸騰 ${c.boil.toFixed(1)}s`;
       else if (c.boilCooldown > 0) this.combo.text = `冷卻 ${Math.ceil(c.boilCooldown)}s`;
@@ -1914,10 +1937,23 @@ class CauldronDrag {
 
 // ---------- 飄字 ----------
 
-/** 同時存在的飄字上限：產量極快時避免物件無限增加拖慢畫面（超過就重用最舊的） */
+/** 同時存在的飄字上限：產量極快時避免物件無限增加拖慢畫面（超過就把最舊的收掉，新的照樣出現） */
 const MAX_FLOATS = 250;
-/** 每一幀最多新增幾個飄字（事件太多時多的就不顯示，數字照樣算進遊戲） */
-const MAX_FLOATS_PER_FRAME = 8;
+/** 同一個來源（某一盆、某一口大釜…）同時最多幾個字：超過就收掉它最舊的字，避免殘影糊成一片 */
+const MAX_FLOATS_PER_SOURCE = 14;
+/** 同一個來源每一幀最多新增幾個字（一幀內湧出幾十個時，多的會疊在一起看不出來） */
+const MAX_NEW_PER_SOURCE_PER_FRAME = 3;
+/**
+ * 每個來源估算每秒冒幾個字（指數平均，時間常數 FLOAT_RATE_TAU 秒）：
+ * 超過 FLOAT_RATE_OK 個／秒時，那個來源的字動得更快、更早消失（最多快 FLOAT_MAX_SPEEDUP 倍），
+ * 讓新的字有位置出現，不會因為舊的還沒消失就被丟掉
+ */
+const FLOAT_RATE_TAU = 2;
+const FLOAT_RATE_OK = 3;
+const FLOAT_MAX_SPEEDUP = 4;
+/** 大釜一般產出的飄字：往上彈的力道與左右散開的幅度（雙倍的大字維持原本的高度） */
+const CAULDRON_FLOAT_LAUNCH = 0.5;
+const CAULDRON_FLOAT_SPREAD = 1.3;
 /** 飄字停留時間（秒），最後 FLOAT_FADE 秒淡出 */
 const FLOAT_LIFE = 1.6;
 const FLOAT_FADE = 0.5;
@@ -1937,22 +1973,65 @@ const FLOAT_STYLE = {
  * 產出、收入的飄字：每個字往不同方向彈出去（左右散開、先往上再慢慢落下），
  * 停留久一點把附近的畫面塞滿，保留放置遊戲的資訊量與爽快感。
  */
+/** 飄字選項 */
+interface FloatOpts {
+  /** 大字（暴擊、雙倍、急單） */
+  big?: boolean;
+  /** 一定顯示，不受每幀新增上限影響（收入、大字） */
+  always?: boolean;
+  /** 來源（例如 pot:0、cauldron:glow），用來估算它每秒冒幾個字 */
+  key?: string;
+  /** 往上彈的力道倍率（小於 1 = 停在比較低的位置） */
+  launch?: number;
+  /** 左右散開的幅度倍率 */
+  spread?: number;
+}
+
+interface FloatItem {
+  t: BitmapText;
+  life: number;
+  vx: number;
+  vy: number;
+  spin: number;
+  size: number;
+  top: number;
+  /** 來源；以及時間流速（來源冒字越快，字動得越快、越早消失） */
+  key: string;
+  speed: number;
+}
+
 class FloatLayer extends Container {
-  private items: { t: BitmapText; life: number; vx: number; vy: number; spin: number; size: number; top: number }[] = [];
+  constructor() {
+    super();
+    // 純顯示，不擋點擊（飄字常常蓋在盆栽與大釜上）
+    this.eventMode = 'none';
+  }
+
+  private items: FloatItem[] = [];
   private pool = new Pool(this, () => {
     const t = new BitmapText({ text: '', style: FLOAT_STYLE });
     t.anchor.set(0.5);
     return t;
   });
-  private spawnedThisFrame = 0;
+  /** 各來源：估計的每秒字數、上次冒字的時間、這一幀新增了幾個、目前有幾個字 */
+  private sources = new Map<string, { rate: number; last: number; frame: number; count: number }>();
+  private now = 0;
 
-  /** always：一定顯示（收入、大字）；其他飄字每幀有上限 */
-  spawn(s: string, x: number, y: number, color: number, big = false, always = big): void {
-    if (!always && this.spawnedThisFrame >= MAX_FLOATS_PER_FRAME) return;
-    this.spawnedThisFrame++;
-    // 滿了就重用最舊的那一個
-    const old = this.items.length >= MAX_FLOATS ? this.items.shift()! : null;
-    const t = old?.t ?? this.pool.get();
+  spawn(s: string, x: number, y: number, color: number, opts: FloatOpts = {}): void {
+    const { big = false, always = big, key = 'misc', launch = 1, spread = 1 } = opts;
+    let src = this.sources.get(key);
+    if (!src) {
+      src = { rate: 0, last: this.now, frame: 0, count: 0 };
+      this.sources.set(key, src);
+    }
+    src.rate = src.rate * Math.exp(-(this.now - src.last) / FLOAT_RATE_TAU) + 1 / FLOAT_RATE_TAU;
+    src.last = this.now;
+    if (!always && src.frame >= MAX_NEW_PER_SOURCE_PER_FRAME) return;
+    src.frame++;
+    // 這個來源的字太多、或全部的字太多：收掉最舊的，讓新的出現
+    if (src.count >= MAX_FLOATS_PER_SOURCE) this.recycle(this.items.findIndex((it) => it.key === key));
+    if (this.items.length >= MAX_FLOATS) this.recycle(0);
+    const t = this.pool.get();
     if (t.text !== s) t.text = s;
     t.tint = color;
     t.alpha = 1;
@@ -1961,17 +2040,31 @@ class FloatLayer extends Container {
     t.scale.set(size * 0.6);
     // 隨機的彈射軌道：左右散開的幅度、往上的力道都不同
     const side = Math.random() < 0.5 ? -1 : 1;
+    src.count++;
     this.items.push({
       t, life: FLOAT_LIFE, size, top: y >= ZONES.greenhouse.y ? FLOAT_1F_CEILING : 20,
-      vx: side * (30 + Math.random() * 150),
-      vy: -(200 + Math.random() * 180),
+      vx: side * (30 + Math.random() * 150) * spread,
+      vy: -(200 + Math.random() * 180) * launch,
       spin: (Math.random() - 0.5) * 0.25,
+      key,
+      speed: Math.max(1, Math.min(FLOAT_MAX_SPEEDUP, src.rate / FLOAT_RATE_OK)),
     });
   }
 
-  update(dt: number): void {
-    this.spawnedThisFrame = 0;
+  private recycle(index: number): void {
+    if (index < 0 || index >= this.items.length) return;
+    const [it] = this.items.splice(index, 1);
+    this.pool.put(it.t);
+    const src = this.sources.get(it.key);
+    if (src) src.count--;
+  }
+
+  update(realDt: number): void {
+    this.now += realDt;
+    for (const src of this.sources.values()) src.frame = 0;
     for (const it of this.items) {
+      // 整條軌跡照同樣的形狀跑，只是時間流速變快
+      const dt = realDt * it.speed;
       it.life -= dt;
       const age = FLOAT_LIFE - it.life;
       it.vy += 420 * dt;
@@ -1990,7 +2083,11 @@ class FloatLayer extends Container {
       it.t.scale.set(it.size * pop);
       it.t.alpha = Math.min(1, it.life / FLOAT_FADE);
     }
-    sweep(this.items, (it) => this.pool.put(it.t));
+    sweep(this.items, (it) => {
+      this.pool.put(it.t);
+      const src = this.sources.get(it.key);
+      if (src) src.count--;
+    });
   }
 }
 
@@ -2051,6 +2148,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   const props = new PropsLayer(tex, game);
   const customers = new CustomerLayer(tex, game);
   const speechLayer = new Container();
+  // 純顯示的圖層不參與點擊判定：舞台是 static（拖曳要用），被動的文字蓋在大釜上時會搶走點擊
+  speechLayer.eventMode = 'none';
   const lumia = new LumiaView(tex, speechLayer);
   const floats = new FloatLayer();
   const highlight = new ZoneHighlight();
@@ -2069,13 +2168,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     // 她的點擊判定也在這些之上：重疊時優先抓得到她（擋住了就把她拖到別處）
     buildBackground(tex), props, ...potsByDepth, ...cauldrons, particles,
     ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud),
-    lumiaLayer, lumiaDrag.hit, customers, floats, speechLayer, props.tip, fever, highlight, dragLayer,
+    lumiaLayer, lumiaDrag.hit, customers, floats, ...cauldrons.map((c) => c.top), speechLayer, props.tip, fever, highlight, dragLayer,
   );
-
-  const cauldronPoint = (s: GameState, recipe: PotionId) => {
-    const idx = s.cauldrons.findIndex((c) => c.recipe === recipe);
-    return idx < 0 ? null : cauldrons[idx].anchorPoint;
-  };
 
   const onEvent = (e: GameEvent, s: GameState) => {
     switch (e.type) {
@@ -2086,9 +2180,10 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         const name = PLANTS[e.material].name;
         const color = lighten(PLANTS[e.material].color);
         const label = `+${formatNumber(e.amount)} ${name}`;
-        if (e.crit) floats.spawn(`暴擊生長！${label}`, p.x, p.y - 20, 0xffe066, true);
-        else if (e.bounty) floats.spawn(`豐收！${label}`, p.x, p.y - 10, 0x9dff8a);
-        else floats.spawn(label, p.x, p.y, color);
+        const key = `pot:${e.slot}`;
+        if (e.crit) floats.spawn(`暴擊生長！${label}`, p.x, p.y - 20, 0xffe066, { big: true, key });
+        else if (e.bounty) floats.spawn(`豐收！${label}`, p.x, p.y - 10, 0x9dff8a, { key });
+        else floats.spawn(label, p.x, p.y, color, { key });
         break;
       }
       case 'brewed': {
@@ -2100,19 +2195,16 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         const name = RECIPES[e.recipe].name;
         const color = lighten(RECIPES[e.recipe].color);
         const label = `+${formatNumber(e.amount)} ${name}`;
-        if (e.double) floats.spawn(`雙倍！${label}`, p.x, p.y - 20, 0x9ee8ff, true);
-        else floats.spawn(label, p.x, p.y, color);
+        // 雙倍的大字彈得高；一般產出彈得低、散得開，填滿大釜上方的區域（兩者分開計算，大字不會擠掉一般的字）
+        if (e.double) floats.spawn(`雙倍！${label}`, p.x, p.y - 20, 0x9ee8ff, { big: true, key: `cauldron:${e.recipe}:double` });
+        else floats.spawn(label, p.x, p.y, color, { key: `cauldron:${e.recipe}`, launch: CAULDRON_FLOAT_LAUNCH, spread: CAULDRON_FLOAT_SPREAD });
         break;
       }
-      case 'boil': {
-        const p = cauldronPoint(s, e.recipe);
-        if (p) floats.spawn('極速沸騰！', p.x, p.y - 40, 0xff8a3c, true);
-        break;
-      }
+      // 極速沸騰：鍋身上的連擊字會變成「🔥 極速沸騰」並彈一下，不另外飄字（以前會被產出的字擋住）
       case 'sale': {
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
         const note = e.tip ? '（土豪小費！）' : e.rush ? '（急單！）' : e.partial ? '（部分購買）' : '';
-        floats.spawn(`+${formatFull(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, e.rush || e.tip, true);
+        floats.spawn(`+${formatFull(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, { big: e.rush || e.tip, always: true, key: 'sale' });
         break;
       }
       case 'wholesale': {
@@ -2120,7 +2212,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         const p = props.bumpCrate(e.crate);
         if (!p) break;
         const what = e.crate === 'materials' ? `${formatNumber(e.amount)} 份原料` : `${formatNumber(e.amount)} 瓶`;
-        floats.spawn(`+${formatFull(e.gold)} 金（收購 ${what}）`, p.x, p.y, 0xe8c56a, false, true);
+        floats.spawn(`+${formatFull(e.gold)} 金（收購 ${what}）`, p.x, p.y, 0xe8c56a, { always: true, key: `crate:${e.crate}` });
         break;
       }
       case 'achievement': {
@@ -2137,10 +2229,10 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
           if (s.wish && s.wish.rarity > 0) showToast(`✨ 露米婭許了一個「${r.name}」！`);
         } else if (e.result === 'done') {
           say(WISH_LINES.done);
-          floats.spawn(`心願達成！${heart}`, lumia.x + 120, lumia.y - 140, 0xff8fb8, true, true);
+          floats.spawn(`心願達成！${heart}`, lumia.x + 120, lumia.y - 140, 0xff8fb8, { big: true });
         } else {
           say(WISH_LINES.fail);
-          if (e.reward > 0) floats.spawn(`努力獎 ${heart}`, lumia.x + 120, lumia.y - 140, 0xffc0d8, false, true);
+          if (e.reward > 0) floats.spawn(`努力獎 ${heart}`, lumia.x + 120, lumia.y - 140, 0xffc0d8, { always: true });
         }
         break;
       }

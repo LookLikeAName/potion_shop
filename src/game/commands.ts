@@ -11,7 +11,7 @@ import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, POTION_IDS, type PotionId } from './config/recipes';
 import { FLOATING_POT, GLOBAL_UPGRADE_MAP, TARGET_UPGRADES, maxLevelOf } from './config/upgrades';
 import { quote, type BuyMode, type Quote } from './costs';
-import { completeBrew, harvest, settlePlant, spawnCustomer, tryStartBrew, type SimContext } from './sim';
+import { advanceBrew, harvest, settlePlant, spawnCustomer, tryStartBrew, type SimContext } from './sim';
 import { createCauldron, type CauldronState, type CrateSetting, type GameState } from './state';
 import { brewClickPower, decorSlots, happyMult, has, plantClickPower, shearsChance } from './stats';
 import { noteWish } from './wishes';
@@ -61,15 +61,8 @@ export function clickCauldron(s: GameState, recipe: PotionId, ctx: SimContext): 
   if (c.batch === 0 && !tryStartBrew(s, c)) return 'missing';
   if (has(s, 'bellows')) countCombo(s, c, ctx);
   noteWish(s, ctx, 'clickCauldron', 1);
-  c.progress += brewClickPower(s, c);
   // 一下點很多（符文攪拌棒）：多出來的進度接著熬下一鍋，直到原料不夠
-  const brewTime = RECIPES[c.recipe].brewTime;
-  for (let guard = 0; guard < 1000 && c.progress >= brewTime; guard++) {
-    const extra = c.progress - brewTime;
-    completeBrew(s, c, ctx);
-    if (!tryStartBrew(s, c)) break;
-    c.progress = extra;
-  }
+  advanceBrew(s, c, brewClickPower(s, c), ctx);
   return 'brew';
 }
 

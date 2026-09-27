@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { clickPlant, giveGift, redeem, setDecor } from '../src/game/commands';
 import { GIFT_FX, GIFT_MAP } from '../src/game/config/gifts';
+import { MASCOT } from '../src/game/config/mascot';
 import { WISH } from '../src/game/config/wishes';
 import { simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
@@ -35,6 +36,34 @@ describe('名聲、羈絆與開心度倍率', () => {
     s.redeemed = { decor_slot_3: 1, attunement: 3, cheer: 10 };
     expect(bondLevel(s)).toBe(4);
     expect(happyMult(s)).toBeCloseTo((1 + 0.1 * 4) * (1 + 0.15 * 4));
+  });
+
+  it('離線時開心度隨離開時間線性衰退，24 小時後不再增加（有心電感應也一樣）', () => {
+    const make = () => {
+      const s = createInitialState();
+      s.redeemed.telepathy = 1; // 離線上限 72 小時
+      return s;
+    };
+    const perHour = (s: GameState) => MASCOT.restHappinessPerHour * happyMult(s);
+    const h6 = simulateOffline(make(), 6 * 3600).happiness;
+    const h12 = simulateOffline(make(), 12 * 3600).happiness;
+    const r24 = simulateOffline(make(), 24 * 3600);
+    const r48 = simulateOffline(make(), 48 * 3600);
+    const base = perHour(make());
+    // 平均倍率 = 1 − T/48：6 小時 → 5.25 小時份、12 小時 → 9 小時份、24 小時 → 12 小時份
+    expect(h6).toBeCloseTo(base * 5.25, 2);
+    expect(h12).toBeCloseTo(base * 9, 2);
+    expect(r24.happiness).toBeCloseTo(base * 12, 2);
+    expect(r48.happiness).toBeCloseTo(r24.happiness, 5);
+    expect(r24.happyCapped).toBe(true);
+    expect(simulateOffline(make(), 6 * 3600).happyCapped).toBe(false);
+  });
+
+  it('在線休息不會衰退', () => {
+    const s = createInitialState();
+    s.mascot.assignment = 'rest';
+    for (let k = 0; k < 30; k++) tick(s, 10, ctx());
+    expect(s.happiness).toBeCloseTo((MASCOT.restHappinessPerHour * happyMult(s) * 300) / 3600, 5);
   });
 
   it('休息的開心度乘上倍率', () => {

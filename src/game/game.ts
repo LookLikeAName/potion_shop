@@ -10,12 +10,11 @@ import { simulateOffline, type OfflineReport } from './offline';
 import { loadGame, saveGame, type SaveFile } from './save';
 import { checkoutByClick, tick, type GameEvent, type SimContext } from './sim';
 import { createInitialState, type GameState } from './state';
+import { DisplayQueue } from './displayQueue';
 
 /** 一次補算最多跑幾個 tick（再多就走離線結算） */
 const MAX_CATCHUP_TICKS = Math.ceil(OFFLINE.reportThreshold / TICK);
 const NOTIFY_INTERVAL_MS = 200;
-/** 等著給畫面顯示的事件最多保留幾個（事件只用來顯示特效與飄字，數值已經算進遊戲裡） */
-const MAX_PENDING_EVENTS = 400;
 
 export class Game {
   state: GameState;
@@ -26,7 +25,8 @@ export class Game {
 
   private last: number;
   private acc = 0;
-  private events: GameEvent[] = [];
+  /** 等著給畫面顯示的事件（只用來顯示特效與飄字，數值已經算進遊戲裡） */
+  private events = new DisplayQueue();
   private listeners = new Set<() => void>();
   private lastNotify = 0;
   private clickTimes: number[] = [];
@@ -35,10 +35,9 @@ export class Game {
     rng: Math.random,
     offline: false,
     emit: (e) => {
-      this.events.push(e);
-      // 畫面沒在更新（背景分頁）時沒人取走事件：只留最近的，避免越積越多、回來時一次處理卡死
-      if (this.events.length > MAX_PENDING_EVENTS * 2) this.events = this.events.slice(-MAX_PENDING_EVENTS);
+      // 產銷統計要看到每一個事件；給畫面的佇列會把同一來源太多的事件合併
       this.flow.note(e);
+      this.events.push(e);
     },
   };
 
@@ -96,7 +95,7 @@ export class Game {
   reload(): void {
     const save = loadGame();
     this.state = save?.state ?? createInitialState();
-    this.events = [];
+    this.events.clear();
     this.flow.reset();
     this.acc = 0;
     this.paused = false;
@@ -106,7 +105,7 @@ export class Game {
 
   replaceState(save: SaveFile): void {
     this.state = save.state;
-    this.events = [];
+    this.events.clear();
     this.flow.reset();
     this.acc = 0;
     this.last = Date.now();
@@ -119,9 +118,7 @@ export class Game {
   }
 
   drainEvents(): GameEvent[] {
-    const out = this.events;
-    this.events = [];
-    return out;
+    return this.events.drain();
   }
 
   subscribe(fn: () => void): () => void {

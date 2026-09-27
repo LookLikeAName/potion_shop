@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { MASCOT } from '../game/config/mascot';
 import { MATERIAL_IDS, PLANTS } from '../game/config/plants';
 import { POTION_IDS, RECIPES } from '../game/config/recipes';
 import type { BuyMode } from '../game/costs';
@@ -164,6 +165,12 @@ function OfflineModal() {
         {r.dream && <p class="hint">月光捕夢網帶來了好夢：離線金幣再 ×1.5！</p>}
         {r.happiness >= 0.005 && (
           <p>看板娘充分休息，開心度增加 <Icon id="icon_happiness" /> <b>+{fmtHeart(r.happiness)}</b>！</p>
+        )}
+        {r.simulated >= 3 * 3600 && (
+          <p class="hint">
+            離線時休息帶來的開心度會越來越少，離開 {MASCOT.offlineHappyHours} 小時後就不再增加
+            {r.happyCapped ? '（這次已經到上限了）' : ''}。常回來看看露米婭吧！
+          </p>
         )}
         {(mats.length > 0 || pots.length > 0) && (
           <div class="report-list">

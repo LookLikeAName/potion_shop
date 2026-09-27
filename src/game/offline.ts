@@ -1,7 +1,7 @@
 import { OFFLINE } from './config/balance';
 import { GIFT_FX } from './config/gifts';
 import { TALENT_FX } from './config/happiness';
-import { OUTFIT_BONUS } from './config/mascot';
+import { MASCOT, OUTFIT_BONUS } from './config/mascot';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
 import { finishSale, tick, type SimContext } from './sim';
@@ -22,6 +22,8 @@ export interface OfflineReport {
   materials: Record<MaterialId, number>;
   potions: Record<PotionId, number>;
   happiness: number;
+  /** 離開超過開心度的計算上限（之後休息不再增加開心度） */
+  happyCapped: boolean;
 }
 
 export function offlineCapSeconds(s: GameState): number {
@@ -48,6 +50,7 @@ export function simulateOffline(s: GameState, seconds: number): OfflineReport {
   let left = simulated;
   while (left > 1e-9) {
     const dt = Math.min(OFFLINE.step, left);
+    ctx.offlineElapsed = simulated - left;
     tick(s, dt, ctx);
     left -= dt;
   }
@@ -73,6 +76,7 @@ export function simulateOffline(s: GameState, seconds: number): OfflineReport {
     dream,
     gold: s.gold - before.gold,
     happiness: s.happiness - before.happiness,
+    happyCapped: simulated >= MASCOT.offlineHappyHours * 3600,
     materials: diff(MATERIAL_IDS, before.materials, s.materials),
     potions: diff(POTION_IDS, before.potions, s.potions),
   };
