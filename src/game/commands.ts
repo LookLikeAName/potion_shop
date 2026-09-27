@@ -14,7 +14,7 @@ import { quote, type BuyMode, type Quote } from './costs';
 import { advanceBrew, harvest, settlePlant, spawnCustomer, tryStartBrew, type SimContext } from './sim';
 import { createCauldron, type CauldronState, type CrateSetting, type GameState } from './state';
 import { brewClickPower, decorSlots, happyMult, has, plantClickPower, shearsChance } from './stats';
-import { noteWish } from './wishes';
+import { noteWish, syncWishLamp } from './wishes';
 
 // ---------- 點擊 ----------
 
@@ -105,9 +105,9 @@ export function setCrateSell(s: GameState, item: PotionId | MaterialId, on: bool
   crateSetting(s, item).sell = on;
 }
 
-/** 收購箱：某種藥水／原料的保留百分比（藥水 100% = 店裡站滿時的最大訂單量；原料 100% = 所有大釜熬 1 輪） */
-export function setCrateKeep(s: GameState, item: PotionId | MaterialId, pct: number): void {
-  crateSetting(s, item).keepPct = Math.max(0, Math.min(UPGRADE_FX.keepMax, Math.round(pct)));
+/** 收購箱：某種藥水／原料保留幾秒份（藥水 = 顧客幾秒的需求；原料 = 所有大釜全速熬煮幾秒的用量） */
+export function setCrateKeep(s: GameState, item: PotionId | MaterialId, sec: number): void {
+  crateSetting(s, item).keepSec = Math.max(0, Math.min(UPGRADE_FX.keepMaxSec, Math.round(sec)));
 }
 
 // ---------- 看板娘 ----------
@@ -167,6 +167,7 @@ export function giveGift(s: GameState, id: string): boolean {
   s.happiness += g.happiness;
   const empty = s.decor.slice(0, decorSlots(s)).findIndex((x) => !x);
   if (empty >= 0) s.decor[empty] = id;
+  if (s.wish) syncWishLamp(s, s.wish);
   return true;
 }
 
@@ -180,6 +181,8 @@ export function setDecor(s: GameState, slot: number, id: string | null): boolean
   const from = id ? s.decor.indexOf(id) : -1;
   if (from >= 0 && from !== slot) s.decor[from] = s.decor[slot];
   s.decor[slot] = id;
+  // 許願星燈擺上／收起來：進行中的心願時限馬上跟著變
+  if (s.wish) syncWishLamp(s, s.wish);
   return true;
 }
 

@@ -99,7 +99,7 @@ export function DecorPanel() {
     <div class="cards">
       <button class="btn back-btn" onClick={() => openDrawer('lumia', 'lumia-bond')}>◀ 回到露米婭</button>
       <div class="card" id="decor-slots">
-        <div class="card-title"><Icon id="furn_slime_doll" /> 休息室擺設 <span class="lv">{open}/{DECOR.maxSlots} 格</span></div>
+        <div class="card-title"><Icon id="gift_slime_doll" /> 休息室擺設 <span class="lv">{open}/{DECOR.maxSlots} 格</span></div>
         <div class="decor-slots">
           {Array.from({ length: DECOR.maxSlots }, (_, k) => {
             const id = k < open ? s.decor[k] : null;

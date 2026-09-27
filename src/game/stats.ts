@@ -213,7 +213,8 @@ export function mascotMods(s: GameState, stat: StatId): Mod[] {
   const m = (value: number): Mod => ({ stat, pool: 'M', value: value * f });
   switch (stat) {
     case 'growthSpeed':
-      return zone === 'greenhouse' ? [m(MASCOT.greenhouseBonus)] : [];
+      if (zone !== 'greenhouse') return [];
+      return outfit === 'gardener' ? [m(MASCOT.greenhouseBonus), m(OUTFIT_BONUS.gardenerGrowth)] : [m(MASCOT.greenhouseBonus)];
     case 'brewSpeed':
       if (zone !== 'cauldron') return [];
       return outfit === 'robe' ? [m(MASCOT.cauldronBonus), m(OUTFIT_BONUS.robeBrew)] : [m(MASCOT.cauldronBonus)];
@@ -298,9 +299,24 @@ export function fullShopDemand(s: GameState, p: PotionId): number {
   return CUSTOMER.queueMax * maxCustomerQty(s) * orderScale(s, p);
 }
 
-/** 藥水保留量：設定的百分比 × 店裡站滿時的最大訂單量（設 0% = 全部收購） */
+/** 顧客對某種藥水的平均需求（瓶／秒）：每秒服務人數 × 點到這種藥水的機率 × 平均數量 */
+export function customerDemand(s: GameState, p: PotionId): number {
+  const types = s.cauldrons.length;
+  if (types === 0 || !s.cauldrons.some((c) => c.recipe === p)) return 0;
+  const chances = CUSTOMER.linesChance[Math.min(types, 3)] ?? [1];
+  const avgLines = chances.reduce((sum, q, k) => sum + q * (k + 1), 0);
+  const avgQty = (CUSTOMER.qtyMin + maxCustomerQty(s)) / 2;
+  return customerThroughput(s) * (avgLines / types) * avgQty * orderScale(s, p);
+}
+
+/**
+ * 藥水保留量：顧客「幾秒」的需求量（設 0 秒 = 全部收購）；
+ * 至少留店裡站滿、每人都點最多時的量，剛進門的一批客人才不會買不到
+ */
 export function potionReserve(s: GameState, p: PotionId): number {
-  return Math.ceil((fullShopDemand(s, p) * s.settings.potions[p].keepPct) / 100);
+  const sec = s.settings.potions[p].keepSec;
+  if (sec <= 0) return 0;
+  return Math.ceil(Math.max(fullShopDemand(s, p), sec * customerDemand(s, p)));
 }
 
 /** 每秒能服務幾位客人：來客速度與自動結帳速度取小（沒有自動結帳時以來客速度估計） */
@@ -465,11 +481,22 @@ export function materialPerRound(s: GameState, m: MaterialId): number {
   return s.cauldrons.reduce((sum, c) => sum + recipeNeeds(s, c.recipe, m) * c.level, 0);
 }
 
-/** 原料保留量：設定的百分比 × 1 輪的量（100% = 1 輪）；設 0% 就不保留，其餘至少保留一點 */
+/** 所有大釜以目前速度全速熬煮時，每秒用掉多少這種原料（只算有火蜥蜴、會自動熬煮的大釜） */
+export function materialDemand(s: GameState, m: MaterialId): number {
+  return s.cauldrons.reduce((sum, c) => {
+    const need = recipeNeeds(s, c.recipe, m);
+    return sum + (need * c.level * brewPassiveSpeed(s, c)) / RECIPES[c.recipe].brewTime;
+  }, 0);
+}
+
+/**
+ * 原料保留量：所有大釜全速熬煮「幾秒」的用量（設 0 秒 = 全部收購）；
+ * 至少留 1 輪的量（還沒有火蜥蜴、靠點擊熬煮時），也至少留 materialReserveMin 份
+ */
 export function materialReserve(s: GameState, m: MaterialId): number {
-  const pct = s.settings.materials[m].keepPct;
-  if (pct <= 0) return 0;
-  return Math.max(UPGRADE_FX.materialReserveMin, Math.ceil((materialPerRound(s, m) * pct) / 100));
+  const sec = s.settings.materials[m].keepSec;
+  if (sec <= 0) return 0;
+  return Math.ceil(Math.max(UPGRADE_FX.materialReserveMin, materialPerRound(s, m), sec * materialDemand(s, m)));
 }
 
 /** 某個收購箱的收購價比例（售價的幾成），沒買 = 0 */

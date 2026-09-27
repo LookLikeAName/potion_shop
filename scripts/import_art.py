@@ -32,8 +32,8 @@ RULES = [
     ('potion_', 'icons', 160),
     ('icon_', 'icons', 160),
     ('upg_', 'upgrades', 256),
-    ('gift_', 'gifts', 160),
-    ('furn_', 'furniture', 360),
+    # 禮物（也是休息室擺設，顯示約 80–100px；原本的家具 furn_ 已經改名併進來）
+    ('gift_', 'gifts', 256),
     ('evt_', 'events', 420),
     ('fx_', 'fx', 256),
     ('ui_', 'ui', 1024),

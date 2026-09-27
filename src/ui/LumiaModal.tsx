@@ -69,7 +69,8 @@ export function MascotControls() {
           </button>
         ))}
       </div>
-      <p class="hint">{ASSIGNMENTS[s.mascot.assignment].desc}。也可以在場景中長按露米婭，把她拖到想要的區域。</p>
+      {/* 說明固定留好行數：換指派、換服裝時說明變長，整個欄位才不會跟著變高 */}
+      <p class="hint fixed-lines l3">{ASSIGNMENTS[s.mascot.assignment].desc}。也可以在場景中長按露米婭，把她拖到想要的區域。</p>
       <div class="chip-label">服裝</div>
       <div class="chips">
         {(Object.keys(OUTFITS) as OutfitId[]).filter((o) => outfitOwned(s, o)).map((o) => (
@@ -81,7 +82,7 @@ export function MascotControls() {
           </button>
         ))}
       </div>
-      <p class="hint">{OUTFITS[s.mascot.outfit].desc}</p>
+      <p class="hint fixed-lines l2">{OUTFITS[s.mascot.outfit].desc}</p>
     </>
   );
 }
@@ -126,11 +127,13 @@ export function LumiaModal() {
       <div class="modal lumia-modal">
         <button class="close modal-close" onClick={() => (lumiaOpen.value = false)} aria-label="關閉">✕</button>
         <div class={`portrait ${portrait.chibi ? 'chibi' : ''} react-${reaction}`} key={anim}>
-          {portrait.url && <img src={portrait.url} alt="露米婭" draggable={false} />}
-          {/* 觸碰區：上方是頭，下方是臉頰／身體 */}
-          <button class="touch-zone head" aria-label="摸頭" onClick={(e) => touch('head', e)} />
-          <button class="touch-zone cheek" aria-label="戳臉頰" onClick={(e) => touch('cheek', e)} />
-          {pops.map((p) => <span key={p.id} class="pop" style={{ left: `${p.x}%`, top: `${p.y}%` }}>{p.text}</span>)}
+          {/* 觸碰區跟著圖片本身（圖片縮放、靠底對齊時，頭的判定才會在頭上）：上方是頭，下方是臉頰／身體 */}
+          <div class="portrait-figure">
+            {portrait.url && <img src={portrait.url} alt="露米婭" draggable={false} />}
+            <button class="touch-zone head" aria-label="摸頭" onClick={(e) => touch('head', e)} />
+            <button class="touch-zone cheek" aria-label="戳臉頰" onClick={(e) => touch('cheek', e)} />
+            {pops.map((p) => <span key={p.id} class="pop" style={{ left: `${p.x}%`, top: `${p.y}%` }}>{p.text}</span>)}
+          </div>
         </div>
         <div class="lumia-side">
           <h2>露米婭</h2>
@@ -145,7 +148,7 @@ export function LumiaModal() {
             點她的<b>頭</b>摸頭、點<b>臉頰</b>戳一戳，每次 +{MASCOT.touchReward} 開心度（每天第一次另外 +{MASCOT.dailyBonus}）。
             狂戳她會慌張，就沒有開心度了。
           </p>
-          <p class="hint">目前：{mascotStatus(s)}</p>
+          <p class="hint fixed-lines l2">目前：{mascotStatus(s)}</p>
           <MascotControls />
         </div>
       </div>

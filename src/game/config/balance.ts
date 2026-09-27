@@ -74,6 +74,13 @@ export const MARKET = {
 
 export const OFFLINE = {
   baseCapHours: 12,
+  /**
+   * 離線效率：離線結算只拿到模擬產出的這個比例（睡衣、捕夢網各加一點，最多 efficiencyMax），
+   * 再乘上時間衰退 0.5^(離開時間 ÷ 計算上限)：離開到計算上限時剩一半。
+   * 讓離線永遠比實際在線遊玩少，「久久開一次」不會比常回來划算
+   */
+  baseEfficiency: 0.5,
+  efficiencyMax: 0.9,
   /** 離線模擬步長（秒） */
   step: 10,
   /** 超過這麼久沒有執行，就改用離線結算並顯示報告（秒） */
@@ -139,13 +146,17 @@ export const UPGRADE_FX = {
   /** 收購箱多久結算一次（秒） */
   crateInterval: 1,
   /**
-   * 收購箱的保留量都用百分比設定（設 0% 就全部收購，上限 keepMax）：
-   * 藥水 100% = 店裡站滿、每人都點最多時的量，預設 100%；
-   * 原料 100% = 所有大釜以目前等級熬 1 輪的量，預設 300%（3 輪），設了保留時至少保留 materialReserveMin 份。
+   * 收購箱的保留量用「幾秒份」設定（設 0 秒就全部收購，上限 keepMaxSec）：
+   * 藥水 = 顧客幾秒的需求量（至少留店裡站滿、每人都點最多時的量），預設 30 秒；
+   * 原料 = 所有大釜全速熬煮幾秒的用量（至少 1 輪、至少 materialReserveMin 份），預設 60 秒。
+   * 原本用百分比（藥水 100% = 店裡站滿、原料 100% = 大釜熬 1 輪）：後期大釜每秒熬上千輪，
+   * 原料就算設到上限也只撐 1–4 秒，收購箱一打開就把庫存收光，極速沸騰時馬上斷料
    */
-  potionKeepDefault: 100,
-  materialKeepDefault: 300,
-  keepMax: 100_000,
+  potionKeepSec: 30,
+  materialKeepSec: 60,
+  keepMaxSec: 3600,
+  /** 保留秒數的調整量（小、大） */
+  keepStepSec: [10, 60] as const,
   materialReserveMin: 20,
   /** 過勞精靈工會合約：離線時模擬每秒點擊次數 */
   contractCps: 5,

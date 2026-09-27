@@ -43,6 +43,25 @@ const text = (s: string, size: number, fill = 0xffffff) =>
     style: { fontFamily: FONT, fontSize: size, fill, fontWeight: '700', align: 'center', stroke: { color: 0x2b1d14, width: Math.max(3, size / 6) } },
   });
 
+/** 會蓋住場景的介面（舞台座標）；pointer-events: none 的也算，因為會擋住視線 */
+const UI_BLOCKERS = ['.topbar', '.event-banner', '.wish-card', '.buff-bar', '.drawer.open'];
+
+function uiBlockers(): Rect[] {
+  const stage = document.getElementById('stage');
+  if (!stage) return [];
+  const sr = stage.getBoundingClientRect();
+  const k = sr.width / W;
+  if (!k) return [];
+  const out: Rect[] = [];
+  for (const sel of UI_BLOCKERS) {
+    for (const el of document.querySelectorAll(sel)) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) out.push({ x: (r.left - sr.left) / k, y: (r.top - sr.top) / k, w: r.width / k, h: r.height / k });
+    }
+  }
+  return out;
+}
+
 /** 0 → 1 → 0 的來回（週期 1） */
 const pingpong = (x: number) => 1 - Math.abs(((x % 2) + 2) % 2 - 1);
 
@@ -55,6 +74,8 @@ class Target extends Container {
   readonly body = new Container();
   alive = true;
   punch = 0;
+  /** 被介面蓋住時自動推開（拖曳中的不推，才會跟著手指） */
+  avoidUi = true;
   private phase = Math.random() * 6;
 
   constructor(readonly r: number, onTap: (t: Target, e: FederatedPointerEvent) => void, color = 0xfff6c0) {
@@ -158,6 +179,32 @@ export class EventLayer extends Container {
     if (a && this.stage) {
       this.lastActive = a;
       this.stage.update(dt, a, s);
+      this.avoidUi();
+    }
+  }
+
+  /**
+   * 要點的東西不能被蓋在場景上的介面擋住（頂列、事件橫幅、小心願、增益列、打開的魔導書）：
+   * 重疊時往最近的空位推開（往下、往左或往右，不往上）
+   */
+  private avoidUi(): void {
+    const blockers = uiBlockers();
+    if (blockers.length === 0) return;
+    for (const c of this.root.children) {
+      if (!(c instanceof Target) || !c.alive || !c.avoidUi) continue;
+      const m = c.r * 1.3;
+      for (const b of blockers) {
+        if (c.x + m <= b.x || c.x - m >= b.x + b.w || c.y + m <= b.y || c.y - m >= b.y + b.h) continue;
+        const down = b.y + b.h + m - c.y;
+        const left = c.x - (b.x - m);
+        const right = b.x + b.w + m - c.x;
+        const canLeft = b.x - m > 0;
+        const canRight = b.x + b.w + m < W;
+        const best = Math.min(down, canLeft ? left : Infinity, canRight ? right : Infinity);
+        if (best === down) c.y += down;
+        else if (best === left) c.x -= left;
+        else c.x += right;
+      }
     }
   }
 
@@ -240,7 +287,7 @@ type Builder = (this: EventLayer, a: ActiveEvent, s: GameState) => Stage;
 /** 追一個會跑的目標，點中 goal 下 */
 const goblin: Builder = function () {
   const t = this.target(52, (tt) => this.tapHit(tt, false, 0x9dff8a));
-  const pic = this.pic('evt_goblin', t.body, 1);
+  const pic = this.pic('npc_goblin', t.body, 1);
   pic.y = 50;
   let time = 0;
   let lastX = 0;
@@ -325,6 +372,7 @@ function draggable(
     update: (dt, _a, _s) => {
       time += dt;
       t.tick(dt);
+      t.avoidUi = mode === 'idle';
       if (mode === 'idle') {
         const h = home(time);
         t.position.set(h.x, h.y);
@@ -608,7 +656,7 @@ function visitor(layer: EventLayer, id: string, tappable: boolean, color = 0xffd
 }
 
 const hero: Builder = function () {
-  return visitor(this, 'evt_hero', true).stage;
+  return visitor(this, 'npc_rich_hero', true).stage;
 };
 const merchant: Builder = function () {
   return visitor(this, 'evt_merchant', false).stage;
@@ -684,13 +732,14 @@ const dream: Builder = function () {
         const z = text(['♪', '★', '♥'][list.length], 24, 0x8a9ae0);
         z.anchor.set(0.5);
         t.body.addChild(g, z);
-        list.push({ t, born: time, dx: (list.length - 1) * 60 });
+        list.push({ t, born: time, dx: (list.length - 1) * 75 });
       }
       const l = refs.lumiaPos();
       for (const b of list) {
         b.t.tick(dt);
         const age = time - b.born;
-        b.t.position.set(l.x + b.dx + Math.sin(age * 1.8) * 14, l.y - 110 - Math.min(150, age * 45));
+        // 休息室在二樓，頭頂上方很快就碰到頂列：只往上飄一點，被介面蓋住時由 avoidUi 推開
+        b.t.position.set(l.x + b.dx + Math.sin(age * 1.8) * 14, l.y - 100 - Math.min(90, age * 40));
       }
     },
     anchor: () => {

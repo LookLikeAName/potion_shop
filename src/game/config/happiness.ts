@@ -34,7 +34,11 @@ export const HAPPINESS_ITEMS: HappinessItem[] = [
   },
   {
     id: 'outfit_pajama', tier: 2, kind: 'outfit', name: '星空絨毛睡衣', icon: 'lumia_chibi_pajama_idle',
-    desc: '互動時會揉眼睛打哈欠。穿著時離線，離線金幣結算 ×2。', cost: fixed(20), max: 1,
+    desc: '互動時會揉眼睛打哈欠。穿著時離線，離線效率 +20%（基礎 50%，最多 90%）。', cost: fixed(20), max: 1,
+  },
+  {
+    id: 'outfit_gardener', tier: 2, kind: 'outfit', name: '花園精靈圍裙裝', icon: 'lumia_chibi_gardener_idle',
+    desc: '戴著花冠、會對植物哼歌。指派在溫室時：植物生長速度 +100%。', cost: fixed(25), max: 1,
   },
   {
     id: 'outfit_robe', tier: 2, kind: 'outfit', name: '鍊金大師法袍', icon: 'lumia_chibi_robe_idle',
@@ -55,7 +59,7 @@ export const HAPPINESS_ITEMS: HappinessItem[] = [
   },
   {
     id: 'telepathy', tier: 3, kind: 'talent', name: '心電感應', icon: 'icon_telepathy',
-    desc: '離線收益上限從 12 小時延長到 72 小時。', cost: fixed(20), max: 1,
+    desc: '離線收益的計算上限從 12 小時延長到 72 小時，離線效率的衰退也跟著變慢（72 小時才減半）。', cost: fixed(20), max: 1,
   },
   // Tier 4：深層羈絆
   {

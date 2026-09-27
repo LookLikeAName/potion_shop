@@ -11,6 +11,28 @@ function run(s: GameState, seconds: number, flow: FlowTracker) {
   }
 }
 
+describe('進門時缺貨的客人', () => {
+  it('記錄最近 30 秒進門的人數、其中貨不夠要等的人數，以及每種藥水不夠的次數', () => {
+    const s = createInitialState();
+    s.cauldrons[0].salamander = 1;
+    const flow = new FlowTracker();
+    s.potions.glow = 0;
+    run(s, 20, flow); // 沒有庫存：進門的客人都要等
+    let r = flow.report(s)!;
+    expect(r.orders.arrived).toBeGreaterThan(0);
+    expect(r.orders.waited).toBe(r.orders.arrived);
+    expect(r.items.glow.short).toBe(r.orders.arrived);
+    // 庫存充足之後：進門就能湊齊，30 秒後舊的紀錄滾出去
+    s.potions.glow = 1e9;
+    run(s, 31, flow);
+    r = flow.report(s)!;
+    expect(r.orders.arrived).toBeGreaterThan(0);
+    expect(r.orders.waited).toBe(0);
+    expect(r.items.glow.short).toBe(0);
+    expect(flow.series(s)!.items.glow.short.every((n) => n === 0)).toBe(true);
+  });
+});
+
 describe('產銷統計', () => {
   it('量出原料與藥水每秒的產量，且 產量 = 使用 + 收購 + 淨變化', () => {
     const s = createInitialState();
@@ -18,7 +40,7 @@ describe('產銷統計', () => {
     s.cauldrons[0].salamander = 1; // 微光恢復劑 每 8 秒熬 1 瓶，用 2 份紅心草
     s.materials.redheart = 10;
     s.upgrades.crate_glow = 1;
-    s.settings.potions.glow.keepPct = 0;
+    s.settings.potions.glow.keepSec = 0;
     const flow = new FlowTracker();
     run(s, 25, flow);
     const r = flow.report(s)!;

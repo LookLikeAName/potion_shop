@@ -1,5 +1,5 @@
 import {
-  Application, BitmapText, Container, Graphics, GraphicsContext, Rectangle, Text, type FederatedPointerEvent,
+  Application, BitmapFont, BitmapText, Container, Graphics, GraphicsContext, Rectangle, Text, type FederatedPointerEvent,
 } from 'pixi.js';
 import { ACHIEVEMENTS } from '../game/config/achievements';
 import { CUSTOMER, UPGRADE_FX } from '../game/config/balance';
@@ -853,6 +853,9 @@ const NPC_FOR: Record<PotionId, string[]> = {
   elixir: ['npc_elf_noble', 'npc_mage_apprentice'],
 };
 
+/** 微服出巡的公主打扮成哪一種客人 */
+const PRINCESS_DISGUISE = 'npc_elf_noble';
+
 /** 客人走路速度（px/秒，固定；要和模擬裡走到櫃台的時間一致） */
 const CUSTOMER_SPEED = CUSTOMER.walkSpeed;
 /** 訂單氣泡每一列的高度 */
@@ -882,11 +885,18 @@ class CustomerView extends Container {
 
   constructor(tex: TextureBank, public readonly id: number, c: CustomerState, onTap: (id: number) => void) {
     super();
-    const pool = NPC_FOR[c.lines[0].potion];
+    // 微服出巡的公主：打扮成一般的精靈貴族客人，沒有訂單，頭上是「……」的小氣泡（在店裡東看西看）
+    const pool = c.princess ? [PRINCESS_DISGUISE] : NPC_FOR[c.lines[0].potion];
     this.body = new PaperDoll(tex, pool[c.id % pool.length]);
     this.x = OFFSTAGE_X;
     this.y = QUEUE_Y;
     this.bubble.addChild(this.bubbleBg);
+    if (c.princess) {
+      const dots = new Text({ text: '……', style: { fontFamily: FONT, fontSize: 24, fontWeight: '700', fill: 0x4a3426 } });
+      dots.anchor.set(0.5);
+      this.bubbleBg.roundRect(-45, -ROW_H / 2 - 6, 90, ROW_H + 12, 16).fill({ color: 0xfff6e0 }).stroke({ width: 3, color: 0x2b1d14 });
+      this.bubble.addChild(dots);
+    }
     // 由下往上排，氣泡底部固定在頭頂
     const n = c.lines.length;
     c.lines.forEach((l, k) => {
@@ -951,6 +961,10 @@ class CustomerView extends Container {
     const bubbleTop = this.bubble.y + ROW_H / 2 + 6 - this.bubbleH;
     if (this.coin.visible) this.coin.position.set(0, bubbleTop - 26 + Math.sin(this.t * 6) * 6);
     if (!c) return;
+    if (c.princess) {
+      this.bar.visible = false;
+      return;
+    }
 
     const packed = c.status !== 'waiting';
     // 等待中：每一項依目前庫存顯示夠不夠（綠 = 夠、紅 = 還缺）
@@ -1006,7 +1020,10 @@ class CustomerLayer extends Container {
   private tap = (id: number) => {
     // 事件「微服出巡的公主」：點中那位客人就認出她
     const ev = this.game.state.events.active;
-    if (ev?.id === 'princess' && ev.customer === id) this.game.eventAction({ type: 'hit', customer: id });
+    if (ev?.id === 'princess' && ev.customer === id) {
+      this.game.eventAction({ type: 'hit', customer: id });
+      return;
+    }
     if (!this.game.clickCustomer(id)) this.views.get(id)?.nudge();
   };
 
@@ -1048,8 +1065,9 @@ class CustomerLayer extends Container {
         v.eventMode = 'none';
       }
       v.update(c, dt, s);
-      // 前排（y 大）畫在前面；同一排越靠近櫃台越前面
-      v.zIndex = v.y * 10 - v.x / 100;
+      // 前排（y 大）畫在前面；同一排越靠近櫃台越前面。
+      // 微服出巡的公主排在最前面一層：隊伍擠在一起時，點她的位置一定點得到她
+      v.zIndex = v.y * 10 - v.x / 100 + (c?.princess ? 1e5 : 0);
       if (v.leaving && v.x >= OFFSTAGE_X) {
         this.views.delete(id);
         v.destroy({ children: true });
@@ -1234,6 +1252,16 @@ class LumiaView extends Container {
     this.eventMode = 'none';
   }
 
+  /** 目前的動作與服裝（換服裝時馬上換圖，不用等到下一次換動作） */
+  private pose: Pose = 'idle';
+  private outfit = '';
+
+  private setPose(s: GameState, pose: Pose): void {
+    this.pose = pose;
+    this.outfit = s.mascot.outfit;
+    this.doll.setPose(this.poseId(s, pose));
+  }
+
   /** 依服裝挑圖：有服裝差分的正式圖就用，沒有就退回預設服裝 */
   private poseId(s: GameState, pose: Pose): string {
     const o = s.mascot.outfit;
@@ -1271,7 +1299,7 @@ class LumiaView extends Container {
     this.swing += (Math.max(-0.5, Math.min(0.5, -vx * 0.0012)) - this.swing) * Math.min(1, dt * 10);
     this.position.set(x, y);
     this.rotation = this.swing + Math.sin(this.t * 3) * 0.04;
-    this.doll.setPose(this.poseId(s, 'drag'));
+    this.setPose(s, 'drag');
     this.doll.mode = 'idle';
     // 讓手（圖片上緣）在指標位置，身體往下垂
     this.doll.y = this.doll.pic.texture.height * this.doll.pic.baseScale * 0.92;
@@ -1375,6 +1403,8 @@ class LumiaView extends Container {
   update(s: GameState, dt: number): void {
     this.t += dt;
     this.updateWishMark(s);
+    // 換了服裝：同一個動作馬上換成新服裝的圖
+    if (s.mascot.outfit !== this.outfit) this.setPose(s, this.pose);
     if (this.dragging) return;
     // 瞬移中不說話；其他時候照節奏自言自語
     if (this.poof) this.bubble.hide();
@@ -1452,7 +1482,7 @@ class LumiaView extends Container {
     } else {
       this.x += (dx / dist) * step;
       this.y += (dy / dist) * step;
-      doll.setPose(this.poseId(s, tired ? 'tired_walk' : 'walk'));
+      this.setPose(s, tired ? 'tired_walk' : 'walk');
       doll.mode = 'walk';
       if (Math.abs(dx) > 2) doll.dir = dx > 0 ? 1 : -1;
     }
@@ -1462,8 +1492,7 @@ class LumiaView extends Container {
 
   private arrive(s: GameState, st: Station): void {
     this.position.set(st.x, st.y);
-    const pose: Pose = st.pose === 'back' ? 'back' : st.pose === 'sleep' ? 'sleep' : 'idle';
-    this.doll.setPose(this.poseId(s, pose));
+    this.setPose(s, st.pose === 'back' ? 'back' : st.pose === 'sleep' ? 'sleep' : 'idle');
     this.doll.mode = st.pose === 'back' ? 'work' : 'idle';
     this.doll.dir = st.dir;
     // 休息室的家具旁邊：有機率說一句跟它有關的話
@@ -1628,6 +1657,10 @@ class FeverOverlay extends Graphics {
 
 // ---------- 升級道具（買了才出現在場景裡） ----------
 
+/** 算盤松鼠結帳動作的秒數，以及動作做到多少以後才能接下一次 */
+const SQUIRREL_ANIM_TIME = 0.5;
+const SQUIRREL_RESTART_AT = 0.5;
+
 /** 滑鼠停在擺設上多久（秒；手機為長按）才顯示效果 */
 const DECOR_TIP_DELAY = 0.5;
 
@@ -1692,6 +1725,9 @@ class PropsLayer extends Container {
   private bell: Pic;
   private bellPips = new Graphics();
   private bellPunch = 0;
+  /** 算盤松鼠：每完成一筆結帳就拉長再縮回、左右搖一下（squirrelAnim 從 0 跑到 1） */
+  private squirrel: Pic;
+  private squirrelAnim = 1;
   private crates = new Map<CrateKind, { box: Container; pic: Pic; baseScale: number; punch: number; icon: Pic; iconY: number }>();
   private t = 0;
 
@@ -1711,13 +1747,13 @@ class PropsLayer extends Container {
     };
     add('star_can', 'upg_starsilver_can', PROPS.starCan);
     add('fortune_owl', 'upg_owl', PROPS.owl);
-    add(SQUIRREL, 'upg_abacus_squirrel', PROPS.squirrel, 1);
+    this.squirrel = add(SQUIRREL, 'upg_abacus_squirrel', PROPS.squirrel, 1);
     add('diffuser', 'upg_diffuser', PROPS.diffuser, 1.5);
     add('signboard', 'upg_signboard', PROPS.signboard, 0, 0);
     // 休息室擺設位：擺出來的禮物（圖跟著擺的東西換）。
     // 點一下打開擺設頁面；滑鼠停在上面 0.5 秒（手機長按）顯示效果
     this.decor = DECOR_POS.map((pos, k) => {
-      const pic = new Pic(tex, 'furn_gramophone', pos.w, pos.h);
+      const pic = new Pic(tex, 'gift_gramophone', pos.w, pos.h);
       pic.anchor.set(0.5, 1);
       pic.position.set(pos.x, pos.y);
       pic.eventMode = 'static';
@@ -1780,6 +1816,14 @@ class PropsLayer extends Container {
     }
   }
 
+  /**
+   * 完成一筆結帳：算盤松鼠拉長再縮回、搖一下。
+   * 結帳很快時不要每筆都從頭開始（會一直抖），動作做到一半以後才接下一次
+   */
+  bumpSquirrel(): void {
+    if (this.squirrel.visible && this.squirrelAnim >= SQUIRREL_RESTART_AT) this.squirrelAnim = 0;
+  }
+
   /** 看得到的收購箱（底部中心） */
   visibleCrates(): { x: number; y: number }[] {
     return [...this.crates.values()].filter((c) => c.box.visible).map((c) => ({ x: c.box.x, y: c.box.y }));
@@ -1829,6 +1873,19 @@ class PropsLayer extends Container {
         const h = pic.texture.height * pic.baseScale;
         this.tip.show(gift.name, `擺出來：${gift.desc}`, pic.x, pic.y - h, pic.y);
       }
+    }
+    // 算盤松鼠的結帳動作：先往上拉長，再壓扁回彈（體積大致不變），同時左右搖擺，越來越小
+    this.squirrelAnim = Math.min(1, this.squirrelAnim + dt / SQUIRREL_ANIM_TIME);
+    const sq = this.squirrel;
+    if (this.squirrelAnim < 1) {
+      const p = this.squirrelAnim;
+      const fade = 1 - p;
+      const sy = 1 + 0.28 * Math.sin(p * Math.PI * 2) * fade;
+      sq.scale.set(sq.baseScale / Math.sqrt(sy), sq.baseScale * sy);
+      sq.rotation = Math.sin(p * Math.PI * 4) * 0.14 * fade;
+    } else if (sq.rotation !== 0) {
+      sq.scale.set(sq.baseScale);
+      sq.rotation = 0;
     }
     // 招牌輕輕搖晃
     const sign = this.items.find((i) => i.upg === 'signboard')!.pic;
@@ -1979,11 +2036,22 @@ const FLOAT_BIG_SIZE = 0.7;
 /** 一樓的飄字不會飄進二樓（浮空盆栽的字才不會蓋住在休息室睡覺的露米婭） */
 const FLOAT_1F_CEILING = ZONES.greenhouse.y + 30;
 
-/** 飄字用點陣字（大量飄字時比一般文字省效能）：白字深色描邊，再用 tint 上色 */
-const FLOAT_STYLE = {
-  fontFamily: FONT, fontSize: 40, fill: 0xffffff, fontWeight: '700' as const,
-  stroke: { color: 0x2b1d14, width: 7 },
-};
+/**
+ * 飄字用點陣字（大量飄字時比一般文字省效能）：白字深色描邊，再用 tint 上色。
+ * 字型先用名稱安裝一次，所有飄字共用：PixiJS 會依「樣式物件」自動產生點陣字型，
+ * 每個飄字各有一份樣式的話，每個都會建一份自己的字型貼圖（上百份），並一直跳效能警告。
+ * 安裝的字型遇到新的字（中文名稱、數字）會自動補進去
+ */
+const FLOAT_FONT = 'float-text';
+const FLOAT_STYLE = { fontFamily: FLOAT_FONT, fontSize: 40 };
+
+function installFloatFont(): void {
+  BitmapFont.install({
+    name: FLOAT_FONT,
+    style: { fontFamily: FONT, fontSize: 40, fill: 0xffffff, fontWeight: '700', stroke: { color: 0x2b1d14, width: 7 } },
+    chars: [['0', '9'], ['a', 'z'], ['A', 'Z'], ' +-.,/%×！？：（）金'],
+  });
+}
 
 /**
  * 產出、收入的飄字：每個字往不同方向彈出去（左右散開、先往上再慢慢落下），
@@ -2025,6 +2093,8 @@ interface FloatItem {
 class FloatLayer extends Container {
   constructor() {
     super();
+    // 字型在場景建立時（網頁字型載入後）才安裝，字形才會用正確的字體畫
+    installFloatFont();
     // 純顯示，不擋點擊（飄字常常蓋在盆栽與大釜上）
     this.eventMode = 'none';
   }
@@ -2253,6 +2323,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       }
       // 極速沸騰：鍋身上的連擊字會變成「🔥 極速沸騰」並彈一下，不另外飄字（以前會被產出的字擋住）
       case 'sale': {
+        props.bumpSquirrel();
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
         const note = e.tip ? '（土豪小費！）' : e.rush ? '（急單！）' : e.partial ? '（部分購買）' : '';
         floats.spawn(`+${formatFull(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, { big: e.rush || e.tip, always: true, key: 'sale' });

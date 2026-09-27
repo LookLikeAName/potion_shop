@@ -1,8 +1,11 @@
 import { ART_URLS, ASSET_MAP } from '../../assets/manifest';
-import { EVENT, EVENTS, LETTERS, RARITY_NAMES, type EventDef } from '../../game/config/events';
+import { GIFT_MAP } from '../../game/config/gifts';
+import {
+  EVENT, EVENTS, EVENT_INFO, EVENT_MAP, KIND_NAMES, LETTERS, RARITY_NAMES, eventRewardText, type EventDef,
+} from '../../game/config/events';
 import { codexCount, codexMilestones } from '../../game/stats';
 import { Icon } from '../Icon';
-import { letterOpen, openDrawer, useGame } from '../store';
+import { eventDetail, letterOpen, openDrawer, useGame } from '../store';
 
 /** 事件的圖；silhouette = 還沒完成，只顯示剪影 */
 function EventArt({ def, silhouette }: { def: EventDef; silhouette: boolean }) {
@@ -17,7 +20,7 @@ function EventArt({ def, silhouette }: { def: EventDef; silhouette: boolean }) {
   );
 }
 
-/** 事件簿：遇過的事件與故事；收集里程碑給永久收入加成 */
+/** 事件簿：只列出名稱與簡介，點一下打開詳細視窗；收集里程碑給永久收入加成 */
 export function EventBookPanel() {
   const game = useGame();
   const s = game.state;
@@ -32,7 +35,7 @@ export function EventBookPanel() {
           <Icon id="icon_event_book" /> 事件簿 <span class="lv">{count}/{EVENTS.length}</span>
         </div>
         <p class="hint">
-          店裡偶爾會發生突發事件（只在畫面開著的時候），完成後就會記在這裡。
+          店裡偶爾會發生突發事件（只在畫面開著的時候），完成後就會記在這裡，點一下可以看詳細內容。
           錯過了也沒關係，之後還會再來。每收集 {EVENT.milestoneEvery} 種、以及全部收齊時，收入永久 +{EVENT.incomePerMilestone * 100}%；
           每種事件第一次完成時，露米婭也會開心一點。
         </p>
@@ -53,30 +56,15 @@ export function EventBookPanel() {
             const done = (e?.done ?? 0) > 0;
             const seen = (e?.seen ?? 0) > 0;
             return (
-              <div class={`gift-entry event-entry ${done ? 'owned' : 'unknown'}`} key={def.id}>
+              <button class={`gift-entry event-entry ${done ? 'owned' : 'unknown'}`} key={def.id} onClick={() => (eventDetail.value = def.id)}>
                 <div class="gift-no">
                   No.{String(i + 1).padStart(2, '0')}
                   <span class={`event-rarity-chip r${def.rarity}`}>{RARITY_NAMES[def.rarity]}</span>
                 </div>
                 <div class="gift-frame"><EventArt def={def} silhouette={!done} /></div>
                 <div class="gift-name">{done || seen ? def.name : '？？？'}</div>
-                {done ? (
-                  <>
-                    <div class="gift-intro">{def.story}</div>
-                    <div class="event-lumia">露米婭：「{def.lumia}」</div>
-                    <div class="event-count">遇見 {e!.seen} 次・完成 {e!.done} 次</div>
-                    {def.id === 'letter' && s.events.letters > 0 && (
-                      <div class="event-letters">
-                        {LETTERS.slice(0, s.events.letters).map((l, k) => (
-                          <button key={k} class="buy-btn" onClick={() => (letterOpen.value = k)}>✉ {l.title}</button>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div class="gift-intro">{seen ? '遇見過，但還沒完成。' : ''}{def.hint}</div>
-                )}
-              </div>
+                <div class="gift-intro">{done ? EVENT_INFO[def.id].summary : seen ? '遇見過，但還沒完成。' : def.hint}</div>
+              </button>
             );
           })}
         </div>
@@ -84,3 +72,70 @@ export function EventBookPanel() {
     </div>
   );
 }
+
+/** 事件的詳細視窗：CG、故事、出現條件、操作、加成（還沒完成的只顯示提示） */
+export function EventDetailModal() {
+  const game = useGame();
+  const id = eventDetail.value;
+  if (!id) return null;
+  const s = game.state;
+  const def = EVENT_MAP[id];
+  const e = s.events.codex[id];
+  const done = (e?.done ?? 0) > 0;
+  const seen = (e?.seen ?? 0) > 0;
+  const idx = EVENTS.indexOf(def);
+  const close = () => (eventDetail.value = null);
+  const step = (d: number) => (eventDetail.value = EVENTS[(idx + d + EVENTS.length) % EVENTS.length].id);
+  const cg = ART_URLS[`cg_evt_${id}`];
+  const decor = def.decor ? GIFT_MAP[def.decor] : null;
+  return (
+    <div class="modal-back" onClick={(ev) => ev.target === ev.currentTarget && close()}>
+      <div class={`modal event-detail rarity-${def.rarity}`}>
+        <button class="close modal-close" onClick={close} aria-label="關閉">✕</button>
+        <div class="event-detail-head">
+          <span class="gift-no">No.{String(idx + 1).padStart(2, '0')}</span>
+          <h2>{done || seen ? def.name : '？？？'}</h2>
+          <span class={`event-rarity-chip r${def.rarity}`}>{RARITY_NAMES[def.rarity]}</span>
+        </div>
+        <div class={`cg event-cg ${done ? '' : 'locked'}`}>
+          {done && cg ? <img src={cg} alt={def.name} />
+            : <span class="event-cg-ph"><EventArt def={def} silhouette={!done} />{done && <small>CG（正式美術之後加入）</small>}</span>}
+        </div>
+        {done ? (
+          <div class="event-detail-body">
+            <p class="event-story">{def.story}</p>
+            <p class="event-lumia">露米婭：「{def.lumia}」</p>
+            <dl class="event-facts">
+              <dt>出現條件</dt><dd>{EVENT_INFO[id].need}</dd>
+              <dt>出現區域</dt><dd>{ZONE_NAMES[def.zone]}{def.zone !== 'any' && '（露米婭在這一區工作時更常出現）'}</dd>
+              {decor && <><dt>相關擺設</dt><dd>擺出「{decor.name}」時更常出現</dd></>}
+              <dt>操作</dt><dd>{KIND_NAMES[def.kind]}：{def.prompt}（限時 {def.time} 秒）</dd>
+              <dt>可以獲得</dt>
+              <dd><ul>{eventRewardText(id).map((t) => <li key={t}>{t}</li>)}</ul></dd>
+              <dt>紀錄</dt><dd>遇見 {e!.seen} 次・完成 {e!.done} 次</dd>
+            </dl>
+            {id === 'letter' && s.events.letters > 0 && (
+              <div class="event-letters">
+                {LETTERS.slice(0, s.events.letters).map((l, k) => (
+                  <button key={k} class="buy-btn" onClick={() => (letterOpen.value = k)}>✉ {l.title}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div class="event-detail-body">
+            <p class="event-story">{seen ? '遇見過，但還沒完成。下次出現時試試看吧！' : '還沒遇見過的事件。'}</p>
+            <p class="hint">提示：{def.hint}</p>
+            <p class="hint">完成後會解鎖這個事件的圖、故事與詳細資訊。</p>
+          </div>
+        )}
+        <div class="event-detail-nav">
+          <button class="btn" onClick={() => step(-1)}>◀ 上一個</button>
+          <button class="btn" onClick={() => step(1)}>下一個 ▶</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const ZONE_NAMES = { greenhouse: '溫室', cauldron: '大釜區', counter: '櫃台', rest: '休息室', any: '不分區' } as const;

@@ -373,22 +373,28 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: pointer; }
   cursor: pointer;
 }
 .chip.active { background: var(--teal); color: #fff; }
+/* 固定留好行數的說明（hint 的行高 1.5） */
+.hint.fixed-lines.l2 { min-height: 3em; }
+.hint.fixed-lines.l3 { min-height: 4.5em; }
 .talk-btn { margin-left: auto; font-size: 0.8em; }
 
+/* 高度固定：立繪欄照立繪的比例（2:3）跟著高度決定寬度，圖片剛好填滿，不會上面留白；右邊的內容太長時在裡面捲動 */
 .lumia-modal {
   position: relative;
   display: flex;
   gap: 1em;
-  width: min(calc(980px * var(--uiz)), 96%);
-  max-height: 92%;
+  width: min(calc(1120px * var(--uiz)), 96%);
+  height: min(calc(790px * var(--uiz)), 92%);
   text-align: left;
-  overflow-y: auto;
 }
+.lumia-modal .lumia-side { flex: 1 1 0; min-width: 0; overflow-y: auto; padding-right: 0.3em; }
 .modal-close { position: absolute; top: 0.3em; right: 0.4em; color: var(--ink); font-size: 1.2em; }
 .portrait {
   position: relative;
-  flex: 0 0 38%;
-  min-height: calc(560px * var(--uiz));
+  flex: 0 0 auto;
+  height: 100%;
+  aspect-ratio: 2 / 3;
+  max-width: 48%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -396,11 +402,14 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: pointer; }
   border-radius: 16px;
   overflow: hidden;
 }
-.portrait img { max-width: 100%; max-height: calc(560px * var(--uiz)); object-fit: contain; pointer-events: none; }
-.portrait.chibi img { max-height: calc(460px * var(--uiz)); margin-bottom: 1em; }
+/* 圖片與觸碰區放在同一個框裡：框的大小 = 圖片實際顯示的大小 */
+.portrait-figure { position: relative; display: flex; max-width: 100%; max-height: 100%; }
+.portrait img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
+.portrait.chibi .portrait-figure { margin-bottom: 1em; max-height: 80%; }
 .touch-zone { position: absolute; left: 10%; width: 80%; border: none; background: transparent; cursor: pointer; }
-.touch-zone.head { top: 0; height: 34%; cursor: grab; }
-.touch-zone.cheek { top: 34%; height: 66%; }
+/* 半身立繪：帽子到下巴大約在圖片上方 45% */
+.touch-zone.head { top: 0; height: 45%; cursor: grab; }
+.touch-zone.cheek { top: 45%; height: 55%; }
 .touch-zone:hover { background: rgba(255, 143, 184, 0.08); }
 .pop {
   position: absolute;
@@ -575,9 +584,46 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: pointer; }
 .event-rarity-chip { border-radius: 999px; padding: 0 0.6em; letter-spacing: 0; background: #e3ebf8; color: #3a5a9a; }
 .event-rarity-chip.r1 { background: #ece6ff; color: #6a4fd0; }
 .event-rarity-chip.r2 { background: #fff1c8; color: #b07a00; }
-.event-lumia { font-size: 0.66em; color: #c0487a; font-weight: 700; text-align: left; }
-.event-count { font-size: 0.62em; color: var(--ink-soft); }
+.event-entry { font: inherit; color: inherit; cursor: pointer; }
+.event-entry:hover { border-color: var(--gold); transform: translateY(-2px); }
 .event-letters { display: flex; flex-wrap: wrap; gap: 0.3em; justify-content: center; }
+
+/* 事件簿的詳細視窗 */
+/* 大小固定（切換上一個／下一個時不會跳動）：標題、CG、切換按鈕固定，中間的內容在裡面捲動 */
+.event-detail {
+  position: relative;
+  width: min(calc(860px * var(--uiz)), 96%);
+  height: min(calc(900px * var(--uiz)), 94%);
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.event-detail .event-cg { flex: 0 0 auto; max-height: 45%; }
+.event-detail .event-detail-body { flex: 1 1 0; min-height: 0; overflow-y: auto; padding-right: 0.4em; }
+.event-detail .event-detail-nav { flex: 0 0 auto; }
+.event-detail.rarity-1 { border-color: #9a7cff; }
+.event-detail.rarity-2 { border-color: #ffc93c; }
+.event-detail-head { display: flex; align-items: center; gap: 0.5em; padding-right: 2em; }
+.event-detail-head h2 { margin: 0.1em 0; }
+.event-detail-head .gift-no { align-self: center; }
+.event-cg { margin: 0.4em 0; max-height: calc(400px * var(--uiz)); aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; }
+.event-cg.locked { background: linear-gradient(135deg, #3b2c22, #2a2030); }
+.event-cg-ph { display: flex; flex-direction: column; align-items: center; gap: 0.4em; color: #f6e3b4; width: 30%; }
+.event-cg-ph .gift-art, .event-cg-ph .gift-art.ph { width: 100%; height: auto; aspect-ratio: 1; max-width: none; max-height: none; font-size: 2.4em; border-radius: 24px; }
+.event-cg-ph small { font-size: 0.6em; opacity: 0.7; }
+.event-detail-body { font-size: 0.85em; }
+.event-story { line-height: 1.7; margin: 0.3em 0; }
+.event-lumia { color: #c0487a; font-weight: 700; margin: 0.2em 0 0.6em; }
+.event-facts { display: grid; grid-template-columns: auto 1fr; gap: 0.3em 0.8em; margin: 0; font-size: 0.9em; }
+.event-facts dt { font-weight: 700; color: var(--teal); white-space: nowrap; }
+.event-facts dd { margin: 0; }
+.event-facts ul { margin: 0; padding-left: 1.2em; }
+.event-detail-nav { display: flex; justify-content: space-between; margin-top: 0.6em; }
+
+/* 設定頁：遊玩時間 */
+.play-time { border-bottom: 1px dashed var(--parchment-dark); margin-bottom: 0.4em; padding-bottom: 0.2em; }
+.play-total { font-size: 0.9em; color: var(--ink-soft); }
+.play-total b { font-size: 1.25em; color: var(--teal); margin-left: 0.3em; }
 
 /* 名聲與羈絆、休息室擺設 */
 .bond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4em; }

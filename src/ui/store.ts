@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals';
+import type { EventId } from '../game/config/events';
 import type { BuyMode } from '../game/costs';
 import type { ItemId } from '../game/flow';
 import type { Game } from '../game/game';
@@ -24,8 +25,10 @@ export const flowDetail = signal<ItemId | 'income' | null>(null);
 export const dragGhost = signal<{ icon: string; x: number; y: number } | null>(null);
 /** 正在播放的劇情 ID */
 export const storyId = signal<string | null>(null);
-/** 正在讀的師父來信（第幾封） */
+/** 正在讀的來信（第幾封） */
 export const letterOpen = signal<number | null>(null);
+/** 事件簿：正在看哪一個事件的詳細視窗 */
+export const eventDetail = signal<EventId | null>(null);
 
 let game: Game | null = null;
 let takeoverFn: (() => Promise<void>) | null = null;

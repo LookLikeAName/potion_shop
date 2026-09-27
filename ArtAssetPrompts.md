@@ -335,16 +335,20 @@ Japanese anime style, kawaii and heartwarming, 2D fantasy game art, soft cel sha
 
 ---
 
-## 8. 家具（休息室）— `src/assets/art/furniture/`
+## 8. 禮物（休息室擺設）— `src/assets/art/gifts/`
+
+> 家具已經和禮物合併：送給露米婭的禮物就是休息室的擺設，素材統一用 `gift_` 開頭、放在 `gifts` 資料夾（原本的 `furn_slime_doll`、`furn_gramophone`、`furn_tea_set` 已改名為 `gift_…`）。
+> 其他禮物的 Prompt 見 [`ArtAssetPrompts_Gifts.md`](ArtAssetPrompts_Gifts.md) 與 [`ArtAssetPrompts_Missing.md`](ArtAssetPrompts_Missing.md) C。
 
 * **比例：** 1:1｜使用第 6 章的物件模板
 
 | 資源 ID | 優先 | {OBJECT} |
 |---|---|---|
-| furn_sofa | ★★ | a cozy plump old sofa with a patchwork quilt and mismatched cushions, warm colors |
-| furn_slime_doll | ★★ | a round squishy pink slime plush toy with a cute sleepy smiling face |
-| furn_gramophone | ★★ | a vintage gramophone with a large brass flower-shaped horn, a spinning record with floating musical notes |
-| furn_tea_set | ★★ | an elegant magic tea set on a small round table: a teapot with gently glowing amber tea, two cups, steam curling into small star shapes |
+| gift_slime_doll | ✔ | a round squishy pink slime plush toy with a cute sleepy smiling face |
+| gift_gramophone | ✔ | a vintage gramophone with a large brass flower-shaped horn, a spinning record with floating musical notes |
+| gift_tea_set | ✔ | an elegant magic tea set on a small round table: a teapot with gently glowing amber tea, two cups, steam curling into small star shapes |
+
+（原本規劃的 `furn_sofa` 沙發沒有用到：休息室的坐墊是背景的一部分。）
 
 ---
 

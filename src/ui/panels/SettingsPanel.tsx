@@ -1,8 +1,24 @@
 import { useState } from 'preact/hooks';
-import { formatNumber } from '../../game/format';
+import { formatDuration, formatNumber } from '../../game/format';
 import { clearSave, exportSave, importSave, toSaveFile } from '../../game/save';
 import { createInitialState } from '../../game/state';
 import { showToast, useGame } from '../store';
+
+/** 遊玩時間：合計 = 遊戲開著（其中畫面在前景）＋ 離開（關掉遊戲、離線） */
+function PlayTime() {
+  const st = useGame().state.stats;
+  const total = st.playOnline + st.playAway;
+  return (
+    <div class="play-time">
+      <div class="play-total">總遊玩時間 <b>{formatDuration(total)}</b></div>
+      <div class="stats">
+        <span>在畫面上 <b>{formatDuration(st.playForeground)}</b></span>
+        <span>開著但在背景 <b>{formatDuration(Math.max(0, st.playOnline - st.playForeground))}</b></span>
+        <span>離開（離線） <b>{formatDuration(st.playAway)}</b></span>
+      </div>
+    </div>
+  );
+}
 
 export function SettingsPanel() {
   const game = useGame();
@@ -48,6 +64,7 @@ export function SettingsPanel() {
     <div class="cards">
       <div class="card">
         <div class="card-title">統計</div>
+        <PlayTime />
         <div class="stats">
           <span>累計金幣 {formatNumber(s.stats.goldEarned)}</span>
           <span>賣出藥水 {formatNumber(s.stats.potionsSold)}</span>

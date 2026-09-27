@@ -19,6 +19,7 @@ export function tickWish(s: GameState, dt: number, ctx: SimContext): void {
   if (!live(ctx) || !wishesUnlocked(s)) return;
   const w = s.wish;
   if (w) {
+    syncWishLamp(s, w);
     w.time -= dt;
     if (w.time <= 0) endWish(s, ctx, false);
     return;
@@ -28,6 +29,23 @@ export function tickWish(s: GameState, dt: number, ctx: SimContext): void {
   s.wish = rollWish(s, ctx.rng);
   if (s.wish) ctx.emit({ type: 'wish', result: 'new', reward: s.wish.reward });
   else s.wishTimer = WISH.retryDelay;
+}
+
+/** 星燈擺上或收起來時，剩餘時間至少留幾秒（收起來不會讓心願當場結束） */
+const LAMP_MIN_LEFT = 3;
+
+/**
+ * 許願星燈的時限加成跟著「現在有沒有擺出來」：心願進行中才擺上星燈，總時限馬上變長、剩餘時間跟著加；
+ * 收起來就變回原本的時限（已經過去的時間不變）
+ */
+export function syncWishLamp(s: GameState, w: WishState): void {
+  const on = decorFx(s, 'wishTime');
+  if (on === !!w.lamp) return;
+  const base = w.lamp ? w.timeMax / GIFT_FX.wishTime : w.timeMax;
+  const elapsed = w.timeMax - w.time;
+  w.timeMax = on ? base * GIFT_FX.wishTime : base;
+  w.time = Math.max(Math.min(w.time, LAMP_MIN_LEFT), w.timeMax - elapsed);
+  w.lamp = on;
 }
 
 /** 記錄進度（收成、熬煮、收購、點擊時呼叫）；達成就立刻完成 */
@@ -109,7 +127,8 @@ export function rollWish(s: GameState, rng: () => number): WishState | null {
   const rarity = WISH.rarities.indexOf(pick(WISH.rarities, (r) => r.chance, rng()));
   const r = WISH.rarities[rarity];
   const base = WISH.times[Math.floor(rng() * WISH.times.length)];
-  const timeMax = base * (decorFx(s, 'wishTime') ? GIFT_FX.wishTime : 1);
+  const lamp = decorFx(s, 'wishTime');
+  const timeMax = base * (lamp ? GIFT_FX.wishTime : 1);
   const click = o.kind === 'clickPot' || o.kind === 'clickCauldron';
   // 目標量以「沒有星燈」的時限計算：星燈只是多給時間
   const coef = click ? 1 : WISH.goalCoef[o.kind as 'harvest' | 'brew' | 'crate'];
@@ -117,7 +136,7 @@ export function rollWish(s: GameState, rng: () => number): WishState | null {
   const reward = WISH.baseReward * (click ? WISH.clickRewardMult : 1) * r.reward * (base / WISH.refTime)
     * happyMult(s) * (decorFx(s, 'wishReward') ? GIFT_FX.wishReward : 1);
   return {
-    kind: o.kind, item: o.item, goal, progress: 0, time: timeMax, timeMax, rarity,
+    kind: o.kind, item: o.item, goal, progress: 0, time: timeMax, timeMax, lamp, rarity,
     reward: Math.round(reward * 100) / 100,
   };
 }

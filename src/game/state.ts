@@ -6,8 +6,11 @@ import { POTION_IDS, type PotionId } from './config/recipes';
 import { EVENT, type EventId } from './config/events';
 import { WISH, type WishKind } from './config/wishes';
 
-/** 2：開心度系統重做（家具改成禮物與擺設、魔力同調改成 5 級）；3：突發事件重做（移除焦晶） */
-export const SAVE_VERSION = 3;
+/**
+ * 2：開心度系統重做（家具改成禮物與擺設、魔力同調改成 5 級）；3：突發事件重做（移除焦晶）；
+ * 4：收購箱保留量從百分比改成「幾秒份」
+ */
+export const SAVE_VERSION = 4;
 
 /** 盆栽對某種植物的培育紀錄（改種後再種回來會恢復） */
 export interface PlotMemory {
@@ -80,6 +83,11 @@ export interface CustomerState {
   /** 付款倍率：進門時女僕裝在櫃台，客人少買但照原本的數量付錢（1 = 一般） */
   payMult: number;
   checkout: number;
+  /**
+   * 事件「微服出巡的公主」：沒有訂單，排在隊伍裡等玩家認出她（點她），
+   * 不會被結帳，事件結束時離開
+   */
+  princess?: boolean;
 }
 
 export interface GameStats {
@@ -100,6 +108,13 @@ export interface GameStats {
   /** 完成的事件數、事件給的金幣 */
   eventsDone: number;
   eventGold: number;
+  /**
+   * 遊玩時間（秒）：遊戲開著的時間（其中分頁在前景的時間）、關掉或離開的時間（離線，不受離線收益上限影響）。
+   * 舊存檔沒有紀錄，從載入這一版開始算
+   */
+  playOnline: number;
+  playForeground: number;
+  playAway: number;
 }
 
 export interface GameState {
@@ -231,6 +246,8 @@ export interface WishState {
   /** 剩餘秒數、總時限 */
   time: number;
   timeMax: number;
+  /** 總時限目前有沒有算進許願星燈的加成（星燈中途擺上或收起來時，總時限與剩餘時間跟著變） */
+  lamp?: boolean;
   /** 稀有度（WISH.rarities 的索引） */
   rarity: number;
   /** 完成時的開心度（出題時就算好） */
@@ -253,24 +270,24 @@ export interface MascotState {
 }
 
 export interface GameSettings {
-  /** 藥水收購箱：每種藥水要不要賣、保留多少（百分比，100% = 店裡站滿、每人都點最多時的量） */
+  /** 藥水收購箱：每種藥水要不要賣、保留多少（顧客幾秒的需求量） */
   potions: Record<PotionId, CrateSetting>;
-  /** 原料收購箱：每種原料要不要賣、保留多少（百分比，100% = 所有大釜熬 1 輪） */
+  /** 原料收購箱：每種原料要不要賣、保留多少（所有大釜全速熬煮幾秒的用量） */
   materials: Record<MaterialId, CrateSetting>;
 }
 
-/** 收購箱對某種藥水／原料的設定：要不要賣、保留多少（百分比） */
+/** 收購箱對某種藥水／原料的設定：要不要賣、保留幾秒份 */
 export interface CrateSetting {
   sell: boolean;
-  keepPct: number;
+  keepSec: number;
 }
 
 export const defaultMaterialSettings = (): Record<MaterialId, CrateSetting> =>
-  Object.fromEntries(MATERIAL_IDS.map((m) => [m, { sell: true, keepPct: UPGRADE_FX.materialKeepDefault }])) as
+  Object.fromEntries(MATERIAL_IDS.map((m) => [m, { sell: true, keepSec: UPGRADE_FX.materialKeepSec }])) as
     Record<MaterialId, CrateSetting>;
 
 export const defaultPotionSettings = (): Record<PotionId, CrateSetting> =>
-  Object.fromEntries(POTION_IDS.map((p) => [p, { sell: true, keepPct: UPGRADE_FX.potionKeepDefault }])) as
+  Object.fromEntries(POTION_IDS.map((p) => [p, { sell: true, keepSec: UPGRADE_FX.potionKeepSec }])) as
     Record<PotionId, CrateSetting>;
 
 export function createSlot(open: boolean): SlotState {
@@ -341,6 +358,7 @@ export function createInitialState(): GameState {
       potionsSold: 0, goldEarned: 0, customersServed: 0, rushServed: 0, partialSales: 0, customersLost: 0,
       potionsWholesaled: 0, materialsWholesaled: 0, wholesaleGold: 0, wishesDone: 0, wishesFailed: 0,
       eventsDone: 0, eventGold: 0,
+      playOnline: 0, playForeground: 0, playAway: 0,
     },
   };
 }

@@ -21,6 +21,8 @@ interface Bucket {
   stock: Counts;
   made: Counts;
   crate: Counts;
+  /** 藥水：進門時這種藥水不夠、訂單沒辦法馬上湊齊的客人數 */
+  short: Counts;
   /** 各配方的大釜等原料（湊不出一份）的秒數 */
   starved: Record<PotionId, number>;
   income: Income;
@@ -36,15 +38,20 @@ export interface Income {
   crateMaterials: number;
 }
 
-/** 顧客：整張湊齊成交、只買走部分、空手離開的人數 */
+/**
+ * 顧客：整張湊齊成交、只買走部分、空手離開的人數；
+ * 進門的人數、其中進門當下訂單沒辦法馬上湊齊（要等貨）的人數
+ */
 export interface Orders {
   full: number;
   partial: number;
   lost: number;
+  arrived: number;
+  waited: number;
 }
 
 const noIncome = (): Income => ({ customers: 0, cratePotions: 0, crateMaterials: 0 });
-const noOrders = (): Orders => ({ full: 0, partial: 0, lost: 0 });
+const noOrders = (): Orders => ({ full: 0, partial: 0, lost: 0, arrived: 0, waited: 0 });
 
 export interface ItemFlow {
   /** 產量／秒（收成、熬煮完成） */
@@ -55,6 +62,8 @@ export interface ItemFlow {
   crate: number;
   /** 庫存淨變化／秒 */
   net: number;
+  /** 藥水：這段時間進門時這種藥水不夠、沒辦法馬上湊齊的客人數（不是每秒） */
+  short: number;
 }
 
 export interface FlowReport {
@@ -78,6 +87,8 @@ export interface ItemSeries {
   net: number[];
   /** 那一秒結束時的庫存 */
   stock: number[];
+  /** 那一秒進門、這種藥水不夠的客人數 */
+  short: number[];
 }
 
 export interface FlowSeries {
@@ -109,6 +120,11 @@ export class FlowTracker {
       b.income.customers += e.gold;
       b.orders[e.partial ? 'partial' : 'full']++;
     } else if (e.type === 'customerLeft') b.orders.lost++;
+    else if (e.type === 'customerArrived' && e.short) {
+      b.orders.arrived++;
+      if (e.short.length > 0) b.orders.waited++;
+      for (const p of e.short) b.short[p]++;
+    }
     else if (e.type === 'harvest') b.made[e.material] += e.amount;
     else if (e.type === 'brewed') b.made[e.recipe] += e.amount;
     else if (e.type === 'wholesale') {
@@ -125,7 +141,7 @@ export class FlowTracker {
       const stock = zeros();
       for (const i of ITEMS) stock[i] = stockOf(s, i);
       b = {
-        time: 0, stock, made: zeros(), crate: zeros(), starved: { glow: 0, focus: 0, elixir: 0 },
+        time: 0, stock, made: zeros(), crate: zeros(), short: zeros(), starved: { glow: 0, focus: 0, elixir: 0 },
         income: noIncome(), orders: noOrders(), market: s.market.value,
       };
       this.buckets.push(b);
@@ -151,6 +167,7 @@ export class FlowTracker {
         used: Math.max(0, consumed - crate) / seconds,
         crate: crate / seconds,
         net: delta / seconds,
+        short: this.buckets.reduce((n, b) => n + b.short[i], 0),
       };
     }
     const starved = { glow: 0, focus: 0, elixir: 0 };
@@ -175,7 +192,7 @@ export class FlowTracker {
     const cur = this.cur!;
     const items = {} as Record<ItemId, ItemSeries>;
     for (const i of ITEMS) {
-      const it: ItemSeries = { made: [], used: [], crate: [], net: [], stock: [] };
+      const it: ItemSeries = { made: [], used: [], crate: [], net: [], stock: [], short: [] };
       done.forEach((b) => {
         const next = this.buckets[this.buckets.indexOf(b) + 1];
         const end = next ? next.stock[i] : stockOf(s, i);
@@ -185,6 +202,7 @@ export class FlowTracker {
         it.crate.push(b.crate[i] / b.time);
         it.net.push((end - b.stock[i]) / b.time);
         it.stock.push(end);
+        it.short.push(b.short[i]);
       });
       items[i] = it;
     }

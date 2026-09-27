@@ -31,7 +31,7 @@ export function LumiaPanel() {
           <button class="btn primary talk-btn" onClick={() => (lumiaOpen.value = true)}>和她互動</button>
         </div>
         <StaminaBar s={s} />
-        <p class="hint">目前：{mascotStatus(s)}</p>
+        <p class="hint fixed-lines l2">目前：{mascotStatus(s)}</p>
         <MascotControls />
       </div>
 

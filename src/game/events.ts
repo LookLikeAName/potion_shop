@@ -9,9 +9,9 @@ import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
 import { formatNumber } from './format';
 import type { SimContext } from './sim';
-import type { ActiveEvent, Buff, BuffKind, GameState } from './state';
+import type { ActiveEvent, Buff, BuffKind, CustomerState, GameState } from './state';
 import {
-  bondLevel, cauldronOutputPerSec, displayedGifts, happyMult, has, hasAnyCrate, isSleeping, potOutputPerSec,
+  bondLevel, cauldronOutputPerSec, displayedGifts, ENTER_TIME, happyMult, has, hasAnyCrate, isSleeping, potOutputPerSec,
   renownLevel, workZone,
 } from './stats';
 import { wishesUnlocked } from './wishes';
@@ -32,9 +32,11 @@ export function tickEvents(s: GameState, dt: number, ctx: SimContext): void {
   if (!live(ctx) || ctx.eventHold || !eventsUnlocked(s)) return;
 
   const a = ev.active;
+  // 公主只在她的事件進行中待在店裡（例如事件被中途結束時，把她送走）
+  if (s.customers.some((c) => c.princess && c.id !== a?.customer)) dismissPrincess(s, a?.customer);
   if (a) {
     a.time -= dt;
-    // 公主離開了（被結帳或走掉）：事件跟著結束
+    // 公主不見了（舊存檔等狀況）：事件跟著結束
     const gone = a.customer !== undefined && !s.customers.some((c) => c.id === a.customer);
     if (a.time <= 0 || gone) endEvent(s, ctx);
     return;
@@ -80,9 +82,7 @@ export function eventAvailable(s: GameState, id: EventId, ctx: SimContext): bool
     case 'apprentice': return has(s, 'guild_contract') && s.cauldrons.length > 0;
     case 'hero': return renownLevel(s) >= 5 && s.cauldrons.length > 0;
     case 'merchant': return renownLevel(s) >= 3;
-    case 'princess':
-      return renownLevel(s) >= 9 && s.cauldrons.some((c) => c.recipe === 'elixir')
-        && s.customers.some((c) => c.status !== 'serving');
+    case 'princess': return renownLevel(s) >= 9 && s.cauldrons.some((c) => c.recipe === 'elixir');
     case 'guild_rush': return hasAnyCrate(s);
     case 'dream': return isSleeping(s);
     case 'letter': return bondLevel(s) >= nextLetter(s).bond;
@@ -149,9 +149,14 @@ export function startEvent(s: GameState, id: EventId, ctx: SimContext): ActiveEv
     }
     case 'butterfly': a.landed = []; break;
     case 'princess': {
-      // 還沒走到櫃台的客人裡挑一位
-      const list = s.customers.filter((c) => c.status !== 'serving');
-      if (list.length > 0) a.customer = pickOne(list, ctx.rng).id;
+      // 公主扮成一般客人走進來排隊：沒有訂單、不會被結帳，等玩家認出她（點她），時間到就離開
+      const c: CustomerState = {
+        id: s.nextCustomerId++, lines: [], status: 'waiting', arrive: ENTER_TIME, walk: 0, express: false,
+        patience: def.time, patienceMax: def.time, rush: false, partial: false, payMult: 1, checkout: 0, princess: true,
+      };
+      s.customers.push(c);
+      a.customer = c.id;
+      ctx.emit({ type: 'customerArrived', id: c.id });
       break;
     }
     case 'merchant': a.options = shuffled(Object.keys(MERCHANT_OFFERS), ctx.rng).slice(0, 3); break;
@@ -281,9 +286,15 @@ function countHit(s: GameState, a: ActiveEvent, ctx: SimContext): EventActionRes
  * 時間到（或時機題用完機會）：計數型、時機題只要點中過就算完成；
  * 其他沒完成的就安靜離開，沒有任何懲罰
  */
+/** 送走事件的公主（keep = 還在進行中的那一位不送） */
+function dismissPrincess(s: GameState, keep?: number): void {
+  s.customers = s.customers.filter((c) => !c.princess || c.id === keep);
+}
+
 function endEvent(s: GameState, ctx: SimContext): void {
   const a = s.events.active!;
   const def = EVENT_MAP[a.id];
+  if (a.id === 'princess') dismissPrincess(s);
   if ((def.kind === 'count' || def.kind === 'timing') && a.hits > 0) {
     completeEvent(s, ctx);
     return;
@@ -298,6 +309,8 @@ function completeEvent(s: GameState, ctx: SimContext): void {
   const a = ev.active!;
   const def = EVENT_MAP[a.id];
   const text = applyReward(s, a, ctx);
+  // 公主被認出來：開心地訂完貨就回城堡了
+  if (a.id === 'princess') dismissPrincess(s);
   const entry = (ev.codex[a.id] ??= { seen: 1, done: 0 });
   const first = entry.done === 0;
   entry.done++;

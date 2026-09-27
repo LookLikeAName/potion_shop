@@ -114,7 +114,7 @@ describe('休息室擺設', () => {
     expect(plantClickPower(s, s.slots[0])).toBeCloseTo(c0 * GIFT_FX.click);
   });
 
-  it('月光捕夢網：離線金幣 ×1.5', () => {
+  it('月光捕夢網：離線效率 50% → 70%', () => {
     const make = () => {
       const s = createInitialState();
       s.slots[0].fairy = true;
@@ -131,7 +131,8 @@ describe('休息室擺設', () => {
     const ra = simulateOffline(a, 3600);
     const rb = simulateOffline(b, 3600);
     expect(rb.dream).toBe(true);
-    expect(rb.gold).toBeCloseTo(ra.gold * GIFT_FX.offline);
+    expect(rb.efficiency).toBeCloseTo(0.5 + GIFT_FX.offline);
+    expect(rb.gold / ra.gold).toBeCloseTo((0.5 + GIFT_FX.offline) / 0.5, 5);
   });
 
   it('送禮物：擺設位滿了就收在倉庫', () => {

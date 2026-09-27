@@ -13,7 +13,7 @@ import {
 } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
 import {
-  arrivalRate, brewPassiveSpeed, checkoutTime, cratePct, customerShare, fullShopDemand, materialReserve, maxCustomerQty, orderScale, potionReserve, recipeInputs,
+  arrivalRate, brewPassiveSpeed, checkoutTime, cratePct, customerDemand, customerShare, fullShopDemand, materialDemand, materialReserve, maxCustomerQty, orderScale, potionReserve, recipeInputs,
   sellPrice,
 } from '../src/game/stats';
 
@@ -210,7 +210,7 @@ describe('商會收購箱', () => {
     expect(getQuote(s, { kind: 'global', id: 'crate_focus' }, 1)?.cost).toBe(1000);
   });
 
-  it('只收購有收購箱的藥水；保留 100% = 店裡站滿時的最大訂單量；0% 全部收購；關掉不賣', () => {
+  it('只收購有收購箱的藥水；需求很少時至少保留店裡站滿時的最大訂單量；0 秒全部收購；關掉不賣', () => {
     const s = createInitialState();
     s.gold = 1e9;
     unlockRecipe(s, 'focus');
@@ -228,7 +228,7 @@ describe('商會收購箱', () => {
     expect(s.gold).toBeCloseTo(25 * 5 * 0.3);
     expect(c.events).toContainEqual(expect.objectContaining({ type: 'wholesale', crate: 'glow', amount: 25 }));
 
-    // 保留 0%：全部收購；關掉「賣」：一瓶都不收
+    // 保留 0 秒：全部收購；關掉「賣」：一瓶都不收
     setCrateKeep(s, 'glow', 0);
     run(s, 1.05, c);
     expect(s.potions.glow).toBe(0);
@@ -238,12 +238,20 @@ describe('商會收購箱', () => {
     expect(s.potions.glow).toBe(50);
   });
 
-  it('藥水保留百分比：200% = 店裡站滿時最大訂單量的兩倍', () => {
+  it('藥水保留幾秒份：顧客幾秒的需求量，至少店裡站滿時的量；上限 1 小時', () => {
     const s = createInitialState();
-    setCrateKeep(s, 'glow', 200);
-    expect(potionReserve(s, 'glow')).toBe(Math.ceil(fullShopDemand(s, 'glow') * 2));
+    s.potionRate.glow = 100;
+    const d = customerDemand(s, 'glow');
+    setCrateKeep(s, 'glow', 600);
+    expect(potionReserve(s, 'glow')).toBe(Math.ceil(600 * d));
+    expect(600 * d).toBeGreaterThan(fullShopDemand(s, 'glow'));
+    setCrateKeep(s, 'glow', 1);
+    expect(potionReserve(s, 'glow')).toBe(Math.ceil(fullShopDemand(s, 'glow')));
+    setCrateKeep(s, 'glow', 99999);
+    expect(s.settings.potions.glow.keepSec).toBe(UPGRADE_FX.keepMaxSec);
     setCrateKeep(s, 'glow', -30);
-    expect(s.settings.potions.glow.keepPct).toBe(0);
+    expect(s.settings.potions.glow.keepSec).toBe(0);
+    expect(potionReserve(s, 'glow')).toBe(0);
   });
 
   it('訂單量變大時，保留量也跟著變大', () => {
@@ -254,36 +262,43 @@ describe('商會收購箱', () => {
     expect(orderScale(s, 'glow')).toBeGreaterThan(100);
   });
 
-  it('多餘原料需要原料收購箱：保留所有大釜熬 3 輪的量，價格 = 基準價 × 收購比例', () => {
+  it('多餘原料需要原料收購箱：大釜還沒有火蜥蜴時保留 1 輪的量，價格 = 基準價 × 收購比例', () => {
     const s = createInitialState();
     own(s, 'crate_materials');
-    s.cauldrons[0].level = 10; // 微光：每輪 2 × 10 = 20 紅心草 → 保留 60
+    s.cauldrons[0].level = 30; // 微光：每輪 2 × 30 = 60 紅心草 → 保留 60
     s.materials.redheart = 1060;
     s.slots[0].plant = null; // 不讓盆栽在測試中繼續長
     s.customerTimer = -1e9;
     const c = ctx();
-    // 大釜開工會先拿走 20，剩下 1040 → 保留 60，收購 980
+    // 大釜開工會先拿走 60，剩下 1000 → 保留 60，收購 940
     run(s, 1.05, c);
     expect(s.materials.redheart).toBe(60);
-    expect(s.stats.materialsWholesaled).toBe(980);
-    expect(s.gold).toBeCloseTo(980 * 0.5 * 0.3);
-    expect(c.events).toContainEqual(expect.objectContaining({ type: 'wholesale', crate: 'materials', amount: 980 }));
+    expect(s.stats.materialsWholesaled).toBe(940);
+    expect(s.gold).toBeCloseTo(940 * 0.5 * 0.3);
+    expect(c.events).toContainEqual(expect.objectContaining({ type: 'wholesale', crate: 'materials', amount: 940 }));
   });
 
-  it('原料保留量用百分比：100% = 大釜熬 1 輪，0% = 全部收購', () => {
+  it('原料保留幾秒份：所有大釜全速熬煮幾秒的用量；至少 1 輪、至少 20 份；0 秒全部收購', () => {
     const s = createInitialState();
     own(s, 'crate_materials');
     s.cauldrons[0].level = 30; // 微光：每輪 2 × 30 = 60 紅心草
     s.slots[0].plant = null;
     s.customerTimer = -1e9;
-    setCrateKeep(s, 'redheart', 100);
+    // 沒有火蜥蜴：不會自動熬煮，保留 1 輪
+    expect(materialDemand(s, 'redheart')).toBe(0);
     expect(materialReserve(s, 'redheart')).toBe(60);
-    setCrateKeep(s, 'redheart', 250);
-    expect(materialReserve(s, 'redheart')).toBe(150);
-    setCrateKeep(s, 'redheart', 10); // 6 份，但至少保留 20
-    expect(materialReserve(s, 'redheart')).toBe(UPGRADE_FX.materialReserveMin);
+    s.cauldrons[0].salamander = 1;
+    const d = materialDemand(s, 'redheart');
+    expect(d).toBeGreaterThan(1);
+    setCrateKeep(s, 'redheart', 60);
+    expect(materialReserve(s, 'redheart')).toBe(Math.ceil(60 * d));
+    setCrateKeep(s, 'redheart', 1); // 比 1 輪還少：保留 1 輪
+    expect(materialReserve(s, 'redheart')).toBe(Math.max(60, Math.ceil(d)));
+    s.cauldrons[0].level = 1; // 每輪 2 份：至少保留 20
+    expect(materialReserve(s, 'redheart')).toBe(Math.max(UPGRADE_FX.materialReserveMin, Math.ceil(materialDemand(s, 'redheart'))));
+    s.cauldrons[0].level = 30;
     setCrateKeep(s, 'redheart', -50);
-    expect(s.settings.materials.redheart.keepPct).toBe(0);
+    expect(s.settings.materials.redheart.keepSec).toBe(0);
     expect(materialReserve(s, 'redheart')).toBe(0);
     s.cauldrons = [];
     s.materials.redheart = 500;
@@ -324,10 +339,10 @@ describe('商會收購箱', () => {
     }))!;
     expect(save.state.upgrades).toMatchObject({ crate_glow: 2, crate_focus: 2, crate_elixir: 2, crate_materials: 2 });
     expect(save.state.upgrades.crate).toBeUndefined();
-    expect(save.state.settings.potions.glow).toEqual({ sell: true, keepPct: UPGRADE_FX.potionKeepDefault });
-    expect(save.state.settings.potions.focus).toEqual({ sell: true, keepPct: 0 });
+    expect(save.state.settings.potions.glow).toEqual({ sell: true, keepSec: UPGRADE_FX.potionKeepSec });
+    expect(save.state.settings.potions.focus).toEqual({ sell: true, keepSec: 0 });
     // 舊的原料總開關關閉 → 每種原料都不賣，保留量用預設
-    expect(save.state.settings.materials.redheart).toEqual({ sell: false, keepPct: UPGRADE_FX.materialKeepDefault });
+    expect(save.state.settings.materials.redheart).toEqual({ sell: false, keepSec: UPGRADE_FX.materialKeepSec });
     expect(save.state.settings.materials.moonshroom.sell).toBe(false);
     expect('sellMaterials' in save.state.settings).toBe(false);
   });
@@ -540,8 +555,21 @@ describe('舊存檔相容', () => {
     };
     const save = parseSave(JSON.stringify(old))!;
     expect(save.state.cauldrons[0]).toMatchObject({ level: 3, combo: 0, boil: 0 });
-    expect(save.state.settings.potions.glow).toEqual({ sell: true, keepPct: UPGRADE_FX.potionKeepDefault });
-    expect(save.state.settings.materials.redheart).toEqual({ sell: true, keepPct: UPGRADE_FX.materialKeepDefault });
+    expect(save.state.settings.potions.glow).toEqual({ sell: true, keepSec: UPGRADE_FX.potionKeepSec });
+    expect(save.state.settings.materials.redheart).toEqual({ sell: true, keepSec: UPGRADE_FX.materialKeepSec });
     expect(save.state.bellCharges).toBe(0);
+  });
+
+  it('版本 3 的百分比保留量：換成預設秒數，0% 維持全部收購，開關照舊', () => {
+    const st = createInitialState() as unknown as { settings: Record<string, Record<string, unknown>> };
+    st.settings = {
+      potions: { glow: { sell: false, keepPct: 600 }, focus: { sell: true, keepPct: 0 } },
+      materials: { redheart: { sell: true, keepPct: 2000 } },
+    };
+    const save = parseSave(JSON.stringify({ version: 3, savedAt: 1, state: st }))!;
+    expect(save.state.settings.potions.glow).toEqual({ sell: false, keepSec: UPGRADE_FX.potionKeepSec });
+    expect(save.state.settings.potions.focus).toEqual({ sell: true, keepSec: 0 });
+    expect(save.state.settings.materials.redheart).toEqual({ sell: true, keepSec: UPGRADE_FX.materialKeepSec });
+    expect('keepPct' in save.state.settings.potions.glow).toBe(false);
   });
 });

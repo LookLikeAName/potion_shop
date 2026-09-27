@@ -196,17 +196,34 @@ describe('事件的操作與獎勵', () => {
     expect(cratePct(s, CRATE_FOR.glow)).toBeLessThan(1);
   });
 
-  it('公主：只有點中那位客人才算', () => {
+  it('公主：扮成沒有訂單的客人排隊，不會被結帳；只有點中她才算，完成後離開', () => {
     const s = opened();
-    s.customers.push({
-      id: 42, lines: [{ potion: 'glow', qty: 1, delivered: 0 }], status: 'waiting', arrive: 0, walk: 0, express: false,
-      patience: 20, patienceMax: 20, rush: false, partial: false, payMult: 1, checkout: 0,
-    });
+    s.potions.glow = 1e6;
     const c = ctx();
     startEvent(s, 'princess', c);
-    expect(s.events.active!.customer).toBe(42);
-    expect(eventAction(s, { type: 'hit', customer: 7 }, c).ok).toBe(false);
-    expect(eventAction(s, { type: 'hit', customer: 42 }, c).done).toBe(true);
+    const id = s.events.active!.customer!;
+    const princess = s.customers.find((x) => x.id === id)!;
+    expect(princess.princess).toBe(true);
+    expect(princess.lines).toHaveLength(0);
+    // 庫存再多也不會被結帳帶走
+    for (let k = 0; k < 100; k++) tick(s, 0.1, c);
+    expect(s.customers.find((x) => x.id === id)?.status).toBe('waiting');
+    expect(eventAction(s, { type: 'hit', customer: id + 100 }, c).ok).toBe(false);
+    expect(eventAction(s, { type: 'hit', customer: id }, c).done).toBe(true);
+    expect(s.customers.some((x) => x.princess)).toBe(false);
+  });
+
+  it('公主：沒被認出來，時間到就離開；事件被中途結束時也會送走她', () => {
+    const s = opened();
+    const c = ctx();
+    startEvent(s, 'princess', c);
+    tickEvents(s, 100, c);
+    expect(s.events.active).toBeNull();
+    expect(s.customers.some((x) => x.princess)).toBe(false);
+    startEvent(s, 'princess', c);
+    s.events.active = null;
+    tickEvents(s, 0.1, c);
+    expect(s.customers.some((x) => x.princess)).toBe(false);
   });
 });
 

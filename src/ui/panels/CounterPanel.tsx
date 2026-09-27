@@ -6,7 +6,7 @@ import { CRATE_FOR, CRATE_MATERIALS } from '../../game/config/upgrades';
 import { crateSetting } from '../../game/commands';
 import {
   arrivalRate, checkoutTime, cratePct, customerPatience, customerShare, has, hasAnyCrate, hasAutoCheckout,
-  materialPerRound,
+  materialPerRound, customerDemand, materialDemand,
   fullShopDemand, materialReserve, maxCustomerQty, orderScale, potionReserve, sellPrice,
 } from '../../game/stats';
 import { GlobalUpgrades } from '../GlobalUpgrades';
@@ -67,8 +67,8 @@ export function MarketHeat() {
 }
 
 /**
- * 收購箱設定：藥水和原料用同一套邏輯——每種都有「要不要賣」開關，以及保留多少（百分比）。
- * 藥水 100% = 店裡站滿、每人都點最多時的量；原料 100% = 所有大釜熬 1 輪的量。
+ * 收購箱設定：藥水和原料用同一套邏輯——每種都有「要不要賣」開關，以及保留幾秒份。
+ * 藥水 = 顧客幾秒的需求量；原料 = 所有大釜全速熬煮幾秒的用量。
  */
 function CrateCard() {
   const game = useGame();
@@ -79,10 +79,10 @@ function CrateCard() {
     <div class="card" id="crate-reserve">
       <div class="card-title"><Icon id="upg_crate" /> 收購箱設定</div>
       <p class="hint">
-        每種藥水和原料都可以決定<b>要不要賣給收購箱</b>，以及<b>保留多少</b>（超過的才收購；0% = 全部收購）。
-        藥水 100% = 店裡站滿、每人都點最多時的量（先留給付全價的客人；市場熱度高時需求會超過產量，
-        沒囤貨就湊不齊；囤太多則錢卡在庫存）；原料 100% = 所有大釜熬 1 輪的量
-        （保留時至少留 {UPGRADE_FX.materialReserveMin} 份）。收購價很低，能賣給客人、能熬成藥水都比較划算。
+        每種藥水和原料都可以決定<b>要不要賣給收購箱</b>，以及<b>保留幾秒份</b>（超過的才收購；0 秒 = 全部收購）。
+        藥水保留「顧客幾秒的需求量」：先留給付全價的客人，市場熱度高時需求會超過產量，有囤貨才湊得齊；
+        原料保留「所有大釜全速熬煮幾秒的用量」：極速沸騰、升級大釜時用量會突然變大，留一點才不會斷料。
+        收購價很低，能賣給客人、能熬成藥水都比較划算。
       </p>
 
       {potionCrates.map((p) => (
@@ -90,18 +90,20 @@ function CrateCard() {
           key={p} item={p} icon={`potion_${p}`} name={RECIPES[p].name}
           price={`收購價 ${Math.round(cratePct(s, CRATE_FOR[p]) * 100)}%`}
           keep={`保留 ${formatNumber(potionReserve(s, p))} 瓶`}
-          base={`100% = ${formatNumber(fullShopDemand(s, p))} 瓶`}
+          base={`顧客需求約 ${formatNumber(customerDemand(s, p))}/秒（至少留店裡站滿時的 ${formatNumber(fullShopDemand(s, p))} 瓶）`}
         />
       ))}
 
       {matPct > 0 && MATERIAL_IDS.filter((m) => shownMaterial(s, m)).map((m) => {
-        const perRound = materialPerRound(s, m);
+        const use = materialDemand(s, m);
         return (
           <CrateRow
             key={m} item={m} icon={`item_${m}`} name={PLANTS[m].name}
             price={`每份 ${formatNumber2(PLANTS[m].sellValue * matPct)} 金`}
             keep={`保留 ${formatNumber(materialReserve(s, m))} 份`}
-            base={perRound > 0 ? `100% = ${formatNumber(perRound)} 份` : '目前沒有大釜用到它'}
+            base={use > 0
+              ? `大釜全速用 ${formatNumber(use)}/秒（至少留 1 輪的量）`
+              : materialPerRound(s, m) > 0 ? '大釜還沒有火蜥蜴：至少留 1 輪的量' : '目前沒有大釜用到它'}
           />
         );
       })}
@@ -120,7 +122,16 @@ function shownMaterial(s: ReturnType<typeof useGame>['state'], m: MaterialId): b
   return s.slots.some((sl) => sl.plant === m) || s.materials[m] >= 1 || materialPerRound(s, m) > 0;
 }
 
-const PCT_STEPS = [-100, -10, 10, 100];
+const [SMALL, BIG] = UPGRADE_FX.keepStepSec;
+const SEC_STEPS = [-BIG, -SMALL, SMALL, BIG];
+
+/** 保留秒數：30 秒、2 分、1 分 30 秒 */
+function fmtKeep(sec: number): string {
+  if (sec < 60) return `${sec} 秒`;
+  const m = Math.floor(sec / 60);
+  const r = sec % 60;
+  return r ? `${m} 分 ${r} 秒` : `${m} 分`;
+}
 
 /** 開關按鈕（賣／不賣） */
 export function Switch({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: [string, string] }) {
@@ -133,7 +144,7 @@ export function Switch({ on, onChange, label }: { on: boolean; onChange: (on: bo
 }
 
 /**
- * 一種藥水或原料的收購設定：要不要賣（開關）+ 保留百分比。
+ * 一種藥水或原料的收購設定：要不要賣（開關）+ 保留幾秒份。
  * 保留量不賣的時候也一直顯示、可以調整，先調好再打開賣出
  */
 function CrateRow(props: {
@@ -150,18 +161,18 @@ function CrateRow(props: {
       </div>
       <div class="row stepper">
         <span class="stepper-label">保留</span>
-        {PCT_STEPS.slice(0, 2).map((d) => (
-          <button key={d} class="btn" disabled={set.keepPct <= 0} onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}>
-            {d}%
+        {SEC_STEPS.slice(0, 2).map((d) => (
+          <button key={d} class="btn" disabled={set.keepSec <= 0} onClick={() => game.setCrateKeep(props.item, set.keepSec + d)}>
+            {d}s
           </button>
         ))}
-        <span class="stepper-value" title="保留百分比">{set.keepPct}%</span>
-        {PCT_STEPS.slice(2).map((d) => (
+        <span class="stepper-value" title="保留幾秒份">{fmtKeep(set.keepSec)}</span>
+        {SEC_STEPS.slice(2).map((d) => (
           <button
-            key={d} class="btn" disabled={set.keepPct >= UPGRADE_FX.keepMax}
-            onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}
+            key={d} class="btn" disabled={set.keepSec >= UPGRADE_FX.keepMaxSec}
+            onClick={() => game.setCrateKeep(props.item, set.keepSec + d)}
           >
-            +{d}%
+            +{d}s
           </button>
         ))}
       </div>

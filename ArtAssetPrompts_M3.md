@@ -16,7 +16,7 @@
 | `portrait_lumia_base`、`_happy`、`_headpat`、`_poke`、`_panic`、`_shy` | 2.3 | 點她打開的互動視窗 | 暫時用 Q 版圖 |
 | `portrait_lumia_maid`、`_pajama`、`_robe` | 2.3 | 穿服裝時的互動視窗 | 暫時用 Q 版圖 |
 | `lumia_chibi_maid_idle/walk/back`、`pajama_*`、`robe_*` | 2.2 | 穿服裝時的場景角色 | 暫時用預設服裝 |
-| `furn_slime_doll`、`furn_gramophone`、`furn_tea_set` | 8 | 休息室家具 | 佔位色塊 |
+| `gift_slime_doll`、`gift_gramophone`、`gift_tea_set`（原本叫 `furn_…`，已併入禮物） | 8 | 休息室擺設 | 已完成 |
 | `cg_celebration`、`cg_starry_vow` | 11 | 劇情事件 | 佔位文字 |
 
 > **`lumia_chibi_sleep` 的方向說明：** 她會躺在二樓的紫色大坐墊上，請畫成「側躺捲成一團」，**橫向構圖（比例 3:2）**，頭朝左。

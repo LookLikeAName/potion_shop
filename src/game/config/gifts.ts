@@ -37,17 +37,17 @@ export const GIFTS: GiftDef[] = [
     line: '小精靈在裡面跳舞耶！轉一圈、再轉一圈～',
   },
   {
-    id: 'slime_doll', name: 'Q版史萊姆娃娃', icon: 'furn_slime_doll', price: 1e6, happiness: 2, fx: 'restHappy',
+    id: 'slime_doll', name: 'Q版史萊姆娃娃', icon: 'gift_slime_doll', price: 1e6, happiness: 2, fx: 'restHappy',
     desc: '休息時的開心度產出 +50%。', intro: '照著溫室裡那隻愛睡覺的史萊姆做的布偶，捏起來軟綿綿、還會發出噗啾聲。午睡時的最佳夥伴。',
     line: '軟綿綿的！我可以抱著它睡覺嗎？',
   },
   {
-    id: 'gramophone', name: '復古留聲機', icon: 'furn_gramophone', price: 5e7, happiness: 3, fx: 'speed',
+    id: 'gramophone', name: '復古留聲機', icon: 'gift_gramophone', price: 5e7, happiness: 3, fx: 'speed',
     desc: '輕快的音樂讓精靈們更有幹勁：植物生長與大釜熬煮速度 +15%。', intro: '從舊貨市集淘來的古董留聲機，喇叭像一朵盛開的花。放起輕快的曲子，連精靈們都跟著打拍子。',
     line: '有音樂的話，工作起來也會特別開心呢♪',
   },
   {
-    id: 'tea_set', name: '高級魔法紅茶組', icon: 'furn_tea_set', price: 2e9, happiness: 4, fx: 'drain',
+    id: 'tea_set', name: '高級魔法紅茶組', icon: 'gift_tea_set', price: 2e9, happiness: 4, fx: 'drain',
     desc: '提神醒腦：露米婭工作時體力消耗 -50%。', intro: '繪著紫色花紋的高級瓷器茶組，泡出來的魔法紅茶會冒出愛心形狀的蒸氣。喝一口就精神百倍。',
     line: '好香的紅茶…老師要一起喝一杯嗎？',
   },
@@ -68,7 +68,7 @@ export const GIFTS: GiftDef[] = [
   },
   {
     id: 'dream_catcher', name: '月光捕夢網', icon: 'gift_dream_catcher', price: 1e12, happiness: 7, fx: 'offline',
-    desc: '離線收益 +50%。', intro: '新月形框架的捕夢網，垂著羽毛與星星珠子。掛在床邊，壞夢都會被網子抓走。',
+    desc: '離線效率 +20%（基礎 50%，最多 90%）。', intro: '新月形框架的捕夢網，垂著羽毛與星星珠子。掛在床邊，壞夢都會被網子抓走。',
     line: '有了它，晚上一定會做好夢的…呼啊～',
   },
   {
@@ -90,7 +90,8 @@ export const GIFT_FX = {
   assist: 1.5,
   wishTime: 1.3,
   click: 1.5,
-  offline: 1.5,
+  /** 月光捕夢網：離線效率 +20%（加在基礎 50% 上） */
+  offline: 0.2,
   wishReward: 1.25,
 };
 

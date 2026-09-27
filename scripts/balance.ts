@@ -98,7 +98,7 @@ interface Row {
   supply: string;
 }
 
-/** 藥水收購設定（比較用）：--potion-keep 保留百分比；--potion-sell 0 = 不賣給收購箱 */
+/** 藥水收購設定（比較用）：--potion-keep 保留幾秒份；--potion-sell 0 = 不賣給收購箱 */
 const POTION_KEEP = argOf('--potion-keep');
 /** --no-events：機器人不理突發事件（比較事件帶來多少收入） */
 const NO_EVENTS = args.includes('--no-events');
@@ -107,7 +107,7 @@ const POTION_SELL = argOf('--potion-sell');
 function simulate(p: Profile) {
   const s = createInitialState();
   for (const set of Object.values(s.settings.potions)) {
-    if (POTION_KEEP !== undefined) set.keepPct = Number(POTION_KEEP);
+    if (POTION_KEEP !== undefined) set.keepSec = Number(POTION_KEEP);
     if (POTION_SELL !== undefined) set.sell = POTION_SELL !== '0';
   }
   const ctx: SimContext = { rng: mulberry32(42), offline: false, emit: () => {} };

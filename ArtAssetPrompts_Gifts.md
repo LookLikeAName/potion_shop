@@ -30,5 +30,5 @@ Japanese anime style, kawaii and heartwarming, 2D fantasy game art, cozy and whi
 
 ## 生成進度檢查表
 
-- [ ] A. 新禮物（4）：許願星燈、精靈音樂盒、月光捕夢網、占星水晶球
-- [ ] B. 兌換圖示（1）：休息室擴建
+- [x] A. 新禮物（4）：許願星燈、精靈音樂盒、月光捕夢網、占星水晶球
+- [x] B. 兌換圖示（1）：休息室擴建

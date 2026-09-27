@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { OFFLINE } from '../game/config/balance';
 import { MASCOT } from '../game/config/mascot';
 import { MATERIAL_IDS, PLANTS } from '../game/config/plants';
 import { POTION_IDS, RECIPES } from '../game/config/recipes';
@@ -16,16 +17,17 @@ import { GreenhousePanel } from './panels/GreenhousePanel';
 import { LumiaPanel, StoryModal } from './panels/LumiaPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
 import { BuffBar, EventBanner, LetterModal } from './Events';
-import { EventBookPanel } from './panels/EventBookPanel';
+import { EventBookPanel, EventDetailModal } from './panels/EventBookPanel';
 import {
-  buyMode, drawerFocus, drawerOpen, drawerTab, letterOpen, lockState, lumiaOpen, offlineReport, openDrawer,
+  buyMode, drawerFocus, drawerOpen, drawerTab, eventDetail, letterOpen, lockState, lumiaOpen, offlineReport, openDrawer,
   requestTakeover, storyId, toast, useGame, type DrawerTab,
 } from './store';
 
 export function App() {
   const game = useGame();
   // 劇情、信件、離線報告、互動視窗開著時，事件的計時暫停（不會在看劇情時錯過事件）
-  const hold = !!storyId.value || letterOpen.value !== null || !!offlineReport.value || lumiaOpen.value || lockState.value !== 'ok';
+  const hold = !!storyId.value || letterOpen.value !== null || !!offlineReport.value || lumiaOpen.value
+    || !!eventDetail.value || lockState.value !== 'ok';
   useEffect(() => game.setEventHold(hold), [hold]);
   return (
     <>
@@ -36,6 +38,7 @@ export function App() {
       <Drawer />
       <LumiaModal />
       <StoryModal />
+      <EventDetailModal />
       <LetterModal />
       <OfflineModal />
       <LockOverlay />
@@ -171,8 +174,11 @@ function OfflineModal() {
         <h2>歡迎回來，老師！</h2>
         <p>你離開了 {formatDuration(r.seconds)}。</p>
         <p class="big">精靈們努力工作，獲得 <Icon id="icon_gold" /> <b>{formatNumber(r.gold)}</b> 金幣！</p>
-        {r.pajama && <p class="hint">露米婭穿著星空絨毛睡衣，睡得特別香甜：離線金幣 ×2！</p>}
-        {r.dream && <p class="hint">月光捕夢網帶來了好夢：離線金幣再 ×1.5！</p>}
+        <p class="hint">
+          離線效率 {Math.round(r.efficiency * 100)}%
+          {(r.pajama || r.dream) && `（基礎 ${Math.round(OFFLINE.baseEfficiency * 100)}%${r.pajama ? '＋星空絨毛睡衣' : ''}${r.dream ? '＋月光捕夢網' : ''}）`}
+          ，離開越久越少（{formatDuration(r.halfLife)}減半）：這次平均 {Math.round(r.avgEfficiency * 100)}%。常回來看看比較划算喔！
+        </p>
         {r.happiness >= 0.005 && (
           <p>看板娘充分休息，開心度增加 <Icon id="icon_happiness" /> <b>+{fmtHeart(r.happiness)}</b>！</p>
         )}

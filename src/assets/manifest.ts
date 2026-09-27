@@ -83,8 +83,11 @@ export const ASSETS: AssetDef[] = [
   a('upg_rune_stirrer', 56, 56, 0x9b6fe0, '攪拌棒', 'round'),
   a('upg_refine', 56, 56, 0xc9a0ff, '精煉', 'round'),
   a('upg_abacus_squirrel', 96, 96, 0xc98a4a, '松鼠', 'round'),
-  // 送給露米婭的禮物
+  // 送給露米婭的禮物（也是休息室的擺設；原本的「家具」史萊姆娃娃、留聲機、紅茶組也是禮物，統一放在 gifts）
   a('gift_snack', 56, 56, 0xf0b070, '點心', 'round'),
+  a('gift_slime_doll', 56, 56, 0xff9ec0, '史萊姆', 'circle'),
+  a('gift_gramophone', 56, 56, 0xc59a3c, '留聲機', 'round'),
+  a('gift_tea_set', 56, 56, 0xd9b38c, '紅茶組', 'round'),
   a('gift_bouquet', 56, 56, 0xff9ec0, '花束', 'round'),
   a('gift_hairpin', 56, 56, 0xc9a0ff, '髮飾', 'round'),
   a('gift_star_lamp', 56, 56, 0xffd98a, '星燈', 'round'),
@@ -95,7 +98,7 @@ export const ASSETS: AssetDef[] = [
   a('icon_decor_slot', 64, 64, 0xd9b38c, '位', 'circle'),
 
   // 露米婭：每個動作一張圖，原圖都朝左。服裝差分沒有正式圖時會退回預設服裝的圖
-  ...(['', 'maid_', 'pajama_', 'robe_'] as const).flatMap((o) => [
+  ...(['', 'maid_', 'pajama_', 'gardener_', 'robe_'] as const).flatMap((o) => [
     a(`lumia_chibi_${o}idle`, 150, 210, 0xe98a4a, `露米婭\n${o}待機`, 'round', -1),
     a(`lumia_chibi_${o}walk`, 150, 210, 0xe98a4a, `露米婭\n${o}走路`, 'round', -1),
     a(`lumia_chibi_${o}back`, 150, 210, 0xe98a4a, `露米婭\n${o}背影`, 'round', -1),
@@ -113,13 +116,9 @@ export const ASSETS: AssetDef[] = [
   a('cg_celebration', 64, 36, 0xd9a441, '宴', 'rect'),
   a('cg_starry_vow', 64, 36, 0x3a4a8a, '誓', 'rect'),
 
-  // 休息室家具
-  a('furn_slime_doll', 50, 44, 0xff9ec0, '史萊姆', 'circle'),
-  a('furn_gramophone', 76, 80, 0xc59a3c, '留聲機', 'round'),
-  a('furn_tea_set', 100, 100, 0xd9b38c, '紅茶組', 'round'),
-
   // 突發事件：場景裡的訪客與道具（同時也是事件簿的縮圖；見 ArtAssetPrompts_Events.md）
-  a('evt_goblin', 90, 100, 0x7a9a4a, '地精', 'round', -1),
+  // 地精、土豪勇者沿用當初為舊版事件畫好的正式圖
+  a('npc_goblin', 100, 104, 0x7a9a4a, '地精', 'round', -1),
   a('evt_dew', 44, 52, 0xbfe8ff, '朝露', 'circle'),
   a('evt_raincloud', 100, 68, 0xa8c0e0, '雲寶寶', 'round'),
   a('evt_butterfly', 52, 44, 0x9ef0d8, '蝶', 'round'),
@@ -127,16 +126,19 @@ export const ASSETS: AssetDef[] = [
   a('evt_bubble', 120, 120, 0xd8c8ff, '泡泡', 'circle'),
   a('evt_heat', 64, 64, 0xffb347, '火候', 'round'),
   a('evt_apprentice', 90, 120, 0x9ad0a0, '精靈\n學徒', 'round', -1),
-  a('evt_hero', 157, 190, 0xd9a441, '土豪\n勇者', 'round', -1),
+  a('npc_rich_hero', 185, 185, 0xd9a441, '土豪\n勇者', 'round', -1),
   a('evt_merchant', 157, 190, 0x9a7a5a, '流浪\n行商', 'round', -1),
   a('evt_princess', 145, 183, 0xffb3d0, '公主', 'round', -1),
   a('evt_guild', 64, 64, 0xe8c56a, '商會', 'round'),
   a('evt_dream', 64, 64, 0xc8d8ff, '夢', 'circle'),
   a('evt_letter', 96, 80, 0x8a5a36, '信鴿\n貓頭鷹', 'round', -1),
   a('evt_fortune', 145, 183, 0x7a5ab0, '占卜\n婆婆', 'round', -1),
-  a('evt_card_back', 90, 130, 0x5a3a8a, '★', 'rect'),
   a('evt_meteor', 64, 64, 0xfff0a0, '流星', 'circle'),
   a('evt_slime', 80, 64, 0x8fe0a0, '史萊姆', 'round'),
+  // 事件簿的事件 CG（16:9，只在事件簿的詳細視窗顯示；沒有正式圖時顯示事件圖示）
+  ...(['goblin', 'dew', 'raincloud', 'butterfly', 'sneeze', 'bubble', 'perfect_heat', 'apprentice', 'hero', 'merchant',
+    'princess', 'guild_rush', 'dream', 'letter', 'fortune', 'meteor', 'slime'] as const)
+    .map((id) => a(`cg_evt_${id}`, 64, 36, 0x3a4a6a, 'CG', 'rect')),
 
   // 顧客（原圖都朝左）：比露米婭的 Q 版圖稍大一點就好
   a('npc_novice_adventurer', 145, 183, 0x8f7a5a, '新手\n冒險者', 'round', -1),

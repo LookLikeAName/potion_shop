@@ -46,7 +46,7 @@ export const EVENTS: EventDef[] = [
   // ---------- 溫室 ----------
   {
     id: 'goblin', name: '迷路的尋寶地精', zone: 'greenhouse', rarity: 0, kind: 'tap', time: 8, goal: 5,
-    icon: 'evt_goblin', decor: 'snack',
+    icon: 'npc_goblin', decor: 'snack',
     prompt: '尋寶地精跑進溫室了！趁他跑掉前點他 5 下！',
     hint: '溫室裡偶爾會有小小的腳步聲，還有叮叮噹噹的聲音…',
     story: '背著比自己還大的布袋、到處找寶藏的小地精。被老師抓到之後，一邊嘟囔「這次就算了」，一邊從袋子裡倒出一大把種子和原料，然後頭也不回地跑掉了。',
@@ -112,7 +112,7 @@ export const EVENTS: EventDef[] = [
   // ---------- 櫃台 ----------
   {
     id: 'hero', name: '土豪勇者的掃貨', zone: 'counter', rarity: 1, kind: 'count', time: 10, goal: 40,
-    icon: 'evt_hero',
+    icon: 'npc_rich_hero',
     prompt: '土豪勇者來掃貨了！一直點他：「再來一箱！」',
     hint: '店的名聲傳開之後，好像會有很有錢的客人上門…',
     story: '打倒魔王之後賞金多到花不完的勇者。一進門就說「全部都要！」，點一下就搬走一箱。買得開心的時候，還會到處幫忙宣傳這間店。',
@@ -129,7 +129,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'princess', name: '微服出巡的公主', zone: 'counter', rarity: 2, kind: 'tap', time: 30, goal: 1,
     icon: 'evt_princess', decor: 'bouquet',
-    prompt: '排隊的客人裡，好像有一位不太一樣…（頭上閃過皇冠的光）',
+    prompt: '排隊的客人裡，好像有一位不太一樣…找出頭上閃過皇冠光芒的客人，點她！',
     hint: '名聲響亮、又有精靈羽化靈藥的店，也許會有尊貴的客人偷偷來訪…',
     story: '戴著斗篷排在隊伍裡的，竟然是王國的公主。被老師認出來之後，她吐了吐舌頭說「被發現了呢」，然後把城堡一整季要用的藥水都訂下來了。',
     lumia: '公、公主殿下！？我剛剛是不是找錯零錢了…',
@@ -240,6 +240,56 @@ export const EVENT_FX = {
   /** 每顆流星 20 秒收入，全部點到再加倍 */
   meteor: { incomePerHit: 20 },
   slime: { materialSec: 240 },
+};
+
+/** 事件簿用：一句話簡介、出現條件 */
+export const EVENT_INFO: Record<EventId, { summary: string; need: string }> = {
+  goblin: { summary: '背著大布袋、到處找寶藏的小地精。', need: '溫室有種植物' },
+  dew: { summary: '星星碎屑溶在露水裡，凝成會發光的朝露。', need: '至少 2 盆有種植物' },
+  raincloud: { summary: '還不太會控制雨量的雲寶寶。', need: '買過雨雲' },
+  butterfly: { summary: '只在花開得最好的溫室出現的發光蝴蝶。', need: '至少 4 盆有種植物' },
+  sneeze: { summary: '被煙嗆到的火蜥蜴打了一個大噴嚏。', need: '有大釜養了火蜥蜴' },
+  bubble: { summary: '藥水熬得太完美時冒出的彩虹泡泡。', need: '有大釜正在產出' },
+  perfect_heat: { summary: '火候只有一瞬間是完美的。', need: '買過雙口冷凝管' },
+  apprentice: { summary: '剛畢業的精靈學徒來店裡見習。', need: '簽了過勞精靈工會合約' },
+  hero: { summary: '賞金多到花不完的勇者上門掃貨。', need: '店舖名聲 5 級以上' },
+  merchant: { summary: '包袱裡什麼都有的流浪行商。', need: '店舖名聲 3 級以上' },
+  princess: { summary: '排在隊伍裡的斗篷客人，好像不太一樣。', need: '店舖名聲 9 級以上、解鎖精靈羽化靈藥' },
+  guild_rush: { summary: '商會發來的緊急收購通知。', need: '至少有一個收購箱' },
+  dream: { summary: '睡著的露米婭飄出了夢泡泡。', need: '露米婭在休息室睡覺' },
+  letter: { summary: '（簡介待定）', need: '羈絆等級 2／4／6（依序寄來三封）' },
+  fortune: { summary: '拄著星星手杖、占卜從不失準的老婆婆。', need: '送過占星水晶球，或店舖名聲 8 級以上' },
+  meteor: { summary: '夜空突然下起流星雨。', need: '現實時間 19:00–05:00，或休息室擺出許願星燈' },
+  slime: { summary: '以為找到同伴的野生史萊姆。', need: '休息室擺出史萊姆娃娃' },
+};
+
+/** 事件簿用：完成後能得到的東西（跟著數值設定產生） */
+export function eventRewardText(id: EventId): string[] {
+  const inc = (sec: number) => `${sec} 秒份的收入`;
+  switch (id) {
+    case 'goblin': return [`每種原料各 ${EVENT_FX.goblin.materialSec} 秒份`, `所有盆栽生長 ×${EVENT_FX.goblin.growth}（${EVENT_FX.goblin.buffSec} 秒）`];
+    case 'dew': return [`那一盆 ${EVENT_FX.dew.yieldSec} 秒份的產量`, `那一盆生長 ×${EVENT_FX.dew.growth}（${EVENT_FX.dew.buffSec} 秒）`];
+    case 'raincloud': return [`放下的那盆與左右相鄰的盆生長 ×${EVENT_FX.raincloud.growth}（${EVENT_FX.raincloud.buffSec} 秒）`];
+    case 'butterfly': return [`每隻蝴蝶讓一盆生長 ×${EVENT_FX.butterfly.growth}（同一盆疊加 +1 倍，${EVENT_FX.butterfly.buffSec} 秒）`];
+    case 'sneeze': return [`所有大釜熬煮 ×${EVENT_FX.sneeze.brew}，持續「接住的火花數 × ${EVENT_FX.sneeze.secPerHit} 秒」`];
+    case 'bubble': return [`那口大釜 ${EVENT_FX.bubble.brewSec} 秒份的藥水（不耗原料）`];
+    case 'perfect_heat': return [`每命中一次，那口大釜 ${EVENT_FX.perfect_heat.secPerHit} 秒內每輪都是雙倍`];
+    case 'apprentice': return [`那口大釜熬煮 ×${EVENT_FX.apprentice.brew}（${EVENT_FX.apprentice.buffSec} 秒）`];
+    case 'hero': return [`每點一下 ${inc(EVENT_FX.hero.incomePerHit)}（最多 ${EVENT_MAP.hero.goal} 下）`, `點滿 ${EVENT_FX.hero.hypeAt} 下：市場熱度拉到 ×${EVENT_FX.hero.hype}（${EVENT_FX.hero.buffSec} 秒）`];
+    case 'merchant': return Object.values(MERCHANT_OFFERS).map((o) => `${o.name}：${o.desc}`).concat('（每次隨機三樣，選一樣）');
+    case 'princess': return [inc(EVENT_FX.princess.incomeSec)];
+    case 'guild_rush': return [`收購箱照售價全額收購（${EVENT_FX.guild_rush.buffSec} 秒）`];
+    case 'dream': return ['露米婭的體力回滿', `開心度 +${EVENT_FX.dream.happy} × 開心度倍率`];
+    case 'letter': return [inc(EVENT_FX.letter.incomeSec), '一封信（收到的信可以在這裡重讀）'];
+    case 'fortune': return Object.values(FORTUNE_CARDS).map((c) => `${c.name}：${c.desc}`).concat('（翻開前不知道是哪一張）');
+    case 'meteor': return [`每顆流星 ${inc(EVENT_FX.meteor.incomePerHit)}`, '10 顆全部抓到：再加碼一樣多'];
+    case 'slime': return [`每種原料各 ${EVENT_FX.slime.materialSec} 秒份`];
+  }
+}
+
+/** 事件簿用：操作方式 */
+export const KIND_NAMES: Record<EventKind, string> = {
+  tap: '點擊', count: '連點（點越多越好）', drag: '拖曳', timing: '看準時機', choice: '三選一',
 };
 
 /** 流浪行商的商品（每次隨機三樣） */

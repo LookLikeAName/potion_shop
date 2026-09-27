@@ -10,7 +10,8 @@ export class TextureBank {
   constructor(private app: Application) {}
 
   async init(): Promise<void> {
-    await Promise.all(ASSETS.map(async (def) => {
+    // CG 只在介面（劇情、事件簿）用網頁圖片顯示，場景用不到：不預先載入成貼圖（每張 1792×1008，全部載入會佔掉上百 MB 的顯示記憶體、拖慢開場）
+    await Promise.all(ASSETS.filter((def) => !def.id.startsWith('cg_')).map(async (def) => {
       const url = ART_URLS[def.id];
       if (url) {
         try {

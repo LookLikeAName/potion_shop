@@ -61,6 +61,7 @@ export function formatDuration(sec: number): string {
   const s = Math.floor(sec);
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
+  if (h >= 24) return `${Math.floor(h / 24)} 天 ${h % 24} 小時 ${m} 分`;
   if (h > 0) return `${h} 小時 ${m} 分`;
   if (m > 0) return `${m} 分 ${s % 60} 秒`;
   return `${s} 秒`;

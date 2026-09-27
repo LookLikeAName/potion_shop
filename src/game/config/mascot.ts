@@ -53,12 +53,13 @@ export const MASCOT = {
   dayResetHour: 4,
 };
 
-export type OutfitId = 'default' | 'maid' | 'pajama' | 'robe';
+export type OutfitId = 'default' | 'maid' | 'pajama' | 'gardener' | 'robe';
 
 export const OUTFITS: Record<OutfitId, { name: string; desc: string; item?: string }> = {
   default: { name: '見習魔女服', desc: '露米婭平常的樣子。' },
   maid: { name: '典雅女僕裝', desc: '指派在櫃台時：售價 +50%；客人每次少買 20%，但照原本的數量付錢。', item: 'outfit_maid' },
-  pajama: { name: '星空絨毛睡衣', desc: '穿著時離線，離線金幣結算 ×2。', item: 'outfit_pajama' },
+  pajama: { name: '星空絨毛睡衣', desc: '穿著時離線，離線效率 +20%（基礎 50%，最多 90%）。', item: 'outfit_pajama' },
+  gardener: { name: '花園精靈圍裙裝', desc: '指派在溫室時：植物生長速度 +100%。', item: 'outfit_gardener' },
   robe: { name: '鍊金大師法袍', desc: '指派在大釜區時：熬煮速度 +100%。', item: 'outfit_robe' },
 };
 
@@ -67,7 +68,10 @@ export const OUTFIT_BONUS = {
   /** 女僕裝在櫃台：客人每次少買的比例（照原本的數量付錢，省下的藥水可以囤著或交給收購箱） */
   maidQtyCut: 0.2,
   robeBrew: 1.0,
-  pajamaOffline: 2,
+  /** 花園精靈圍裙裝在溫室：生長速度 +100%（和指派的 +25% 同一池相加） */
+  gardenerGrowth: 1.0,
+  /** 睡衣：離線效率 +20%（加在基礎 50% 上，不再直接乘金幣） */
+  pajamaOffline: 0.2,
 };
 
 /** 收入追蹤的平滑時間（秒） */
@@ -164,6 +168,7 @@ export const MUTTER_LINES = {
     maid: ['歡迎回來，老師…啊，說錯了，是歡迎光臨！', '女僕裝的裙子好容易飄起來…', '要用最優雅的姿勢倒茶…'],
     pajama: ['穿著睡衣工作…好像有點想睡…', '星星圖案好可愛吧？嘿嘿。', '毛茸茸的好溫暖～'],
     robe: ['穿上這件法袍，感覺自己變厲害了！', '鍊金大師露米婭，參上！', '袖子好長…差點掉進大釜裡。'],
+    gardener: ['花冠是溫室的花編的喔！', '圍裙口袋裡裝滿了種子～', '植物們今天也要長得壯壯的！'],
   } satisfies Record<OutfitId, string[]>,
   tired: ['呼啊…有點睏了…', '腳…腳好痠…', '再…再撐一下下就好…', '眼皮好重喔…'],
   /** 體力滿了還在休息室：悠閒地晃來晃去 */

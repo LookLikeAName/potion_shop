@@ -3,8 +3,9 @@ import type { PotionId } from './config/recipes';
 import { INITIAL_OPEN_SLOTS } from './config/balance';
 import { DECOR } from './config/gifts';
 import { CRATE_FOR, CRATE_MATERIALS, FLOATING_POT } from './config/upgrades';
+import { decorFx } from './stats';
 import {
-  createCauldron, createInitialState, createSlot, SAVE_VERSION, type CustomerState, type GameSettings,
+  createCauldron, createInitialState, createSlot, SAVE_VERSION, type CrateSetting, type CustomerState, type GameSettings,
   type GameState, type SlotState,
 } from './state';
 
@@ -77,15 +78,27 @@ function migrateUpgrades(old: Record<string, number>, slots?: Partial<SlotState>
   return out;
 }
 
+/** 舊版的單項設定：保留量曾經是百分比（keepPct） */
+type OldCrateSetting = { sell?: boolean; keepSec?: number; keepPct?: number };
+
+/** 單項設定：開關照舊；保留量有秒數就用，舊的百分比設成 0（全部收購）的保留 0 秒，其他換成預設秒數 */
+function migrateCrate(def: CrateSetting, old?: OldCrateSetting, keepOff = false): CrateSetting {
+  const keepSec = old?.keepSec ?? (keepOff || old?.keepPct === 0 ? 0 : def.keepSec);
+  return { sell: old?.sell ?? def.sell, keepSec };
+}
+
 /**
  * 收購箱設定的舊版格式：
  * - 藥水保留量原本是數字（共用的 reserve 或每種各自的 reserves），後來是「保留給客人」開關（keepForCustomers）：
- *   設成 0／關掉的換成保留 0%（全部收購），其他換成預設的保留 100%。
+ *   設成 0／關掉的換成保留 0（全部收購），其他用預設值。
  * - 原料收購原本只有一個總開關（sellMaterials）：套用到每一種原料。
+ * - 保留量原本是百分比（藥水 100% = 店裡站滿、原料 100% = 大釜熬 1 輪），版本 4 改成「幾秒份」：
+ *   百分比沒辦法換算（後期原料的 100% 只有千分之一秒），一律換成預設秒數；設成 0% 的維持全部收購。
  */
 function migrateSettings(
   base: GameSettings,
-  old?: Partial<GameSettings> & {
+  old?: {
+    potions?: Partial<Record<PotionId, OldCrateSetting>>; materials?: Partial<Record<MaterialId, OldCrateSetting>>;
     reserve?: number; reserves?: Partial<Record<PotionId, number>>;
     keepForCustomers?: Partial<Record<PotionId, boolean>>; sellMaterials?: boolean;
   },
@@ -94,11 +107,12 @@ function migrateSettings(
   for (const p of Object.keys(potions) as PotionId[]) {
     const n = old?.reserves?.[p] ?? old?.reserve;
     const keep = old?.keepForCustomers?.[p] ?? (n === undefined ? undefined : n > 0);
-    potions[p] = { ...potions[p], ...(keep === false && { keepPct: 0 }), ...old?.potions?.[p] };
+    potions[p] = migrateCrate(base.potions[p], old?.potions?.[p], keep === false);
   }
   const materials = { ...base.materials };
   for (const m of Object.keys(materials) as MaterialId[]) {
-    materials[m] = { ...materials[m], ...(old?.sellMaterials === false && { sell: false }), ...old?.materials?.[m] };
+    const o = old?.materials?.[m];
+    materials[m] = migrateCrate(base.materials[m], { ...o, sell: o?.sell ?? (old?.sellMaterials === false ? false : undefined) });
   }
   return { potions, materials };
 }
@@ -145,6 +159,8 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
   // 版本 3：焦晶移除了（從來沒有取得途徑，丟掉欄位就好）
   delete (state as Partial<GameState> & { charCrystal?: number }).charCrystal;
   if ((st.version ?? 1) < 2) migrateHappiness(state);
+  // 舊版的心願沒有記錄時限有沒有算星燈：出題時就是照當時有沒有擺出星燈算的，當成現在的狀態
+  if (state.wish && state.wish.lamp === undefined) state.wish.lamp = decorFx(state, 'wishTime');
   return { version: SAVE_VERSION, savedAt: raw.savedAt ?? Date.now(), state };
 }
 

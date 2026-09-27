@@ -1,5 +1,7 @@
 # 尚未補齊的美術素材（整理版）
 
+> **這份清單已經全部完成。** 目前還要製作的素材見 [`ArtAssetRequest.md`](ArtAssetRequest.md)（可以直接交給繪圖 AI 的完整版）。
+
 整理目前遊戲裡**還在用佔位圖**的所有素材，共 25 張，一次列在這裡。
 舊文件裡寫過的（[`ArtAssetPrompts.md`](ArtAssetPrompts.md) 第 6 章、[`ArtAssetPrompts_Economy.md`](ArtAssetPrompts_Economy.md)、[`ArtAssetPrompts_ClickUpgrades.md`](ArtAssetPrompts_ClickUpgrades.md)）也收進來了，並依照**現在場景的實際擺放方式**調整描述；以這份為準即可。
 

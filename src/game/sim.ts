@@ -9,7 +9,7 @@ import { POTION_IDS, RECIPES, type PotionId } from './config/recipes';
 import type { CauldronState, CustomerState, GameState, OrderLine } from './state';
 import {
   arrivalRate, autoHarvest, bountyChance, brewClickAdvance, brewPassiveSpeed, buffMult, codexIncomeMult, doubleChance,
-  cratePct, customerPatience, customerThroughput, drunkChance, growthSpeed, harvestYield, has, hasAnyCrate,
+  cratePct, customerDemand, customerPatience, drunkChance, growthSpeed, harvestYield, has, hasAnyCrate,
   decorFx, hasAutoCheckout, isResting, maidQtyCut, materialReserve, maxCustomerQty, orderScale, patrolZones, plantClickAdvance, potYield,
   ENTER_TIME, payTime, potionReserve, recipeInputs, restHappinessPerSec, sellPrice, slotYieldMult, WALK_TIME,
 } from './stats';
@@ -21,7 +21,8 @@ export type GameEvent =
   | { type: 'harvest'; slot: number; material: MaterialId; amount: number; crit?: boolean; bounty?: boolean }
   | { type: 'brewed'; recipe: PotionId; amount: number; double?: boolean }
   | { type: 'boil'; recipe: PotionId }
-  | { type: 'customerArrived'; id: number }
+  /** 客人進門；short = 訂單裡進門當下庫存不夠、沒辦法馬上湊齊的藥水（產銷統計用） */
+  | { type: 'customerArrived'; id: number; short?: PotionId[] }
   | { type: 'sale'; id: number; gold: number; rush: boolean; tip: boolean; partial: boolean }
   | { type: 'customerLeft'; id: number }
   /** 某一個收購箱收購了 amount 瓶（或份原料）；原料收購箱另外列出每種原料各收了多少 */
@@ -56,6 +57,11 @@ export interface SimContext {
 
 export function tick(s: GameState, dt: number, ctx: SimContext): void {
   s.time += dt;
+  // 遊玩時間：離線結算的時間另外在 simulateOffline 記（實際離開多久，不受上限影響）
+  if (!ctx.offline) {
+    s.stats.playOnline += dt;
+    if (ctx.foreground !== false) s.stats.playForeground += dt;
+  }
   const earnedBefore = s.stats.goldEarned;
   const crateBefore = s.stats.wholesaleGold;
   if (ctx.offline && has(s, 'guild_contract')) contractClicks(s, dt, ctx);
@@ -295,7 +301,8 @@ function tickCustomers(s: GameState, dt: number, ctx: SimContext): void {
   for (const c of [...s.customers]) {
     // 還沒排到的客人繼續從門口往隊伍前面走（排到後由 walk 接手）
     if (c.status !== 'serving') c.arrive = Math.max(0, c.arrive - dt);
-    if (c.status !== 'waiting') continue;
+    // 微服出巡的公主：不買東西，只是排在隊伍裡（由事件決定什麼時候離開）
+    if (c.status !== 'waiting' || c.princess) continue;
     if (tryReserve(s, c)) continue;
     c.patience -= dt;
     if (c.patience <= 0 && !takePartial(s, c)) {
@@ -371,8 +378,10 @@ export function spawnCustomer(s: GameState, ctx: SimContext): CustomerState {
     payMult: 1 / (1 - maidQtyCut(s)),
   };
   s.customers.push(c);
+  // 進門當下哪幾種藥水不夠（產銷統計：需求跟著產量調整後，靠這個看產能是不是還差一點）
+  const short = lines.filter((l) => s.potions[l.potion] < l.qty).map((l) => l.potion);
   if (!tryReserve(s, c)) c.rush = true;
-  ctx.emit({ type: 'customerArrived', id: c.id });
+  ctx.emit({ type: 'customerArrived', id: c.id, short });
   return c;
 }
 
@@ -435,15 +444,8 @@ function removeCustomer(s: GameState, id: number): void {
   s.customers = s.customers.filter((c) => c.id !== id);
 }
 
-/** 顧客對某種藥水的平均需求（瓶／秒）：每秒服務人數 × 點到這種藥水的機率 × 平均數量 */
-export function customerDemand(s: GameState, p: PotionId): number {
-  const types = s.cauldrons.length;
-  if (types === 0 || !s.cauldrons.some((c) => c.recipe === p)) return 0;
-  const chances = CUSTOMER.linesChance[Math.min(types, 3)] ?? [1];
-  const avgLines = chances.reduce((sum, q, k) => sum + q * (k + 1), 0);
-  const avgQty = (CUSTOMER.qtyMin + maxCustomerQty(s)) / 2;
-  return customerThroughput(s) * (avgLines / types) * avgQty * orderScale(s, p);
-}
+/** 顧客對某種藥水的平均需求（瓶／秒）：搬到 stats（收購箱保留量也要用），這裡保留原本的匯出 */
+export { customerDemand };
 
 /** 離線：顧客以期望值購買（沒有自動結帳就沒有人結帳），沒有急單；酒鬼小費取期望值 */
 function tickCustomersOffline(s: GameState, dt: number): void {

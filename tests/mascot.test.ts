@@ -4,7 +4,7 @@ import { MASCOT } from '../src/game/config/mascot';
 import {
   assignLumia, canStartFever, dayKeyOf, equipOutfit, redeem, redeemCost, startFever, touchLumia,
 } from '../src/game/commands';
-import { offlineCapSeconds, simulateOffline } from '../src/game/offline';
+import { offlineCapSeconds, offlineDecay, offlineEfficiency, simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
 import { finishSale, spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
@@ -289,13 +289,14 @@ describe('服裝', () => {
     expect(brewPassiveSpeed(s, s.cauldrons[0])).toBeCloseTo(b0 * 2.25);
   });
 
-  it('穿睡衣離線：金幣 ×2', () => {
+  it('穿睡衣離線：離線效率 50% → 70%', () => {
     const make = () => {
       const s = createInitialState();
       s.slots[0].fairy = true;
       s.slots[0].level = 10;
       s.cauldrons[0].salamander = 3;
       s.cauldrons[0].level = 10;
+      s.upgrades.abacus_squirrel = 1;
       return s;
     };
     const a = make();
@@ -305,7 +306,63 @@ describe('服裝', () => {
     const ra = simulateOffline(a, 3600);
     const rb = simulateOffline(b, 3600);
     expect(rb.pajama).toBe(true);
-    expect(rb.gold).toBeCloseTo(ra.gold * 2);
+    expect(rb.gold / ra.gold).toBeCloseTo(0.7 / 0.5, 5);
+  });
+});
+
+describe('離線效率', () => {
+  /** 有自動化、會一直賺錢的店 */
+  const shop = () => {
+    const s = createInitialState();
+    s.slots[0].fairy = true;
+    s.slots[0].level = 10;
+    s.cauldrons[0].salamander = 3;
+    s.cauldrons[0].level = 10;
+    s.upgrades.abacus_squirrel = 1;
+    return s;
+  };
+  const both = (s: ReturnType<typeof shop>) => {
+    s.redeemed.outfit_pajama = 1;
+    equipOutfit(s, 'pajama');
+    s.gifts.dream_catcher = true;
+    s.decor[0] = 'dream_catcher';
+    return s;
+  };
+
+  it('基礎 50%、睡衣＋捕夢網最多 90%', () => {
+    expect(offlineEfficiency(shop())).toBeCloseTo(0.5);
+    expect(offlineEfficiency(both(shop()))).toBeCloseTo(0.9);
+  });
+
+  it('時間衰退：離開到計算上限時剩一半（沒有心電感應 12 小時、有的話 72 小時）', () => {
+    const s = shop();
+    expect(offlineDecay(s, 0)).toBeCloseTo(1);
+    expect(offlineDecay(s, 12 * 3600)).toBeCloseTo(0.5);
+    s.redeemed.telepathy = 1;
+    expect(offlineDecay(s, 12 * 3600)).toBeCloseTo(0.5 ** (1 / 6));
+    expect(offlineDecay(s, 72 * 3600)).toBeCloseTo(0.5);
+    // 有心電感應、沒有道具：第 72 小時只拿 50% × 50%
+    expect(offlineEfficiency(s) * offlineDecay(s, 72 * 3600)).toBeCloseTo(0.25);
+  });
+
+  it('離線永遠比在線少：道具全開、剛離開時也只有 90%；離開越久平均越低', () => {
+    const r1 = simulateOffline(both(shop()), 600);
+    expect(r1.avgEfficiency).toBeLessThanOrEqual(0.9);
+    expect(r1.avgEfficiency).toBeGreaterThan(0.89);
+    const r12 = simulateOffline(both(shop()), 12 * 3600);
+    // 平均衰退 = (1 − 2^−1) ÷ ln2 ≈ 0.721
+    expect(r12.avgEfficiency).toBeCloseTo(0.9 * (0.5 / Math.LN2), 2);
+  });
+
+  it('離線時露米婭在休息：沒有工作區的指派加成，結束後指派不變', () => {
+    const a = shop();
+    const b = shop();
+    assignLumia(a, 'rest');
+    assignLumia(b, 'greenhouse');
+    const ra = simulateOffline(a, 3600);
+    const rb = simulateOffline(b, 3600);
+    expect(rb.gold).toBeCloseTo(ra.gold, 5);
+    expect(b.mascot.assignment).toBe('greenhouse');
   });
 });
 

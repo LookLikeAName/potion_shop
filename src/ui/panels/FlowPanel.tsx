@@ -4,19 +4,14 @@ import type { FlowReport, ItemFlow, ItemId } from '../../game/flow';
 import { formatExact, formatNumber, formatRate } from '../../game/format';
 import { customerDemand } from '../../game/sim';
 import type { GameState } from '../../game/state';
-import { brewPassiveSpeed, customerShare, recipeNeeds, sellPrice } from '../../game/stats';
+import { customerShare, materialDemand, sellPrice } from '../../game/stats';
 import { Icon } from '../Icon';
 import { LineChart } from '../LineChart';
 import { MarketHeat } from './CounterPanel';
 import { flowDetail, useGame } from '../store';
 
-/** 大釜以目前速度全速熬煮時，每秒需要多少這種原料（只算有自動熬煮的大釜） */
-function brewDemand(s: GameState, m: MaterialId): number {
-  return s.cauldrons.reduce((sum, c) => {
-    const need = recipeNeeds(s, c.recipe, m);
-    return sum + (need * c.level * brewPassiveSpeed(s, c)) / RECIPES[c.recipe].brewTime;
-  }, 0);
-}
+/** 大釜以目前速度全速熬煮時，每秒需要多少這種原料（只算有自動熬煮的大釜；和收購箱的原料保留量同一套算法） */
+const brewDemand = materialDemand;
 
 type Tone = 'warn' | 'ok' | 'info';
 
@@ -45,9 +40,22 @@ function potionHint(s: GameState, p: PotionId, f: ItemFlow, r: FlowReport): [Ton
     return ['warn', `大釜有 ${Math.round(starved * 100)}% 的時間在等原料：先補原料產量${tip}`];
   }
   if (s.potions[p] < 1 && f.made < customerDemand(s, p) * 0.9) return ['warn', '賣得比熬得快：升級大釜'];
+  // 顧客需求會跟著產量調整，平常很少缺貨；進門時不夠的客人一多，就是產能還差一點
+  if (f.short > 0) {
+    const ratio = f.short / Math.max(1, r.orders.arrived);
+    const hot = s.market.value > 1.1 ? '（市場正熱，需求比平常多）' : '';
+    const tip = f.crate > 0
+      ? '收購箱還在收它，可以在櫃台調高這種藥水的保留量，先留給客人'
+      : '產能可能稍微不足，可以升級這口大釜，或補上它的原料產量';
+    return [ratio >= SHORT_WARN ? 'warn' : 'info', `${WINDOW_TEXT}有 ${f.short} 位客人進門時它不夠，要等熬好才能結帳${hot}：${tip}`];
+  }
   if (f.crate > 0) return ['ok', '有剩：多的由收購箱收購。可以提升來客、升級售價'];
   return null;
 }
+
+/** 進門時缺貨的客人超過這個比例，提示變成警告 */
+const SHORT_WARN = 0.2;
+const WINDOW_TEXT = '最近 30 秒';
 
 /** 帶正負號的速率；接近 0 就只顯示 0 */
 function Signed({ v }: { v: number }) {
@@ -63,6 +71,8 @@ function FlowRow(props: {
   onOpen?: () => void;
   /** 庫存顯示完整數字（詳細頁） */
   fullStock?: boolean;
+  /** 藥水：顯示進門時不夠的客人數 */
+  potion?: boolean;
 }) {
   const { f } = props;
   return (
@@ -80,7 +90,10 @@ function FlowRow(props: {
         <span>淨變化<Signed v={f.net} /></span>
       </div>
       {props.demand && props.demand.value > 0 && (
-        <div class="flow-demand">{props.demand.label} ≈ {formatRate(props.demand.value)}/秒</div>
+        <div class="flow-demand">
+          {props.demand.label} ≈ {formatRate(props.demand.value)}/秒
+          {props.potion && <>・{WINDOW_TEXT}進門時不夠 <b class={f.short > 0 ? 'minus' : ''}>{f.short}</b> 位</>}
+        </div>
       )}
       {props.hint && <div class={`flow-hint ${props.hint[0]}`}>{props.hint[1]}</div>}
     </div>
@@ -129,6 +142,12 @@ function IncomeCard({ r, onOpen }: { r: FlowReport; onOpen?: () => void }) {
             {orders.lost > 0 && `・空手離開 ${orders.lost} 人`}
           </span>
         )}
+        {orders.arrived > 0 && (
+          <span>
+            {WINDOW_TEXT}進門 <b>{orders.arrived}</b> 人，其中 <b class={orders.waited > 0 ? 'minus' : ''}>{orders.waited}</b> 人
+            進門時貨不夠、要等（{Math.round((orders.waited / orders.arrived) * 100)}%）
+          </span>
+        )}
       </div>
     </div>
   );
@@ -170,7 +189,7 @@ export function FlowPanel() {
         {s.cauldrons.map(({ recipe: p }) => (
           <FlowRow
             key={p} icon={`potion_${p}`} name={RECIPES[p].name} stock={s.potions[p]} f={r.items[p]}
-            usedLabel="售出" demand={{ label: '顧客需求約', value: customerDemand(s, p) }}
+            usedLabel="售出" demand={{ label: '顧客需求約', value: customerDemand(s, p) }} potion
             hint={potionHint(s, p, r.items[p], r)} onOpen={() => openDetail(p)}
           />
         ))}
@@ -259,7 +278,7 @@ function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
       <div class="card">
         <FlowRow
           icon={icon} name={name} stock={isMat ? s.materials[id as MaterialId] : s.potions[id as PotionId]} f={f}
-          usedLabel={usedLabel} hint={hint} fullStock
+          usedLabel={usedLabel} hint={hint} fullStock potion={!isMat}
           demand={{ label: isMat ? '大釜全速需要' : '顧客需求約', value: demand }}
         />
       </div>
@@ -288,6 +307,19 @@ function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
         />
         <p class="hint">產量 − {usedLabel} − 收購。在 0 以上是庫存在增加，以下是在減少。</p>
       </div>
+      {!isMat && (
+        <div class="card">
+          <div class="card-title">進門時不夠的客人</div>
+          <LineChart
+            ago={ser.ago} format={(n) => (Number.isInteger(n) ? `${n}` : n.toFixed(1))}
+            series={[{ label: '人數', color: FLOW_COLORS.used, values: it.short }]}
+          />
+          <p class="hint">
+            每一秒進門的客人裡，訂單的{name}在當下不夠、要等熬好才能結帳的人數。
+            顧客需求會跟著產量調整，所以平常很少缺貨；這裡常常出現的話，代表產能還差一點。
+          </p>
+        </div>
+      )}
       {users.length > 0 && (
         <div class="card">
           <div class="card-title">{isMat ? '用到它的大釜' : '大釜'}在等原料的時間</div>

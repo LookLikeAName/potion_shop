@@ -16,7 +16,8 @@ import { simulateOffline } from '../src/game/offline';
 import { tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
 import { bondLevel, decorSlots, happyMult, renownLevel } from '../src/game/stats';
-import { botClick, botShop, DEFAULT_BOT, mulberry32, type Buy } from './bot';
+import { EVENT, EVENT_FX } from '../src/game/config/events';
+import { botClick, botEvent, botShop, DEFAULT_BOT, mulberry32, type Buy } from './bot';
 
 const args = process.argv.slice(2);
 const argOf = (name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
@@ -46,6 +47,8 @@ interface Sources {
   touch: number;
   achievement: number;
   gift: number;
+  /** 事件：第一次完成、露米婭的夢話 */
+  event: number;
 }
 
 interface HourRow {
@@ -93,7 +96,7 @@ function giftBuys(s: GameState, minutes: number, onGift: (id: string) => void): 
 
 function simulate(kind: 'active' | 'idle') {
   const s = createInitialState();
-  const src: Sources = { wish: 0, rest: 0, touch: 0, achievement: 0, gift: 0 };
+  const src: Sources = { wish: 0, rest: 0, touch: 0, achievement: 0, gift: 0, event: 0 };
   const wishStats: Partial<Record<WishKind, { done: number; fail: number }>> = {};
   let currentWish: WishKind | null = null;
   const onEvent = (e: GameEvent) => {
@@ -109,6 +112,10 @@ function simulate(kind: 'active' | 'idle') {
       }
     }
     if (e.type === 'achievement') src.achievement += ACHIEVEMENTS.find((a) => a.id === e.id)?.reward ?? 0;
+    if (e.type === 'event' && e.result === 'done') {
+      if (e.first) src.event += EVENT.firstHappy * happyMult(s);
+      if (e.id === 'dream') src.event += EVENT_FX.dream.happy * happyMult(s);
+    }
   };
   const ctx: SimContext = { rng: mulberry32(7), offline: false, emit: onEvent };
   const firsts = new Map<string, number>();
@@ -157,7 +164,8 @@ function simulate(kind: 'active' | 'idle') {
     while (s.time < end - 1e-9) {
       clickAcc += 4 * TICK;
       while (clickAcc >= 1) {
-        botClick(s, ctx, bot);
+        // 有突發事件時先處理事件
+        if (!botEvent(s, ctx)) botClick(s, ctx, bot);
         clickAcc -= 1;
       }
       const sec = Math.round(s.time * 10);
@@ -165,12 +173,12 @@ function simulate(kind: 'active' | 'idle') {
       if (sec % (s.time < 1800 ? 10 : 100) === 0) shop(30);
       // 能量每小時回滿 20 次：每 3 分鐘摸一次頭
       if (sec % 1800 === 0 && sec > 0) touch();
-      // 收購題：暫時把藥水保留量調成 0% 全部收購，結束後調回來
+      // 收購題：暫時把藥水保留量調成 0 秒（全部收購），結束後調回來
       if (s.wish?.kind === 'crate' && !saved) {
-        saved = Object.fromEntries(POTION_IDS.map((p) => [p, s.settings.potions[p].keepPct])) as Record<PotionId, number>;
-        for (const p of POTION_IDS) s.settings.potions[p].keepPct = 0;
+        saved = Object.fromEntries(POTION_IDS.map((p) => [p, s.settings.potions[p].keepSec])) as Record<PotionId, number>;
+        for (const p of POTION_IDS) s.settings.potions[p].keepSec = 0;
       } else if (s.wish?.kind !== 'crate' && saved) {
-        for (const p of POTION_IDS) s.settings.potions[p].keepPct = saved[p];
+        for (const p of POTION_IDS) s.settings.potions[p].keepSec = saved[p];
         saved = null;
       }
       tick(s, TICK, ctx);
@@ -201,7 +209,7 @@ function simulate(kind: 'active' | 'idle') {
       record(h);
     }
   }
-  src.rest = s.happiness + spent - src.wish - src.touch - src.achievement - src.gift;
+  src.rest = s.happiness + spent - src.wish - src.touch - src.achievement - src.gift - src.event;
   return { s, rows, firsts, src, wishStats, spent, doneAt };
 }
 
@@ -233,7 +241,7 @@ for (const kind of ['active', 'idle'] as const) {
   out();
   out(`- 全部兌換完（聲援除外）：**${doneAt === null ? '未完成' : fmtTime(doneAt)}**；結束時羈絆 Lv ${bondLevel(s)}、名聲 Lv ${renownLevel(s)}、倍率 ×${happyMult(s).toFixed(2)}，聲援 ${s.redeemed.cheer ?? 0} 次`);
   const pct = (n: number) => `${Math.round((n / total) * 100)}%`;
-  out(`- 開心度來源（共 ${total.toFixed(1)}）：心願 ${src.wish.toFixed(1)}（${pct(src.wish)}）、休息／離線 ${src.rest.toFixed(1)}（${pct(src.rest)}）、禮物 ${src.gift}（${pct(src.gift)}）、成就 ${src.achievement.toFixed(1)}（${pct(src.achievement)}）、觸碰 ${src.touch.toFixed(1)}（${pct(src.touch)}）`);
+  out(`- 開心度來源（共 ${total.toFixed(1)}）：心願 ${src.wish.toFixed(1)}（${pct(src.wish)}）、休息／離線 ${src.rest.toFixed(1)}（${pct(src.rest)}）、禮物 ${src.gift}（${pct(src.gift)}）、成就 ${src.achievement.toFixed(1)}（${pct(src.achievement)}）、觸碰 ${src.touch.toFixed(1)}（${pct(src.touch)}）、事件 ${src.event.toFixed(1)}（${pct(src.event)}）`);
   const ws = Object.entries(wishStats);
   if (ws.length) {
     out(`- 小心願完成率：${ws.map(([k, w]) => `${k} ${w!.done}/${w!.done + w!.fail}`).join('、')}`);
