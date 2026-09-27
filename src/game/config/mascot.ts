@@ -33,8 +33,8 @@ export const MASCOT = {
   /** 在櫃台時的售價加成（看板娘池 M，和女僕裝相加） */
   counterPriceBonus: 0.25,
 
-  /** 休息時每小時產出的開心度（家具另計） */
-  restHappinessPerHour: 0.05,
+  /** 休息（含離線）時每小時產出的開心度基礎值：再乘上開心度倍率，擺出史萊姆娃娃另 ×1.5 */
+  restHappinessPerHour: 0.9,
 
   /** 互動能量：上限、每次觸碰消耗、每小時回滿 */
   energyMax: 100,
@@ -52,38 +52,18 @@ export type OutfitId = 'default' | 'maid' | 'pajama' | 'robe';
 
 export const OUTFITS: Record<OutfitId, { name: string; desc: string; item?: string }> = {
   default: { name: '見習魔女服', desc: '露米婭平常的樣子。' },
-  maid: { name: '典雅女僕裝', desc: '指派在櫃台時：顧客耐心 +200%、售價 +50%。', item: 'outfit_maid' },
+  maid: { name: '典雅女僕裝', desc: '指派在櫃台時：售價 +50%；客人每次少買 20%，但照原本的數量付錢。', item: 'outfit_maid' },
   pajama: { name: '星空絨毛睡衣', desc: '穿著時離線，離線金幣結算 ×2。', item: 'outfit_pajama' },
   robe: { name: '鍊金大師法袍', desc: '指派在大釜區時：熬煮速度 +100%。', item: 'outfit_robe' },
 };
 
 export const OUTFIT_BONUS = {
-  maidPatience: 2.0,
   maidPrice: 0.5,
+  /** 女僕裝在櫃台：客人每次少買的比例（照原本的數量付錢，省下的藥水可以囤著或交給收購箱） */
+  maidQtyCut: 0.2,
   robeBrew: 1.0,
   pajamaOffline: 2,
 };
-
-/**
- * 用金幣送禮物給露米婭換開心度（金幣的長期出口）。
- * 每天每種可以送一次；價格 = 目前收入 × N 分鐘（至少 minPrice），後期也一直有意義。
- */
-export interface GiftDef {
-  id: string;
-  name: string;
-  icon: string;
-  happiness: number;
-  /** 價格相當於幾分鐘的收入 */
-  minutes: number;
-  minPrice: number;
-  line: string;
-}
-
-export const GIFTS: GiftDef[] = [
-  { id: 'snack', name: '手工點心', icon: 'gift_snack', happiness: 0.1, minutes: 2, minPrice: 200, line: '哇！是點心！老師最好了～' },
-  { id: 'bouquet', name: '魔法花束', icon: 'gift_bouquet', happiness: 0.2, minutes: 5, minPrice: 1000, line: '好、好漂亮的花…我會好好插在店裡的！' },
-  { id: 'hairpin', name: '星光髮飾', icon: 'gift_hairpin', happiness: 0.35, minutes: 10, minPrice: 5000, line: '這是…給我的嗎？我、我會一直戴著的！' },
-];
 
 /** 收入追蹤的平滑時間（秒） */
 export const INCOME_SMOOTHING = 120;
@@ -188,11 +168,18 @@ export const MUTTER_LINES = {
     '窗外的星星好漂亮。',
     '偶爾偷懶一下，老師不會生氣吧？',
   ],
-  /** 走到休息室的家具旁邊時 */
+  /** 走到休息室擺出來的禮物旁邊時 */
   furniture: {
+    snack: ['偷吃一塊點心…一塊就好！', '老師做的點心最好吃了～'],
     slime_doll: ['史萊姆娃娃軟綿綿的～捏捏！', '嘿嘿，今天也一起午睡嗎？'],
     gramophone: ['放一首輕快的曲子吧♪', '這張唱片是師父最喜歡的…'],
     tea_set: ['泡一杯魔法紅茶休息一下～', '香香的，喝完又有精神了！'],
+    bouquet: ['花還開得好好的，要記得換水喔。', '聞起來好香～'],
+    hairpin: ['髮飾有沒有戴歪？嘿嘿。', '亮晶晶的，好喜歡！'],
+    star_lamp: ['星燈亮起來了，要許什麼願好呢？', '希望明天也能跟老師一起開店～'],
+    music_box: ['轉一轉發條…小精靈又跳起舞了！', '這首曲子好溫柔喔。'],
+    dream_catcher: ['捕夢網把壞夢都抓走了！', '今晚也會做個好夢吧…'],
+    crystal_ball: ['水晶球裡…好像看到好多客人！', '占卜結果：今天大吉！'],
   } as Record<string, string[]>,
   /** 睡覺時的夢話 */
   sleep: [

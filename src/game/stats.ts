@@ -1,6 +1,7 @@
 // 數值計算：依企劃書第 5 章「同池相加、異池相乘」。
 import { BOUNTY, CHANCE_CAP, CUSTOMER, INITIAL_OPEN_SLOTS, MILESTONES, UPGRADE_FX } from './config/balance';
-import { TALENT_FX } from './config/happiness';
+import { DECOR, GIFT_FX, GIFT_MAP, type GiftFx } from './config/gifts';
+import { BOND, HAPPINESS_ITEMS, TALENT_FX } from './config/happiness';
 import { MASCOT, OUTFIT_BONUS, type WorkZone } from './config/mascot';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
@@ -99,12 +100,17 @@ export function brewClickAdvance(s: GameState, c: CauldronState): number {
  */
 export function plantClickPower(s: GameState, slot: SlotState): number {
   const bonus = (s.upgrades.garden_gloves ?? 0) * UPGRADE_FX.clickBonusSecPerLevel;
-  return plantClickAdvance(slot) + (slot.plant ? bonus * growthSpeed(s, slot) : 0);
+  return (plantClickAdvance(slot) + (slot.plant ? bonus * growthSpeed(s, slot) : 0)) * musicBoxMult(s);
 }
 
 export function brewClickPower(s: GameState, c: CauldronState): number {
   const bonus = (s.upgrades.rune_stirrer ?? 0) * UPGRADE_FX.clickBonusSecPerLevel;
-  return brewClickAdvance(s, c) + bonus * brewSpeedOf(s, c);
+  return (brewClickAdvance(s, c) + bonus * brewSpeedOf(s, c)) * musicBoxMult(s);
+}
+
+/** 精靈音樂盒（擺出來時）：老師親手點擊的效果 ×1.5 */
+function musicBoxMult(s: GameState): number {
+  return decorFx(s, 'click') ? GIFT_FX.click : 1;
 }
 
 // ---------- 看板娘（M 池）----------
@@ -153,7 +159,8 @@ export function mascotFactor(s: GameState): number {
 export function mascotMods(s: GameState, stat: StatId): Mod[] {
   const zone = workZone(s);
   if (!zone) return [];
-  const f = mascotFactor(s);
+  // 疲勞減半；擺出星光髮飾 ×1.5
+  const f = mascotFactor(s) * (decorFx(s, 'assist') ? GIFT_FX.assist : 1);
   const outfit = s.mascot.outfit;
   const m = (value: number): Mod => ({ stat, pool: 'M', value: value * f });
   switch (stat) {
@@ -164,7 +171,7 @@ export function mascotMods(s: GameState, stat: StatId): Mod[] {
       return outfit === 'robe' ? [m(MASCOT.cauldronBonus), m(OUTFIT_BONUS.robeBrew)] : [m(MASCOT.cauldronBonus)];
     case 'patience':
       if (zone !== 'counter') return [];
-      return outfit === 'maid' ? [m(MASCOT.counterPatienceBonus), m(OUTFIT_BONUS.maidPatience)] : [m(MASCOT.counterPatienceBonus)];
+      return [m(MASCOT.counterPatienceBonus)];
     case 'sellPrice':
       // 在櫃台：售價 +25%（女僕裝再 +50%）
       if (zone !== 'counter') return [];
@@ -172,6 +179,15 @@ export function mascotMods(s: GameState, stat: StatId): Mod[] {
     default:
       return [];
   }
+}
+
+/**
+ * 女僕裝在櫃台：客人每次少買的比例（照原本的數量付錢）。
+ * 跟其他指派效果一樣，疲勞時減半、擺出星光髮飾 ×1.5
+ */
+export function maidQtyCut(s: GameState): number {
+  if (workZone(s) !== 'counter' || s.mascot.outfit !== 'maid') return 0;
+  return OUTFIT_BONUS.maidQtyCut * mascotFactor(s) * (decorFx(s, 'assist') ? GIFT_FX.assist : 1);
 }
 
 /** 有沒有自動結帳（算盤松鼠）；沒有時要玩家親手點客人結帳 */
@@ -224,7 +240,9 @@ export function orderScale(s: GameState, p: PotionId): number {
   // 每位客人平均點到這種藥水幾瓶基本量
   const perCustomer = avgBaseBottles(s) / types;
   // 市場熱度讓需求起伏：熱的時候客人買得比產量多（囤貨有用），冷的時候有剩（收購箱有用）
-  return Math.max(1, (s.potionRate[p] * customerShare(s) * s.market.value) / (customerThroughput(s) * perCustomer));
+  const scale = Math.max(1, (s.potionRate[p] * customerShare(s) * s.market.value) / (customerThroughput(s) * perCustomer));
+  // 擺出魔法花束：客人心情好，每次多買 20%；女僕裝在櫃台：少買 20%（照原本的數量付錢）
+  return scale * (decorFx(s, 'orderQty') ? GIFT_FX.orderQty : 1) * (1 - maidQtyCut(s));
 }
 
 /** 店裡站滿、每人都點最多時需要的某種藥水量（藥水保留量 100% 的基準） */
@@ -249,6 +267,46 @@ export function redeemed(s: GameState, id: string): number {
   return s.redeemed[id] ?? 0;
 }
 
+// ---------- 名聲、羈絆與開心度倍率 ----------
+
+/** 店舖名聲：累計收入每多 10 倍 +1 級 */
+export function renownLevel(s: GameState): number {
+  return Math.max(0, Math.floor(Math.log10(Math.max(1, s.stats.goldEarned)) + 1e-9));
+}
+
+/** 羈絆等級：用開心度兌換過幾件東西（可重複的算次數；少女的聲援不算） */
+export function bondLevel(s: GameState): number {
+  return HAPPINESS_ITEMS.reduce((n, i) => n + (BOND.exclude.includes(i.id) ? 0 : redeemed(s, i.id)), 0);
+}
+
+/** 開心度倍率：心願、休息、觸碰、每日互動的開心度都乘上它 */
+export function happyMult(s: GameState): number {
+  return (1 + BOND.renownPerLevel * renownLevel(s)) * (1 + BOND.bondPerLevel * bondLevel(s));
+}
+
+// ---------- 休息室擺設（禮物） ----------
+
+/** 目前開放的擺設位數 */
+export function decorSlots(s: GameState): number {
+  return DECOR.baseSlots + DECOR.slotItems.filter((id) => redeemed(s, id) > 0).length;
+}
+
+/** 目前擺出來（在開放的擺設位上）的禮物 */
+export function displayedGifts(s: GameState): string[] {
+  return s.decor.slice(0, decorSlots(s)).filter((id): id is string => !!id && !!s.gifts[id]);
+}
+
+/** 某種擺設效果有沒有生效 */
+export function decorFx(s: GameState, fx: GiftFx): boolean {
+  return displayedGifts(s).some((id) => GIFT_MAP[id]?.fx === fx);
+}
+
+/** 休息時每秒產出的開心度（含離線）：基礎 × 開心度倍率，擺出史萊姆娃娃再 ×1.5 */
+export function restHappinessPerSec(s: GameState): number {
+  const slime = decorFx(s, 'restHappy') ? GIFT_FX.restHappy : 1;
+  return (MASCOT.restHappinessPerHour * happyMult(s) * slime) / 3600;
+}
+
 /** 自動採收：有花妖精，或狂熱時刻中 */
 export function autoHarvest(s: GameState, slot: SlotState): boolean {
   return slot.fairy || s.feverLeft > 0;
@@ -261,7 +319,7 @@ function feverMods(s: GameState): Mod[] {
 export function talentMods(s: GameState, stat: StatId): Mod[] {
   const out: Mod[] = [];
   if (stat === 'growthSpeed' || stat === 'brewSpeed') {
-    if (redeemed(s, 'gramophone')) out.push({ stat, pool: 'H', value: TALENT_FX.gramophoneSpeed });
+    if (decorFx(s, 'speed')) out.push({ stat, pool: 'H', value: GIFT_FX.speed });
     if (s.feverLeft > 0) out.push({ stat, pool: 'S', value: TALENT_FX.feverMult });
   }
   if (stat === 'sellPrice') {

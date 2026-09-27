@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CUSTOMER, UPGRADE_FX } from '../src/game/config/balance';
 import {
-  activeCombo, clickCauldron, clickPlant, getQuote, giftAvailable, giftPrice, giveGift, moveCauldron, purchase,
+  activeCombo, clickCauldron, clickPlant, getQuote, giveGift, moveCauldron, purchase,
   ringBell, setCrateKeep, setCrateSell, unlockRecipe,
 } from '../src/game/commands';
+import { GIFT_MAP } from '../src/game/config/gifts';
 import { FLOATING_POT, FLOATING_POT_COSTS, REFINE_FOR, SIGNBOARD_MAX } from '../src/game/config/upgrades';
 import { simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
@@ -500,25 +501,23 @@ describe('無限升級（金幣出口）', () => {
 });
 
 describe('送禮物', () => {
-  it('價格 = 目前收入 × 分鐘數（至少最低價），每天每種一次', () => {
+  it('價格固定、每種只能送一次；送出時給開心度，並擺到第一個空的擺設位', () => {
     const s = createInitialState();
-    expect(giftPrice(s, 'snack')).toBe(200);
-    s.incomeRate = 100; // 每秒 100 金
-    expect(giftPrice(s, 'snack')).toBe(12000); // 2 分鐘
-    expect(giftPrice(s, 'hairpin')).toBe(60000); // 10 分鐘
-
     s.gold = 1e6;
-    expect(giveGift(s, 'snack', 'd1')).toBe(true);
-    expect(s.happiness).toBeCloseTo(0.1);
-    expect(giveGift(s, 'snack', 'd1')).toBe(false);
-    expect(giftAvailable(s, 'snack', 'd2')).toBe(true);
-    expect(giveGift(s, 'snack', 'd2')).toBe(true);
+    s.incomeRate = 1e9; // 收入再高價格也不會漲
+    expect(giveGift(s, 'snack')).toBe(true);
+    expect(s.gold).toBe(1e6 - GIFT_MAP.snack.price);
+    expect(s.happiness).toBe(GIFT_MAP.snack.happiness);
+    expect(s.decor[0]).toBe('snack');
+    expect(giveGift(s, 'snack')).toBe(false);
+    expect(giveGift(s, 'music_box')).toBe(true);
+    expect(s.decor[1]).toBe('music_box');
   });
 
   it('錢不夠不能送', () => {
     const s = createInitialState();
     s.gold = 100;
-    expect(giveGift(s, 'snack', 'd1')).toBe(false);
+    expect(giveGift(s, 'snack')).toBe(false);
     expect(s.happiness).toBe(0);
   });
 

@@ -193,7 +193,16 @@ export class Game {
   }
 
   giveGift(id: string) {
-    return this.run(() => cmd.giveGift(this.state, id, this.today));
+    return this.run(() => cmd.giveGift(this.state, id));
+  }
+
+  setDecor(slot: number, id: string | null) {
+    return this.run(() => cmd.setDecor(this.state, slot, id));
+  }
+
+  /** 分頁在前景與否（小心願只在前景進行） */
+  setForeground(on: boolean): void {
+    this.ctx.foreground = on;
   }
 
   redeem(id: string) {

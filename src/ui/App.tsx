@@ -2,12 +2,14 @@ import { useEffect, useRef } from 'preact/hooks';
 import { MATERIAL_IDS, PLANTS } from '../game/config/plants';
 import { POTION_IDS, RECIPES } from '../game/config/recipes';
 import type { BuyMode } from '../game/costs';
-import { formatDuration, formatHappiness, formatNumber } from '../game/format';
+import { formatDuration, formatNumber } from '../game/format';
 import { canStartFever } from '../game/commands';
 import { Icon } from './Icon';
+import { HeartMeter, WishCard, fmtHeart } from './Happiness';
 import { LumiaModal } from './LumiaModal';
 import { CauldronPanel } from './panels/CauldronPanel';
 import { CounterPanel } from './panels/CounterPanel';
+import { DecorPanel, DragGhost } from './panels/DecorPanel';
 import { FlowPanel } from './panels/FlowPanel';
 import { GreenhousePanel } from './panels/GreenhousePanel';
 import { LumiaPanel, StoryModal } from './panels/LumiaPanel';
@@ -21,11 +23,13 @@ export function App() {
   return (
     <>
       <TopBar />
+      <WishCard />
       <Drawer />
       <LumiaModal />
       <StoryModal />
       <OfflineModal />
       <LockOverlay />
+      <DragGhost />
       {toast.value && <div class="toast" key={toast.value.id}>{toast.value.text}</div>}
     </>
   );
@@ -50,9 +54,8 @@ function TopBar() {
           <div class="res" key={p} title={RECIPES[p].name}><Icon id={`potion_${p}`} /> {formatNumber(s.potions[p])}</div>
         ))}
       </button>
-      <button class="res res-btn" title="開心度（點擊打開兌換）" onClick={() => openDrawer('lumia')}>
-        <Icon id="icon_happiness" /> {formatHappiness(s.happiness)}
-      </button>
+      <HeartMeter />
+
       <FeverButton />
       <button class="book-btn" onClick={() => (drawerOpen.value = !drawerOpen.value)}>
         📖 魔導書
@@ -92,6 +95,11 @@ function Drawer() {
   const tab = drawerTab.value;
   const focus = drawerFocus.value;
 
+  // 換分頁時從最上面開始（有指定要捲到的卡片時交給下面處理）
+  useEffect(() => {
+    if (!focus && bodyRef.current) bodyRef.current.scrollTop = 0;
+  }, [tab]);
+
   // 從場景點徽章打開時，捲動到對應卡片並閃一下
   useEffect(() => {
     if (!open || !focus) return;
@@ -110,14 +118,14 @@ function Drawer() {
       <div class="drawer-head">
         <div class="tabs">
           {TABS.map((t) => (
-            <button key={t.id} class={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => (drawerTab.value = t.id)}>
+            <button key={t.id} class={`tab ${tab === t.id || (t.id === 'lumia' && tab === 'decor') ? 'active' : ''}`} onClick={() => (drawerTab.value = t.id)}>
               {t.label}
             </button>
           ))}
         </div>
         <button class="close" onClick={() => (drawerOpen.value = false)} aria-label="關閉">✕</button>
       </div>
-      {tab !== 'settings' && tab !== 'lumia' && tab !== 'flow' && (
+      {tab !== 'settings' && tab !== 'lumia' && tab !== 'flow' && tab !== 'decor' && (
         <div class="modes">
           購買數量
           {MODES.map((m) => (
@@ -133,6 +141,7 @@ function Drawer() {
         {tab === 'counter' && <CounterPanel />}
         {tab === 'flow' && <FlowPanel />}
         {tab === 'lumia' && <LumiaPanel />}
+        {tab === 'decor' && <DecorPanel />}
         {tab === 'settings' && <SettingsPanel />}
       </div>
     </aside>
@@ -152,8 +161,9 @@ function OfflineModal() {
         <p>你離開了 {formatDuration(r.seconds)}。</p>
         <p class="big">精靈們努力工作，獲得 <Icon id="icon_gold" /> <b>{formatNumber(r.gold)}</b> 金幣！</p>
         {r.pajama && <p class="hint">露米婭穿著星空絨毛睡衣，睡得特別香甜：離線金幣 ×2！</p>}
-        {r.happiness > 0.00005 && (
-          <p>看板娘充分休息，開心度增加 <Icon id="icon_happiness" /> <b>{formatHappiness(r.happiness)}</b>！</p>
+        {r.dream && <p class="hint">月光捕夢網帶來了好夢：離線金幣再 ×1.5！</p>}
+        {r.happiness >= 0.005 && (
+          <p>看板娘充分休息，開心度增加 <Icon id="icon_happiness" /> <b>+{fmtHeart(r.happiness)}</b>！</p>
         )}
         {(mats.length > 0 || pots.length > 0) && (
           <div class="report-list">

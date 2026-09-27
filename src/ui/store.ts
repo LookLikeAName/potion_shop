@@ -3,7 +3,7 @@ import type { BuyMode } from '../game/costs';
 import type { Game } from '../game/game';
 import type { OfflineReport } from '../game/offline';
 
-export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'flow' | 'lumia' | 'settings';
+export type DrawerTab = 'greenhouse' | 'cauldron' | 'counter' | 'flow' | 'lumia' | 'decor' | 'settings';
 
 /** 遊戲狀態變更計數，UI 讀取它來訂閱更新 */
 export const uiTick = signal(0);
@@ -17,6 +17,8 @@ export const lockState = signal<'ok' | 'blocked' | 'lost'>('ok');
 export const toast = signal<{ id: number; text: string } | null>(null);
 /** 露米婭互動視窗 */
 export const lumiaOpen = signal(false);
+/** 拖曳中的擺設：跟著指標的圖（#ui 內的座標） */
+export const dragGhost = signal<{ icon: string; x: number; y: number } | null>(null);
 /** 正在播放的劇情 ID */
 export const storyId = signal<string | null>(null);
 

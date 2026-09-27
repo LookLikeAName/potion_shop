@@ -6,10 +6,10 @@ import {
 } from '../src/game/commands';
 import { offlineCapSeconds, simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
-import { spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
+import { finishSale, spawnCustomer, tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
 import {
-  brewPassiveSpeed, checkoutTime, condenserChance, customerPatience, growthSpeed, sellPrice, workZone,
+  brewPassiveSpeed, checkoutTime, condenserChance, customerPatience, growthSpeed, orderScale, sellPrice, workZone,
 } from '../src/game/stats';
 
 function ctx(rng = () => 0.5): SimContext & { events: GameEvent[] } {
@@ -143,10 +143,11 @@ describe('體力', () => {
     expect(c.events).toContainEqual({ type: 'mascot', kind: 'woke' });
   });
 
-  it('紅茶組讓工作消耗 -50%', () => {
+  it('擺出紅茶組讓工作消耗 -50%', () => {
     const s = createInitialState();
     quiet(s);
-    s.redeemed.tea_set = 1;
+    s.gifts.tea_set = true;
+    s.decor[0] = 'tea_set';
     assignLumia(s, 'greenhouse');
     run(s, 60);
     expect(s.mascot.stamina).toBeCloseTo(97.5, 0);
@@ -159,7 +160,8 @@ describe('體力', () => {
     assignLumia(s, 'rest');
     run(s, 60);
     expect(s.mascot.stamina).toBeCloseTo(20, 0);
-    expect(s.happiness).toBeCloseTo(0.05 / 60, 4);
+    // 基礎每小時 2 點 × 開心度倍率（剛開店名聲、羈絆都是 0 → ×1）
+    expect(s.happiness).toBeCloseTo(MASCOT.restHappinessPerHour / 60, 4);
   });
 });
 
@@ -202,12 +204,12 @@ describe('觸碰互動', () => {
 describe('開心度兌換', () => {
   it('只能花整數開心度；買滿後不能再買', () => {
     const s = createInitialState();
-    s.happiness = 0.99;
-    expect(redeem(s, 'slime_doll')).toBe(false);
-    s.happiness = 1.5;
-    expect(redeem(s, 'slime_doll')).toBe(true);
+    s.happiness = 2.99;
+    expect(redeem(s, 'decor_slot_3')).toBe(false);
+    s.happiness = 3.5;
+    expect(redeem(s, 'decor_slot_3')).toBe(true);
     expect(s.happiness).toBeCloseTo(0.5);
-    expect(redeemCost(s, 'slime_doll')).toBeNull();
+    expect(redeemCost(s, 'decor_slot_3')).toBeNull();
   });
 
   it('少女的聲援：價格遞增 2、3、4、5…，每次售價 +20%（相加）', () => {
@@ -233,7 +235,7 @@ describe('開心度兌換', () => {
     expect(offlineCapSeconds(s)).toBe(72 * 3600);
     s.upgrades.condenser = 1;
     redeem(s, 'attunement');
-    expect(condenserChance(s)).toBeCloseTo(0.2);
+    expect(condenserChance(s)).toBeCloseTo(0.25);
   });
 
   it('慶功宴：售價 ×3', () => {
@@ -253,16 +255,28 @@ describe('服裝', () => {
     expect(equipOutfit(s, 'maid')).toBe(true);
   });
 
-  it('女僕裝在櫃台：耐心 +200%、售價 +50%（同屬看板娘池，與櫃台指派相加）', () => {
+  it('女僕裝在櫃台：售價 +50%（與櫃台指派相加）；客人少買 20% 但照原本的數量付錢', () => {
     const s = createInitialState();
     const p0 = customerPatience(s);
     const price0 = sellPrice(s, 'glow');
+    s.potionRate.glow = 50;
+    assignLumia(s, 'counter');
+    const scale0 = orderScale(s, 'glow');
     s.redeemed.outfit_maid = 1;
     equipOutfit(s, 'maid');
-    assignLumia(s, 'counter');
-    expect(customerPatience(s)).toBeCloseTo(p0 * (1 + 0.25 + 2));
+    // 耐心只剩櫃台指派的 +25%
+    expect(customerPatience(s)).toBeCloseTo(p0 * 1.25);
     // 櫃台 +25% 加女僕裝 +50%（同一池相加）
     expect(sellPrice(s, 'glow')).toBeCloseTo(price0 * 1.75);
+    expect(orderScale(s, 'glow')).toBeCloseTo(scale0 * 0.8);
+    // 進門時就決定付款倍率：一瓶付 1.25 瓶的錢
+    s.potions.glow = 1e6;
+    const c = spawnCustomer(s, ctx(() => 0.5));
+    expect(c.payMult).toBeCloseTo(1.25);
+    const gold0 = s.gold;
+    const delivered = c.lines.reduce((n, l) => n + l.delivered, 0);
+    finishSale(s, c, ctx(() => 0.99));
+    expect(s.gold - gold0).toBeCloseTo(delivered * sellPrice(s, 'glow') * 1.25);
   });
 
   it('法袍在大釜區：熬煮 +100%（加上指派的 25%）', () => {

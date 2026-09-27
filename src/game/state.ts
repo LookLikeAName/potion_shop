@@ -1,9 +1,12 @@
 import { CUSTOMER, INITIAL_OPEN_SLOTS, MARKET, SLOT_COUNT, UPGRADE_FX } from './config/balance';
+import { DECOR } from './config/gifts';
 import { MASCOT, type Assignment, type OutfitId, type WorkZone } from './config/mascot';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
+import { WISH, type WishKind } from './config/wishes';
 
-export const SAVE_VERSION = 1;
+/** 2：開心度系統重做（家具改成禮物與擺設、魔力同調改成 5 級） */
+export const SAVE_VERSION = 2;
 
 /** 盆栽對某種植物的培育紀錄（改種後再種回來會恢復） */
 export interface PlotMemory {
@@ -73,6 +76,8 @@ export interface CustomerState {
   rush: boolean;
   /** 時間到只湊到一部分 → 以折扣價買走現有的 */
   partial: boolean;
+  /** 付款倍率：進門時女僕裝在櫃台，客人少買但照原本的數量付錢（1 = 一般） */
+  payMult: number;
   checkout: number;
 }
 
@@ -88,6 +93,9 @@ export interface GameStats {
   potionsWholesaled: number;
   materialsWholesaled: number;
   wholesaleGold: number;
+  /** 完成／沒完成的小心願數 */
+  wishesDone: number;
+  wishesFailed: number;
 }
 
 export interface GameState {
@@ -123,16 +131,40 @@ export interface GameState {
   /** 狂熱時刻剩餘秒數、上次使用的日期 */
   feverLeft: number;
   feverDay: string;
-  /** 平滑後的每秒收入（禮物價格用） */
+  /** 平滑後的每秒收入 */
   incomeRate: number;
   /** 市場熱度：顧客訂單量的倍率，每隔一段時間隨機換目標、慢慢靠過去（value 目前、target 目標、timer 距離換目標的秒數） */
   market: { value: number; target: number; timer: number };
   /** 各藥水平滑後的每秒產量（顧客訂單量用），以及這個 tick 熬好的量 */
   potionRate: Record<PotionId, number>;
   brewedThisTick: Record<PotionId, number>;
-  /** 今天已經送過的禮物 */
-  giftDay: string;
-  giftsToday: Record<string, boolean>;
+  /** 各原料平滑後的每秒採收量（小心願出題用），以及這個 tick 採收的量 */
+  materialRate: Record<MaterialId, number>;
+  harvestedThisTick: Record<MaterialId, number>;
+  /** 收購箱平滑後的每秒收入（小心願出題用） */
+  crateRate: number;
+  /** 已經送過的禮物（送過的會變成擺設） */
+  gifts: Record<string, boolean>;
+  /** 休息室擺設位：每格擺的禮物 ID（只有已開放的格數有效果） */
+  decor: (string | null)[];
+  /** 目前的小心願；沒有時 wishTimer = 距離下一個心願的秒數 */
+  wish: WishState | null;
+  wishTimer: number;
+}
+
+export interface WishState {
+  kind: WishKind;
+  /** 收成／熬煮題：哪一種原料或藥水 */
+  item: MaterialId | PotionId | null;
+  goal: number;
+  progress: number;
+  /** 剩餘秒數、總時限 */
+  time: number;
+  timeMax: number;
+  /** 稀有度（WISH.rarities 的索引） */
+  rarity: number;
+  /** 完成時的開心度（出題時就算好） */
+  reward: number;
 }
 
 export interface MascotState {
@@ -228,11 +260,16 @@ export function createInitialState(): GameState {
     market: { value: 1, target: 1, timer: MARKET.holdMin },
     potionRate: zeroRecord(POTION_IDS),
     brewedThisTick: zeroRecord(POTION_IDS),
-    giftDay: '',
-    giftsToday: {},
+    materialRate: zeroRecord(MATERIAL_IDS),
+    harvestedThisTick: zeroRecord(MATERIAL_IDS),
+    crateRate: 0,
+    gifts: {},
+    decor: Array.from({ length: DECOR.maxSlots }, () => null),
+    wish: null,
+    wishTimer: WISH.firstDelay,
     stats: {
       potionsSold: 0, goldEarned: 0, customersServed: 0, rushServed: 0, partialSales: 0, customersLost: 0,
-      potionsWholesaled: 0, materialsWholesaled: 0, wholesaleGold: 0,
+      potionsWholesaled: 0, materialsWholesaled: 0, wholesaleGold: 0, wishesDone: 0, wishesFailed: 0,
     },
   };
 }

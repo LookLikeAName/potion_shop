@@ -1,10 +1,12 @@
 import { OFFLINE } from './config/balance';
+import { GIFT_FX } from './config/gifts';
 import { TALENT_FX } from './config/happiness';
 import { OUTFIT_BONUS } from './config/mascot';
 import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
 import { finishSale, tick, type SimContext } from './sim';
 import type { GameState } from './state';
+import { decorFx } from './stats';
 
 export interface OfflineReport {
   /** 實際離開秒數 */
@@ -14,6 +16,8 @@ export interface OfflineReport {
   capped: boolean;
   /** 穿著睡衣，金幣已 ×2 */
   pajama: boolean;
+  /** 擺出月光捕夢網，金幣已 ×1.5 */
+  dream: boolean;
   gold: number;
   materials: Record<MaterialId, number>;
   potions: Record<PotionId, number>;
@@ -48,10 +52,12 @@ export function simulateOffline(s: GameState, seconds: number): OfflineReport {
     left -= dt;
   }
 
-  // 星空絨毛睡衣：穿著時離線金幣 ×2
+  // 星空絨毛睡衣：穿著時離線金幣 ×2；擺出月光捕夢網再 ×1.5
   const pajama = s.mascot.outfit === 'pajama';
-  if (pajama) {
-    const extra = (s.gold - before.gold) * (OUTFIT_BONUS.pajamaOffline - 1);
+  const dream = decorFx(s, 'offline');
+  const mult = (pajama ? OUTFIT_BONUS.pajamaOffline : 1) * (dream ? GIFT_FX.offline : 1);
+  if (mult > 1) {
+    const extra = (s.gold - before.gold) * (mult - 1);
     s.gold += extra;
     s.stats.goldEarned += extra;
   }
@@ -64,6 +70,7 @@ export function simulateOffline(s: GameState, seconds: number): OfflineReport {
     simulated,
     capped: seconds > cap,
     pajama,
+    dream,
     gold: s.gold - before.gold,
     happiness: s.happiness - before.happiness,
     materials: diff(MATERIAL_IDS, before.materials, s.materials),

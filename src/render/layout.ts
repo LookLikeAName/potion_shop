@@ -48,7 +48,7 @@ export const OFFSTAGE_X = 2060;
  * 招牌掛在牆上，錨點是上緣。
  */
 export const PROPS = {
-  starCan: { x: 512, y: 925 },
+  starCan: { x: 528, y: 925 },
   owl: { x: 1255, y: 846 },
   bell: { x: 1462, y: 848 },
   /** 算盤松鼠蹲在貓頭鷹和鈴鐺中間 */
@@ -64,6 +64,8 @@ export const CRATE_POS = {
   elixir: { x: 1395, y: 378 },
   materials: { x: 1535, y: 378 },
 };
+/** 收購箱正面木板的中心高度（占箱子高度的比例，從底部量起；依原圖量測） */
+export const CRATE_PANEL_Y = 0.43;
 
 /** 拖曳露米婭時的指派區域（放開時落在哪一區就指派到哪裡） */
 export const ASSIGN_ZONES = {
@@ -83,12 +85,16 @@ export const FLOOR_SPLIT_Y = 600;
 /** 休息室：坐墊上睡覺的位置 */
 export const REST_POS = { x: 405, y: 336 };
 
-/** 休息室家具（開心度兌換後出現） */
-export const FURNITURE = {
-  slime_doll: { x: 530, y: 350 },
-  gramophone: { x: 705, y: 232 },
-  tea_set: { x: 790, y: 232 },
-};
+/**
+ * 休息室擺設位（底部中心點與顯示框）：前 2 格在窗邊的層架上，
+ * 第 3 格在坐墊旁、第 4 格在樓梯邊的地板上（開心度兌換「休息室擴建」開放）
+ */
+export const DECOR_POS = [
+  { x: 705, y: 232, w: 84, h: 96 },
+  { x: 790, y: 232, w: 84, h: 96 },
+  { x: 540, y: 352, w: 80, h: 76 },
+  { x: 905, y: 352, w: 84, h: 84 },
+];
 
 // 露米婭的工作點：櫃台左側，以及站在盆栽/大釜前方偏右（背影），不完全擋住物件
 export const LUMIA_COUNTER = { x: 1090, y: 990 };

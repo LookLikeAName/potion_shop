@@ -2,9 +2,10 @@
 import {
   CUSTOMER, INITIAL_OPEN_SLOTS, LEVEL_COST_GROWTH, SLOT_NEIGHBORS, TIER_MULT, UPGRADE_FX,
 } from './config/balance';
+import { GIFT_MAP } from './config/gifts';
 import { HAPPINESS_MAP, TALENT_FX } from './config/happiness';
 import {
-  GIFTS, MASCOT, OUTFITS, type Assignment, type OutfitId, type Reaction, type TouchPart,
+  MASCOT, OUTFITS, type Assignment, type OutfitId, type Reaction, type TouchPart,
 } from './config/mascot';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, POTION_IDS, type PotionId } from './config/recipes';
@@ -12,7 +13,8 @@ import { FLOATING_POT, GLOBAL_UPGRADE_MAP, TARGET_UPGRADES, maxLevelOf } from '.
 import { quote, type BuyMode, type Quote } from './costs';
 import { completeBrew, harvest, settlePlant, spawnCustomer, tryStartBrew, type SimContext } from './sim';
 import { createCauldron, type CauldronState, type CrateSetting, type GameState } from './state';
-import { brewClickPower, has, plantClickPower, shearsChance } from './stats';
+import { brewClickPower, decorSlots, happyMult, has, plantClickPower, shearsChance } from './stats';
+import { noteWish } from './wishes';
 
 // ---------- 點擊 ----------
 
@@ -39,6 +41,7 @@ export function clickPlant(s: GameState, i: number, ctx: SimContext): PlantClick
     result = 'grow';
   }
   if (has(s, 'star_can')) splash(s, i, ctx);
+  noteWish(s, ctx, 'clickPot', 1);
   return result;
 }
 
@@ -57,6 +60,7 @@ export function clickCauldron(s: GameState, recipe: PotionId, ctx: SimContext): 
   if (!c) return 'none';
   if (c.batch === 0 && !tryStartBrew(s, c)) return 'missing';
   if (has(s, 'bellows')) countCombo(s, c, ctx);
+  noteWish(s, ctx, 'clickCauldron', 1);
   c.progress += brewClickPower(s, c);
   // 一下點很多（符文攪拌棒）：多出來的進度接著熬下一鍋，直到原料不夠
   const brewTime = RECIPES[c.recipe].brewTime;
@@ -147,6 +151,8 @@ export function touchLumia(s: GameState, part: TouchPart, spam: boolean, dayKey:
     gain += MASCOT.touchReward;
     reaction = part === 'head' ? 'headpat' : 'poke';
   }
+  // 觸碰與每日互動的開心度都乘上開心度倍率（名聲 × 羈絆）
+  gain *= happyMult(s);
   s.happiness += gain;
   return { reaction, gain, daily };
 }
@@ -157,37 +163,30 @@ export function dayKeyOf(nowMs: number): string {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
-// ---------- 送禮物 ----------
+// ---------- 禮物圖鑑與擺設 ----------
 
-/** 取 3 位有效數字，讓價格好讀 */
-const roundNice = (n: number) => {
-  if (n < 1000) return Math.ceil(n / 10) * 10;
-  const p = 10 ** (Math.floor(Math.log10(n)) - 2);
-  return Math.ceil(n / p) * p;
-};
-
-export function giftPrice(s: GameState, id: string): number {
-  const g = GIFTS.find((x) => x.id === id)!;
-  return roundNice(Math.max(g.minPrice, s.incomeRate * g.minutes * 60));
-}
-
-/** 今天還能不能送（每天凌晨 4 點重置） */
-export function giftAvailable(s: GameState, id: string, dayKey: string): boolean {
-  return s.giftDay !== dayKey || !s.giftsToday[id];
-}
-
-export function giveGift(s: GameState, id: string, dayKey: string): boolean {
-  const g = GIFTS.find((x) => x.id === id);
-  if (!g || !giftAvailable(s, id, dayKey)) return false;
-  const price = giftPrice(s, id);
-  if (s.gold < price) return false;
-  if (s.giftDay !== dayKey) {
-    s.giftDay = dayKey;
-    s.giftsToday = {};
-  }
-  s.gold -= price;
-  s.giftsToday[id] = true;
+/** 用金幣送禮物：每種只能送一次，價格固定；送出後自動擺到第一個空的擺設位 */
+export function giveGift(s: GameState, id: string): boolean {
+  const g = GIFT_MAP[id];
+  if (!g || s.gifts[id] || s.gold < g.price) return false;
+  s.gold -= g.price;
+  s.gifts[id] = true;
   s.happiness += g.happiness;
+  const empty = s.decor.slice(0, decorSlots(s)).findIndex((x) => !x);
+  if (empty >= 0) s.decor[empty] = id;
+  return true;
+}
+
+/**
+ * 在擺設位 slot 擺上禮物 id（null = 收起來）。同一件禮物只能擺一個位置：
+ * 已經擺在別格時，兩格互換。
+ */
+export function setDecor(s: GameState, slot: number, id: string | null): boolean {
+  if (slot < 0 || slot >= decorSlots(s)) return false;
+  if (id && !s.gifts[id]) return false;
+  const from = id ? s.decor.indexOf(id) : -1;
+  if (from >= 0 && from !== slot) s.decor[from] = s.decor[slot];
+  s.decor[slot] = id;
   return true;
 }
 

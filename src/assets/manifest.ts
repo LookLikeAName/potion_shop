@@ -64,15 +64,15 @@ export const ASSETS: AssetDef[] = [
   a('upg_raincloud', 80, 54, 0x8a9bb0, '雨雲', 'round'),
   a('upg_fairy', 46, 46, 0x6cc36a, '妖精', 'circle'),
   a('upg_salamander', 64, 36, 0xff8a3c, '火蜥蜴', 'round'),
-  a('upg_starsilver_can', 56, 50, 0xb8c6e0, '澆水壺', 'round'),
+  a('upg_starsilver_can', 96, 84, 0xb8c6e0, '澆水壺', 'round'),
   a('upg_shears', 56, 56, 0xc9a44a, '園藝剪', 'round'),
   a('upg_servant_ladle', 54, 70, 0xc8a070, '湯勺', 'round'),
   a('upg_bellows', 64, 64, 0x8a4a3a, '風箱', 'round'),
   a('upg_condenser', 64, 64, 0x9ad0d8, '冷凝管', 'round'),
-  a('upg_owl', 56, 66, 0x8a5a36, '貓頭鷹', 'round'),
+  a('upg_owl', 84, 100, 0x8a5a36, '貓頭鷹', 'round'),
   a('upg_signboard', 96, 70, 0x9a6a3e, '招牌', 'rect'),
   a('upg_diffuser', 50, 60, 0xa8c8a0, '擴香儀', 'round'),
-  a('upg_bell', 46, 46, 0xd9a441, '鈴', 'circle'),
+  a('upg_bell', 84, 84, 0xd9a441, '鈴', 'circle'),
   a('upg_drunk', 56, 56, 0xc98a3a, '酒杯', 'round'),
   a('upg_crate', 96, 80, 0x7a5a3a, '收購箱', 'rect'),
   a('upg_guild_contract', 56, 56, 0xe8dcc0, '合約', 'round'),
@@ -82,11 +82,17 @@ export const ASSETS: AssetDef[] = [
   a('upg_garden_gloves', 56, 56, 0x8ac06a, '手套', 'round'),
   a('upg_rune_stirrer', 56, 56, 0x9b6fe0, '攪拌棒', 'round'),
   a('upg_refine', 56, 56, 0xc9a0ff, '精煉', 'round'),
-  a('upg_abacus_squirrel', 56, 56, 0xc98a4a, '松鼠', 'round'),
+  a('upg_abacus_squirrel', 96, 96, 0xc98a4a, '松鼠', 'round'),
   // 送給露米婭的禮物
   a('gift_snack', 56, 56, 0xf0b070, '點心', 'round'),
   a('gift_bouquet', 56, 56, 0xff9ec0, '花束', 'round'),
   a('gift_hairpin', 56, 56, 0xc9a0ff, '髮飾', 'round'),
+  a('gift_star_lamp', 56, 56, 0xffd98a, '星燈', 'round'),
+  a('gift_music_box', 56, 56, 0xd9a0c8, '音樂盒', 'round'),
+  a('gift_dream_catcher', 56, 56, 0x8fa8ff, '捕夢網', 'round'),
+  a('gift_crystal_ball', 56, 56, 0xb8a0ff, '水晶球', 'circle'),
+  // 休息室擴建（擺設位）的兌換圖示
+  a('icon_decor_slot', 64, 64, 0xd9b38c, '位', 'circle'),
 
   // 露米婭：每個動作一張圖，原圖都朝左。服裝差分沒有正式圖時會退回預設服裝的圖
   ...(['', 'maid_', 'pajama_', 'robe_'] as const).flatMap((o) => [
@@ -110,7 +116,7 @@ export const ASSETS: AssetDef[] = [
   // 休息室家具
   a('furn_slime_doll', 50, 44, 0xff9ec0, '史萊姆', 'circle'),
   a('furn_gramophone', 76, 80, 0xc59a3c, '留聲機', 'round'),
-  a('furn_tea_set', 80, 50, 0xd9b38c, '紅茶組', 'round'),
+  a('furn_tea_set', 100, 100, 0xd9b38c, '紅茶組', 'round'),
 
   // 顧客（原圖都朝左）
   a('npc_novice_adventurer', 170, 215, 0x8f7a5a, '新手\n冒險者', 'round', -1),

@@ -2,15 +2,16 @@ import { useState } from 'preact/hooks';
 import { ART_URLS } from '../../assets/manifest';
 import { ACHIEVEMENTS } from '../../game/config/achievements';
 import { HAPPINESS_ITEMS, STORIES, type HappinessItem } from '../../game/config/happiness';
-import { GIFTS } from '../../game/config/mascot';
-import { giftAvailable, giftPrice, redeemCost } from '../../game/commands';
-import { formatHappiness, formatNumber } from '../../game/format';
+import { redeemCost } from '../../game/commands';
+import { formatHappiness } from '../../game/format';
+import { bondLevel, happyMult, renownLevel, restHappinessPerSec } from '../../game/stats';
+import { fmtHeart } from '../Happiness';
 import { Icon } from '../Icon';
 import { MascotControls, StaminaBar, mascotStatus } from '../LumiaModal';
-import { lumiaOpen, showToast, storyId, useGame } from '../store';
+import { lumiaOpen, openDrawer, showToast, storyId, useGame } from '../store';
 
 const TIERS: { tier: 1 | 2 | 3 | 4; title: string; hint: string }[] = [
-  { tier: 1, title: '日常陪伴與小確幸', hint: '家具會出現在休息室' },
+  { tier: 1, title: '休息室擴建', hint: '多一格擺設位，可以多擺一件禮物' },
   { tier: 2, title: '百變看板娘', hint: '買了之後在上方「服裝」切換' },
   { tier: 3, title: '特權天賦', hint: '金幣買不到的永久強化' },
   { tier: 4, title: '深層羈絆', hint: '專屬劇情與終局獎勵' },
@@ -32,14 +33,14 @@ export function LumiaPanel() {
         <MascotControls />
       </div>
 
-      <GiftCard />
+      <BondCard />
 
-      <div class="card">
+      <div class="card" id="lumia-redeem">
         <div class="card-title">
           <Icon id="icon_happiness" /> 開心度兌換
           <span class="lv">♥ {formatHappiness(s.happiness)}</span>
         </div>
-        <p class="hint">開心度來自：摸頭戳臉頰、她在休息室睡覺、每日第一次互動、達成成就。兌換只花整數部分。</p>
+        <p class="hint">兌換只花整數部分。每兌換一件（少女的聲援除外）羈絆等級 +1，之後得到的開心度都會變多。</p>
         {TIERS.map((t) => (
           <div key={t.tier} class="tier">
             <div class="tier-title">Tier {t.tier}：{t.title}<span class="tier-hint">{t.hint}</span></div>
@@ -63,33 +64,26 @@ export function LumiaPanel() {
   );
 }
 
-/** 用金幣送禮物：每天每種一次，價格跟著收入走 */
-function GiftCard() {
+/** 名聲、羈絆與開心度倍率，以及目前各來源的節奏 */
+function BondCard() {
   const game = useGame();
   const s = game.state;
-  const today = game.today;
+  const renown = renownLevel(s);
+  const bond = bondLevel(s);
+  const mult = happyMult(s);
+  const rest = restHappinessPerSec(s) * 3600;
   return (
-    <div class="card" id="lumia-gifts">
-      <div class="card-title">🎁 送禮物給露米婭</div>
-      <p class="hint">每天每種可以送一次（凌晨 4 點重置）。價格大約是目前幾分鐘的收入。</p>
-      {GIFTS.map((g) => {
-        const available = giftAvailable(s, g.id, today);
-        const price = giftPrice(s, g.id);
-        return (
-          <div class="buy-row" key={g.id}>
-            <div class="buy-text">
-              <div class="buy-title"><Icon id={g.icon} /> {g.name}</div>
-              <div class="buy-desc">開心度 +{g.happiness}（約 {g.minutes} 分鐘的收入）</div>
-            </div>
-            <button
-              class="buy-btn" disabled={!available || s.gold < price}
-              onClick={() => game.giveGift(g.id) && showToast(`露米婭：${g.line}（+${g.happiness} ♥）`)}
-            >
-              {available ? <><Icon id="icon_gold" size={1} /> {formatNumber(price)}</> : '今天送過了'}
-            </button>
-          </div>
-        );
-      })}
+    <div class="card" id="lumia-bond">
+      <div class="card-title"><Icon id="icon_happiness" /> 名聲與羈絆 <span class="lv">開心度 ×{mult.toFixed(2)}</span></div>
+      <div class="bond-grid">
+        <span><em>店舖名聲</em><b>Lv {renown}</b><small>累計收入每多 10 倍 +1</small></span>
+        <span><em>羈絆</em><b>Lv {bond}</b><small>每用開心度兌換一件 +1</small></span>
+      </div>
+      <p class="hint">
+        小心願、休息、摸頭戳臉頰得到的開心度都乘上倍率（成就與禮物固定）。
+        休息時每小時約 +{fmtHeart(rest)} ♥（離線也算）；已完成 {s.stats.wishesDone} 個小心願。
+      </p>
+      <button class="btn primary" onClick={() => openDrawer('decor')}>🎁 禮物圖鑑與休息室擺設</button>
     </div>
   );
 }

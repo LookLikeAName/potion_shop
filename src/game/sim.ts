@@ -2,7 +2,7 @@
 import { ACHIEVEMENTS } from './config/achievements';
 import { CRATE_FOR, CRATE_MATERIALS } from './config/upgrades';
 import { BOUNTY, CUSTOMER, MARKET, UPGRADE_FX } from './config/balance';
-import { TALENT_FX } from './config/happiness';
+import { GIFT_FX } from './config/gifts';
 import { INCOME_SMOOTHING, MASCOT } from './config/mascot';
 import { MATERIAL_IDS, PLANTS, type MaterialId } from './config/plants';
 import { POTION_IDS, RECIPES, type PotionId } from './config/recipes';
@@ -10,9 +10,10 @@ import type { CauldronState, CustomerState, GameState, OrderLine } from './state
 import {
   arrivalRate, autoHarvest, bountyChance, brewClickAdvance, brewPassiveSpeed, condenserChance,
   cratePct, customerPatience, customerThroughput, drunkChance, growthSpeed, harvestYield, has, hasAnyCrate,
-  hasAutoCheckout, isResting, materialReserve, maxCustomerQty, orderScale, patrolZones, plantClickAdvance, potYield,
-  ENTER_TIME, payTime, potionReserve, recipeInputs, redeemed, sellPrice, slotYieldMult, WALK_TIME,
+  decorFx, hasAutoCheckout, isResting, maidQtyCut, materialReserve, maxCustomerQty, orderScale, patrolZones, plantClickAdvance, potYield,
+  ENTER_TIME, payTime, potionReserve, recipeInputs, restHappinessPerSec, sellPrice, slotYieldMult, WALK_TIME,
 } from './stats';
+import { noteWish, tickWish } from './wishes';
 
 export type GameEvent =
   | { type: 'harvest'; slot: number; material: MaterialId; amount: number; crit?: boolean; bounty?: boolean }
@@ -24,7 +25,9 @@ export type GameEvent =
   /** 某一個收購箱收購了 amount 瓶（或份原料）；原料收購箱另外列出每種原料各收了多少 */
   | { type: 'wholesale'; crate: CrateKind; amount: number; gold: number; items?: Partial<Record<MaterialId, number>> }
   | { type: 'mascot'; kind: 'exhausted' | 'woke' }
-  | { type: 'achievement'; id: string };
+  | { type: 'achievement'; id: string }
+  /** 小心願：出現、完成、時間到（reward = 實際拿到的開心度，出現時為完成可得的量） */
+  | { type: 'wish'; result: 'new' | 'done' | 'fail'; reward: number };
 
 /** 收購箱種類：每種藥水一個、原料一個 */
 export type CrateKind = PotionId | 'materials';
@@ -33,12 +36,15 @@ export interface SimContext {
   rng: () => number;
   /** 離線模式：顧客與機率改用期望值，不產生急單 */
   offline: boolean;
+  /** 分頁在前景（小心願只在前景進行）；沒給 = 視為在前景 */
+  foreground?: boolean;
   emit: (e: GameEvent) => void;
 }
 
 export function tick(s: GameState, dt: number, ctx: SimContext): void {
   s.time += dt;
   const earnedBefore = s.stats.goldEarned;
+  const crateBefore = s.stats.wholesaleGold;
   if (ctx.offline && has(s, 'guild_contract')) contractClicks(s, dt, ctx);
   tickPlants(s, dt, ctx);
   tickCauldrons(s, dt, ctx);
@@ -49,15 +55,21 @@ export function tick(s: GameState, dt: number, ctx: SimContext): void {
   tickCrate(s, dt, ctx);
   tickMascot(s, dt, ctx);
   tickAchievements(s, dt, ctx);
+  tickWish(s, dt, ctx);
   s.feverLeft = Math.max(0, s.feverLeft - dt);
-  // 平滑的每秒收入（指數移動平均）
-  const inst = (s.stats.goldEarned - earnedBefore) / dt;
-  s.incomeRate += (inst - s.incomeRate) * Math.min(1, dt / INCOME_SMOOTHING);
-  // 各藥水平滑後的每秒產量（包含點擊熬好的），顧客訂單量跟著它走
+  // 平滑的每秒收入、收購箱收入（指數移動平均）
+  const smooth = Math.min(1, dt / INCOME_SMOOTHING);
+  s.incomeRate += ((s.stats.goldEarned - earnedBefore) / dt - s.incomeRate) * smooth;
+  s.crateRate += ((s.stats.wholesaleGold - crateBefore) / dt - s.crateRate) * smooth;
+  // 各藥水平滑後的每秒產量（包含點擊熬好的），顧客訂單量跟著它走；原料同理（小心願出題用）
   const k = Math.min(1, dt / CUSTOMER.rateSmoothing);
   for (const p of POTION_IDS) {
     s.potionRate[p] += (s.brewedThisTick[p] / dt - s.potionRate[p]) * k;
     s.brewedThisTick[p] = 0;
+  }
+  for (const m of MATERIAL_IDS) {
+    s.materialRate[m] += (s.harvestedThisTick[m] / dt - s.materialRate[m]) * k;
+    s.harvestedThisTick[m] = 0;
   }
 }
 
@@ -110,7 +122,9 @@ export function harvest(s: GameState, i: number, times: number, ctx: SimContext,
   }
   amount *= harvestYield(s) * slotYieldMult(s, i);
   s.materials[material] += amount;
+  s.harvestedThisTick[material] += amount;
   ctx.emit({ type: 'harvest', slot: i, material, amount, crit, bounty });
+  noteWish(s, ctx, 'harvest', amount, material);
 }
 
 // ---------- 大釜 ----------
@@ -167,6 +181,7 @@ export function completeBrew(s: GameState, c: CauldronState, ctx: SimContext): v
   ctx.emit({ type: 'brewed', recipe: c.recipe, amount, double });
   c.batch = 0;
   c.progress = 0;
+  noteWish(s, ctx, 'brew', amount, c.recipe);
 }
 
 /** 缺少的原料（開工需要 1 份） */
@@ -281,6 +296,7 @@ export function spawnCustomer(s: GameState, ctx: SimContext): CustomerState {
   const c: CustomerState = {
     id: s.nextCustomerId++, lines, status: 'waiting',
     patience, patienceMax: patience, rush: false, partial: false, checkout: 0, arrive: ENTER_TIME, walk: 0, express: false,
+    payMult: 1 / (1 - maidQtyCut(s)),
   };
   s.customers.push(c);
   if (!tryReserve(s, c)) c.rush = true;
@@ -328,7 +344,7 @@ export const deliveredCount = (c: CustomerState) => c.lines.reduce((n, l) => n +
 
 export function finishSale(s: GameState, c: CustomerState, ctx: SimContext): void {
   const tip = ctx.rng() < drunkChance(s);
-  const base = c.lines.reduce((sum, l) => sum + sellPrice(s, l.potion) * l.delivered, 0);
+  const base = c.lines.reduce((sum, l) => sum + sellPrice(s, l.potion) * l.delivered, 0) * c.payMult;
   // 急單獎勵只在整張訂單湊齊時才有
   const gold = base
     * (c.partial ? CUSTOMER.partialPriceMult : c.rush ? CUSTOMER.rushBonus : 1)
@@ -360,7 +376,8 @@ export function customerDemand(s: GameState, p: PotionId): number {
 /** 離線：顧客以期望值購買（沒有自動結帳就沒有人結帳），沒有急單；酒鬼小費取期望值 */
 function tickCustomersOffline(s: GameState, dt: number): void {
   if (!hasAutoCheckout(s)) return;
-  const tipMult = 1 + drunkChance(s) * (UPGRADE_FX.drunkMult - 1);
+  // 女僕裝在櫃台：少買但照原本的數量付錢
+  const tipMult = (1 + drunkChance(s) * (UPGRADE_FX.drunkMult - 1)) / (1 - maidQtyCut(s));
   for (const { recipe: p } of s.cauldrons) {
     const sold = Math.min(s.potions[p], customerDemand(s, p) * dt);
     if (sold <= 0) continue;
@@ -409,6 +426,7 @@ function tickCrate(s: GameState, dt: number, ctx: SimContext): void {
     if (crate === 'materials') s.stats.materialsWholesaled += amount;
     else s.stats.potionsWholesaled += amount;
     ctx.emit({ type: 'wholesale', crate, amount, gold, ...(items && { items }) });
+    noteWish(s, ctx, 'crate', gold);
   };
 
   for (const c of s.cauldrons) {
@@ -447,7 +465,9 @@ function tickMascot(s: GameState, dt: number, ctx: SimContext): void {
   // 離線時她在休息室好好休息
   const resting = ctx.offline || isResting(s);
   if (resting) {
-    const mult = !ctx.offline && m.assignment === 'rest' ? MASCOT.playerRestMult : 1;
+    // 親手派來休息回得比較快；擺出手工點心再 ×1.5
+    const mult = (!ctx.offline && m.assignment === 'rest' ? MASCOT.playerRestMult : 1)
+      * (decorFx(s, 'restRegen') ? GIFT_FX.restRegen : 1);
     m.stamina = Math.min(MASCOT.staminaMax, m.stamina + (MASCOT.restRegenPerMin / 60) * mult * dt);
     s.happiness += restHappinessPerSec(s) * dt;
     if (m.autoRest && m.stamina >= MASCOT.staminaMax) {
@@ -457,7 +477,7 @@ function tickMascot(s: GameState, dt: number, ctx: SimContext): void {
     return;
   }
   if (m.assignment === 'patrol') tickPatrol(s, dt, ctx);
-  const drain = (MASCOT.workDrainPerMin / 60) * (redeemed(s, 'tea_set') ? TALENT_FX.teaDrainMult : 1);
+  const drain = (MASCOT.workDrainPerMin / 60) * (decorFx(s, 'drain') ? GIFT_FX.drain : 1);
   m.stamina -= drain * dt;
   if (m.stamina <= 0) {
     m.stamina = 0;
@@ -477,12 +497,6 @@ function tickPatrol(s: GameState, dt: number, ctx: SimContext): void {
   const pool = others.length > 0 ? others : zones;
   m.patrolZone = pool[Math.floor(ctx.rng() * pool.length)];
   m.patrolTimer = MASCOT.patrolSwitchMin + ctx.rng() * (MASCOT.patrolSwitchMax - MASCOT.patrolSwitchMin);
-}
-
-/** 休息時每秒產出的開心度（史萊姆娃娃另加） */
-export function restHappinessPerSec(s: GameState): number {
-  const perHour = MASCOT.restHappinessPerHour + (redeemed(s, 'slime_doll') ? TALENT_FX.slimeRestPerHour : 0);
-  return perHour / 3600;
 }
 
 // ---------- 成就 ----------

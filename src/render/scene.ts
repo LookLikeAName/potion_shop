@@ -3,6 +3,8 @@ import {
 } from 'pixi.js';
 import { ACHIEVEMENTS } from '../game/config/achievements';
 import { CUSTOMER, UPGRADE_FX } from '../game/config/balance';
+import { GIFT_MAP } from '../game/config/gifts';
+import { WISH, WISH_LINES } from '../game/config/wishes';
 import { ASSIGNMENTS, LINES, MUTTER, MUTTER_LINES, type Assignment } from '../game/config/mascot';
 import { pickMutter } from '../game/mutter';
 import { PLANTS } from '../game/config/plants';
@@ -14,13 +16,14 @@ import { missingInputs, type CrateKind, type GameEvent } from '../game/sim';
 import { CRATE_FOR, CRATE_MATERIALS, SQUIRREL } from '../game/config/upgrades';
 import type { CustomerState, GameState } from '../game/state';
 import {
-  autoHarvest, brewPassiveSpeed, growthSpeed, hasAutoCheckout, payTime, has, isRelaxing, isResting, isSleeping, isTired, milestoneCount, recipeInputs, redeemed,
+  autoHarvest, brewPassiveSpeed, growthSpeed, hasAutoCheckout, payTime, has, isRelaxing, isResting, isSleeping, isTired, milestoneCount, recipeInputs,
+  decorSlots,
   refineLevel, workZone,
 } from '../game/stats';
 import { lumiaOpen, openDrawer, showToast } from '../ui/store';
 import {
   ASSIGN_ZONES, CAULDRON_X, CAULDRON_Y, CHECKOUT_X, COUNTER, DOOR, FLOATING_SLOT_FROM, FLOOR_1F_Y, FLOOR_2F_Y, LEAVE_Y,
-  CRATE_POS, FLOOR_SPLIT_Y, FURNITURE, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT, LUMIA_COUNTER, OFFSTAGE_X, PROPS,
+  CRATE_PANEL_Y, CRATE_POS, DECOR_POS, FLOOR_SPLIT_Y, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT, LUMIA_COUNTER, OFFSTAGE_X, PROPS,
   QUEUE_X, QUEUE_Y, REST_POS, SHELF_Y, SLOT_POS, W, ZONES,
 } from './layout';
 import { PaperDoll } from './paperDoll';
@@ -483,6 +486,8 @@ class CauldronView extends Container {
   private info = text('', 22, 0xffffff);
   private needs = new Container();
   private salamander: Pic;
+  /** 火蜥蜴的呼吸相位（每口氣 +1） */
+  private breath = Math.random();
   private ladle: Pic;
   private combo = text('', 22, 0xffb347);
   private comboFill = 0xffb347;
@@ -641,6 +646,13 @@ class CauldronView extends Container {
     const squash = 1 + Math.sin(this.punch * Math.PI) * (fast ? 0.05 + 0.03 * tier : 0.06);
     this.body.scale.y = this.body.baseScale / squash;
     this.body.scale.x = this.body.baseScale * (fast ? 1 + (squash - 1) * 0.5 : 1);
+    // 火蜥蜴呼吸：身體慢慢鼓起再縮回（吸氣時縱向鼓得比較多）；熬煮中呼吸快一點，高速模式更快
+    if (this.salamander.visible) {
+      this.breath += dt * (fast ? 1.4 + tier * 0.3 : brewing ? 0.75 : 0.45);
+      const inhale = 0.5 - 0.5 * Math.cos(this.breath * Math.PI * 2);
+      const bs = this.salamander.baseScale;
+      this.salamander.scale.set(bs * (1 + inhale * 0.04), bs * (1 + inhale * 0.09));
+    }
     // 極速沸騰：鍋身泛紅光閃爍；高速模式：鍋身跟著節奏泛出藥水色的光
     const beat = 0.5 + 0.5 * Math.sin(this.t * (10 + tier * 4));
     this.body.tint = boiling ? lerpColor(0xffffff, 0xffa060, 0.5 + 0.5 * Math.sin(this.t * 14))
@@ -1074,9 +1086,17 @@ class SpeechBubble extends Container {
   }
 }
 
+/** 心願泡泡的顏色：普通、大心願、閃亮心願 */
+const WISH_COLORS = [0xff8fb8, 0x9a7cff, 0xffc93c];
+
 class LumiaView extends Container {
   private doll: PaperDoll;
   private zz = text('zZ', 26, 0xcfe3ff);
+  /** 有小心願時頭上的提醒泡泡（內容在畫面右上角） */
+  private wishMark = new Container();
+  private wishBg = new Graphics();
+  private wishHeart = text('♥', 26, 0xffffff);
+  private wishRarity = -1;
   private bubble = new SpeechBubble();
   /** 距離下一次自言自語的秒數（剛開場先等一下） */
   private mutterIn = 5 + Math.random() * 6;
@@ -1096,7 +1116,9 @@ class LumiaView extends Container {
     super();
     this.doll = new PaperDoll(tex, 'lumia_chibi_idle');
     this.zz.anchor.set(0.5);
-    this.addChild(this.sparkle, this.doll, this.zz);
+    this.wishHeart.anchor.set(0.5);
+    this.wishMark.addChild(this.wishBg, this.wishHeart);
+    this.addChild(this.sparkle, this.doll, this.zz, this.wishMark);
     speechLayer.addChild(this.bubble);
     this.position.set(LUMIA_COUNTER.x, LUMIA_COUNTER.y);
     // 點擊由獨立的判定區（LumiaDrag.hit）處理
@@ -1204,8 +1226,28 @@ class LumiaView extends Container {
     this.stateKey = '';
   }
 
+  /** 心願提醒泡泡：頭的左上方輕輕上下飄，說話時先讓位給對話泡泡 */
+  private updateWishMark(s: GameState): void {
+    const w = s.wish;
+    this.wishMark.visible = !!w && !this.dragging && !this.poof && !this.bubble.showing;
+    if (!w || !this.wishMark.visible) return;
+    if (w.rarity !== this.wishRarity) {
+      this.wishRarity = w.rarity;
+      this.wishBg.clear()
+        .circle(0, 0, 22).fill({ color: WISH_COLORS[w.rarity] ?? WISH_COLORS[0] }).stroke({ width: 3, color: 0x2b1d14 })
+        .circle(12, 22, 5).fill({ color: WISH_COLORS[w.rarity] ?? WISH_COLORS[0] }).stroke({ width: 2, color: 0x2b1d14 })
+        .circle(18, 32, 3).fill({ color: WISH_COLORS[w.rarity] ?? WISH_COLORS[0] }).stroke({ width: 2, color: 0x2b1d14 });
+    }
+    const h = this.doll.pic.texture.height * this.doll.pic.baseScale;
+    this.wishMark.position.set(-44, -h - 18 + Math.sin(this.t * 2.4) * 5);
+    // 閃亮心願會一閃一閃
+    const pulse = w.rarity === 2 ? 1 + 0.12 * Math.sin(this.t * 8) : 1 + 0.05 * Math.sin(this.t * 3);
+    this.wishMark.scale.set(pulse);
+  }
+
   update(s: GameState, dt: number): void {
     this.t += dt;
+    this.updateWishMark(s);
     if (this.dragging) return;
     // 瞬移中不說話；其他時候照節奏自言自語
     if (this.poof) this.bubble.hide();
@@ -1312,11 +1354,13 @@ class LumiaView extends Container {
       { x: REST_POS.x - 40, y, pose: 'idle', dir: 1 },
       { x: 880, y, pose: 'idle', dir: -1 },
     ];
-    for (const [id, pos] of Object.entries(FURNITURE)) {
-      if (redeemed(s, id) <= 0) continue;
+    const open = decorSlots(s);
+    DECOR_POS.forEach((pos, k) => {
+      const id = k < open ? s.decor[k] : null;
+      if (!id || !s.gifts[id]) return;
       const talk = MUTTER_LINES.furniture[id];
       spots.push({ x: pos.x + (pos.x > REST_POS.x + 200 ? -10 : 50), y, pose: 'idle', dir: pos.x > REST_POS.x + 200 ? 1 : -1, talk });
-    }
+    });
     return spots;
   }
 
@@ -1459,10 +1503,11 @@ class FeverOverlay extends Graphics {
 
 class PropsLayer extends Container {
   private items: { upg: string; when: (s: GameState) => boolean; pic: Pic; bob: number; baseY: number }[] = [];
+  private decor: Pic[];
   private bell: Pic;
   private bellPips = new Graphics();
   private bellPunch = 0;
-  private crates = new Map<CrateKind, { box: Container; pic: Pic; baseScale: number; punch: number }>();
+  private crates = new Map<CrateKind, { box: Container; pic: Pic; baseScale: number; punch: number; icon: Pic; iconY: number }>();
   private t = 0;
 
   constructor(tex: TextureBank, private game: Game) {
@@ -1484,10 +1529,19 @@ class PropsLayer extends Container {
     add(SQUIRREL, 'upg_abacus_squirrel', PROPS.squirrel, 1);
     add('diffuser', 'upg_diffuser', PROPS.diffuser, 1.5);
     add('signboard', 'upg_signboard', PROPS.signboard, 0, 0);
-    // 休息室家具（開心度兌換）
-    for (const [id, pos] of Object.entries(FURNITURE)) {
-      add(id, `furn_${id}`, pos, 0, 1, (s) => redeemed(s, id) > 0);
-    }
+    // 休息室擺設位：擺出來的禮物（圖跟著擺的東西換）
+    this.decor = DECOR_POS.map((pos) => {
+      const pic = new Pic(tex, 'furn_gramophone', pos.w, pos.h);
+      pic.anchor.set(0.5, 1);
+      pic.position.set(pos.x, pos.y);
+      // 點擺設打開「擺設」分頁
+      pic.eventMode = 'static';
+      pic.cursor = 'pointer';
+      pic.on('pointerdown', () => openDrawer('decor'));
+      pic.visible = false;
+      this.addChild(pic);
+      return pic;
+    });
 
     // 叫賣鈴鐺：可以點
     this.bell = add('bell', 'upg_bell', PROPS.bell);
@@ -1497,22 +1551,24 @@ class PropsLayer extends Container {
     this.bellPips.position.set(PROPS.bell.x, PROPS.bell.y + 12);
     this.addChild(this.bellPips);
 
-    // 收購箱：二樓倉庫裡一字排開，每買一個就多一個箱子；箱蓋上放對應的藥水／原料圖示，點了打開設定
+    // 收購箱：二樓倉庫裡一字排開，每買一個就多一個箱子；箱子正面的木板上貼對應的藥水／原料圖示，點了打開設定
     for (const kind of Object.keys(CRATE_POS) as CrateKind[]) {
       const pos = CRATE_POS[kind];
       const box = new Container();
       box.position.set(pos.x, pos.y);
       const pic = new Pic(tex, 'upg_crate');
       pic.anchor.set(0.5, 1);
-      const icon = new Pic(tex, kind === 'materials' ? 'item_redheart' : `potion_${kind}`, 34, 34);
+      const h = pic.texture.height * pic.baseScale;
+      // 正面木板約占箱子高度的 44%，圖示比木板小一點
+      const iconSize = Math.round(h * 0.38);
+      const icon = new Pic(tex, kind === 'materials' ? 'item_redheart' : `potion_${kind}`, iconSize, iconSize);
       icon.anchor.set(0.5);
-      icon.y = -pic.texture.height * pic.baseScale - 12;
       box.addChild(pic, icon);
       box.eventMode = 'static';
       box.cursor = 'pointer';
       box.on('pointerdown', () => openDrawer('counter', 'crate-reserve'));
       this.addChild(box);
-      this.crates.set(kind, { box, punch: 0, baseScale: pic.baseScale, pic });
+      this.crates.set(kind, { box, punch: 0, baseScale: pic.baseScale, pic, icon, iconY: -h * CRATE_PANEL_Y });
     }
   }
 
@@ -1538,6 +1594,13 @@ class PropsLayer extends Container {
       it.pic.visible = it.when(s);
       if (it.bob) it.pic.y = it.baseY + Math.sin(this.t * it.bob) * 2;
     }
+    const open = decorSlots(s);
+    this.decor.forEach((pic, k) => {
+      const id = k < open ? s.decor[k] : null;
+      const gift = id && s.gifts[id] ? GIFT_MAP[id] : null;
+      pic.visible = !!gift;
+      if (gift) pic.setId(gift.icon);
+    });
     // 招牌輕輕搖晃
     const sign = this.items.find((i) => i.upg === 'signboard')!.pic;
     sign.rotation = Math.sin(this.t * 1.3) * 0.05;
@@ -1550,6 +1613,9 @@ class PropsLayer extends Container {
       c.punch = Math.max(0, c.punch - dt * 4);
       const squash = 1 + Math.sin(c.punch * Math.PI) * 0.12;
       c.pic.scale.set(c.baseScale * squash, c.baseScale / squash);
+      // 圖示跟著木板一起擠壓
+      c.icon.y = c.iconY / squash;
+      c.icon.scale.set(c.icon.baseScale * squash, c.icon.baseScale / squash);
     }
 
     // 鈴鐺剩餘次數
@@ -1870,6 +1936,22 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       case 'achievement': {
         const a = ACHIEVEMENTS.find((x) => x.id === e.id);
         if (a) showToast(`🏆 成就達成：${a.name}（+${a.reward} ♥）`);
+        break;
+      }
+      case 'wish': {
+        const say = (lines: string[]) => lumia.say(lines[Math.floor(Math.random() * lines.length)]);
+        const heart = `+${e.reward.toFixed(2).replace(/\.?0+$/, '')} ♥`;
+        if (e.result === 'new') {
+          say(WISH_LINES.new);
+          const r = WISH.rarities[s.wish?.rarity ?? 0];
+          if (s.wish && s.wish.rarity > 0) showToast(`✨ 露米婭許了一個「${r.name}」！`);
+        } else if (e.result === 'done') {
+          say(WISH_LINES.done);
+          floats.spawn(`心願達成！${heart}`, lumia.x + 120, lumia.y - 140, 0xff8fb8, true, true);
+        } else {
+          say(WISH_LINES.fail);
+          if (e.reward > 0) floats.spawn(`努力獎 ${heart}`, lumia.x + 120, lumia.y - 140, 0xffc0d8, false, true);
+        }
         break;
       }
       case 'mascot': {

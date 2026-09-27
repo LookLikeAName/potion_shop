@@ -59,9 +59,13 @@ async function main() {
   // 所以 Game 以真實經過時間計算）
   setInterval(() => game.advance(), BACKGROUND_TICK_MS);
   setInterval(() => game.save(), AUTOSAVE_MS);
+  // 小心願只在分頁在前景時進行：切到背景前先把前景的時間算完，回來時先補算背景的時間
+  game.setForeground(document.visibilityState === 'visible');
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') game.save();
-    else game.advance();
+    const visible = document.visibilityState === 'visible';
+    game.advance();
+    game.setForeground(visible);
+    if (!visible) game.save();
   });
   window.addEventListener('pagehide', () => game.save());
 }

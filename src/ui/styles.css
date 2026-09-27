@@ -376,6 +376,175 @@ html, body {
 .ach.done { color: var(--ink); font-weight: 700; }
 .ach-reward { color: #c0487a; }
 
+/* 頂列的開心度：整數 + 愛心水位 */
+.heart-meter { position: relative; gap: 0.3em; }
+.heart { display: inline-flex; width: 1.35em; height: 1.3em; }
+.heart svg { width: 100%; height: 100%; overflow: visible; }
+.heart-empty { fill: rgba(255, 143, 184, 0.18); }
+.heart-fill { fill: #ff6fa3; transform-box: fill-box; transform-origin: 50% 100%; transition: transform 0.5s ease; }
+.heart-line { fill: none; stroke: #ffd0e0; stroke-width: 2; }
+.heart.burst { animation: heart-burst 0.7s ease; }
+@keyframes heart-burst { 30% { transform: scale(1.45); filter: drop-shadow(0 0 6px #ff8fb8); } }
+.heart-count { color: #ffd0e0; min-width: 1.2em; }
+.heart-pop {
+  position: absolute;
+  left: 1.6em;
+  top: 60%;
+  color: #ff9ec0;
+  font-size: 0.75em;
+  text-shadow: 0 1px 2px #2b1d14;
+  pointer-events: none;
+  animation: heart-pop 1.2s ease-out forwards;
+  white-space: nowrap;
+}
+@keyframes heart-pop { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-1.8em); opacity: 0; } }
+
+/* 小心願卡片（畫面右上角；魔導書打開時讓到左邊） */
+.wish-card {
+  position: absolute;
+  top: calc(76px * var(--uiz) + 12px);
+  right: calc(16px * var(--uiz));
+  width: calc(380px * var(--uiz));
+  background: rgba(255, 250, 240, 0.95);
+  border: 3px solid #ff8fb8;
+  border-radius: 14px;
+  padding: 0.45em 0.7em 0.5em;
+  font-size: 0.8em;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: right 0.25s ease;
+  pointer-events: none !important;
+}
+.wish-card.shift { right: calc(min(calc(640px * var(--uiz)), 100%) + 16px * var(--uiz)); }
+.wish-card.rarity-1 { border-color: #9a7cff; }
+.wish-card.rarity-2 { border-color: #ffc93c; animation: wish-shine 1.4s ease-in-out infinite alternate; }
+@keyframes wish-shine { to { box-shadow: 0 0 18px 4px rgba(255, 201, 60, 0.7); } }
+.wish-head { display: flex; align-items: center; font-weight: 700; color: #c0487a; }
+.rarity-1 .wish-head { color: #6a4fd0; }
+.rarity-2 .wish-head { color: #b07a00; }
+.wish-time { margin-left: auto; color: var(--ink-soft); font-size: 0.9em; }
+.wish-time.urgent { color: var(--danger); }
+.wish-text { margin: 0.2em 0 0.35em; color: var(--ink); font-weight: 700; }
+.wish-bar { height: 0.65em; background: #f0e0d0; border-radius: 999px; overflow: hidden; }
+.wish-fill { height: 100%; background: linear-gradient(90deg, #ffb3cd, #ff6fa3); border-radius: 999px; transition: width 0.3s; }
+.rarity-1 .wish-fill { background: linear-gradient(90deg, #c8b8ff, #8a6cf0); }
+.rarity-2 .wish-fill { background: linear-gradient(90deg, #ffe08a, #ffb300); }
+.wish-foot { display: flex; justify-content: space-between; margin-top: 0.25em; font-size: 0.9em; color: var(--ink-soft); }
+.wish-reward { color: #c0487a; font-weight: 700; }
+
+/* 名聲與羈絆、休息室擺設 */
+.bond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4em; }
+.bond-grid span { display: flex; flex-direction: column; background: #f6ecd6; border-radius: 10px; padding: 0.3em 0.6em; }
+.bond-grid em { font-style: normal; font-size: 0.75em; color: var(--ink-soft); }
+.bond-grid b { font-size: 1.2em; color: #c0487a; }
+.bond-grid small { font-size: 0.65em; color: var(--ink-soft); }
+#lumia-bond .btn { width: 100%; margin-top: 0.2em; }
+.back-btn { align-self: flex-start; }
+
+/* 休息室擺設：四個格子（拖曳放入） */
+.decor-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45em; margin: 0.3em 0; }
+.decor-slot {
+  position: relative;
+  aspect-ratio: 1 / 1.1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3px dashed #c9b48a;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 40%, #fff7e6, #efe0bf);
+  transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+.decor-slot.filled { border-style: solid; border-color: var(--gold); }
+.decor-slot.locked { background: #e6dac0; border-color: #d2c3a3; }
+.decor-slot.hover { border-color: #ff6fa3; box-shadow: 0 0 0 3px rgba(255, 111, 163, 0.35); transform: scale(1.05); }
+.decor-slot.target:not(.locked) { border-color: #ff8fb8; cursor: pointer; animation: slot-pulse 1s ease-in-out infinite alternate; }
+@keyframes slot-pulse { to { box-shadow: 0 0 0 4px rgba(255, 143, 184, 0.35); } }
+.slot-art { width: 78%; height: 70%; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; }
+.slot-art .gift-art { max-width: 100%; max-height: 100%; }
+.slot-empty { font-size: 1.8em; color: #c9b48a; font-weight: 700; }
+.slot-lock { display: flex; flex-direction: column; align-items: center; font-size: 1.2em; opacity: 0.7; }
+.slot-lock small { font-size: 0.45em; text-align: center; color: var(--ink-soft); line-height: 1.3; margin-top: 0.2em; }
+.slot-name { position: absolute; bottom: 0.2em; font-size: 0.62em; font-weight: 700; color: var(--ink-soft); }
+.slot-remove {
+  position: absolute;
+  top: 0.15em;
+  right: 0.15em;
+  font: inherit;
+  font-size: 0.6em;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  border: 2px solid var(--ink-soft);
+  background: #fffaf0;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0;
+}
+
+/* 禮物圖鑑 */
+.gift-book { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5em; }
+.gift-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2em;
+  padding: 0.4em 0.5em 0.55em;
+  border: 2px solid var(--parchment-dark);
+  border-radius: 14px;
+  background: #fbf3e2;
+  text-align: center;
+}
+.gift-entry.owned { background: #fffaf0; border-color: #e3c98f; }
+.gift-entry.picked { border-color: #ff6fa3; box-shadow: 0 0 0 3px rgba(255, 111, 163, 0.35); }
+.gift-no { align-self: stretch; display: flex; justify-content: space-between; font-size: 0.62em; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.05em; }
+.gift-shown { color: #fff; background: var(--teal); border-radius: 999px; padding: 0 0.6em; letter-spacing: 0; }
+.gift-frame {
+  width: 100%;
+  aspect-ratio: 1 / 0.85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 45%, #fffdf6, #efe2c4);
+}
+.gift-entry.owned .gift-frame { cursor: grab; touch-action: none; }
+.gift-entry.unknown .gift-frame { background: radial-gradient(circle at 50% 45%, #e9dcc0, #d6c5a3); }
+.gift-art { max-width: 82%; max-height: 88%; object-fit: contain; pointer-events: none; }
+.gift-art.silhouette { filter: brightness(0) opacity(0.45); }
+.gift-art.ph {
+  width: 4.2em;
+  height: 4.2em;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9em;
+  border: 3px solid rgba(43, 29, 20, 0.6);
+}
+.gift-art.ph.silhouette { filter: none; opacity: 0.6; color: #d6c5a3; font-size: 1.6em; }
+.gift-name { font-weight: 700; font-size: 0.9em; }
+.gift-entry.unknown .gift-name { color: var(--ink-soft); letter-spacing: 0.2em; }
+.gift-fx { font-size: 0.7em; font-weight: 700; color: var(--teal); }
+.gift-intro { font-size: 0.66em; color: var(--ink-soft); line-height: 1.45; text-align: left; }
+.gift-buy { margin-top: 0.2em; }
+
+/* 拖曳中跟著指標的禮物圖 */
+.drag-ghost {
+  position: absolute;
+  width: calc(110px * var(--uiz));
+  height: calc(110px * var(--uiz));
+  transform: translate(-50%, -60%) rotate(-6deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none !important;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45));
+  z-index: 20;
+}
+.drag-ghost img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
 .story-back { background: rgba(18, 12, 8, 0.85); }
 .story { width: min(calc(1100px * var(--uiz)), 96%); }
 .cg {

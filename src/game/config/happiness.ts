@@ -1,6 +1,6 @@
 // 開心度兌換（企劃書第 8 章）
 
-export type HappinessKind = 'furniture' | 'outfit' | 'talent' | 'story';
+export type HappinessKind = 'slot' | 'outfit' | 'talent' | 'story';
 
 export interface HappinessItem {
   id: string;
@@ -18,23 +18,19 @@ export interface HappinessItem {
 const fixed = (n: number) => () => n;
 
 export const HAPPINESS_ITEMS: HappinessItem[] = [
-  // Tier 1：家具
+  // Tier 1：休息室擴建（多一格擺設位，禮物擺出來才有效果）
   {
-    id: 'slime_doll', tier: 1, kind: 'furniture', name: 'Q版史萊姆娃娃', icon: 'furn_slime_doll',
-    desc: '露米婭休息時會拿起來揉捏。休息室開心度產出 +0.05/小時。', cost: fixed(1), max: 1,
+    id: 'decor_slot_3', tier: 1, kind: 'slot', name: '休息室擴建：坐墊旁', icon: 'icon_decor_slot',
+    desc: '在坐墊旁的地板多一個擺設位，可以多擺一件禮物。', cost: fixed(3), max: 1,
   },
   {
-    id: 'gramophone', tier: 1, kind: 'furniture', name: '復古留聲機', icon: 'furn_gramophone',
-    desc: '輕快的音樂讓精靈們更有幹勁。植物生長與大釜熬煮速度 +10%。', cost: fixed(3), max: 1,
-  },
-  {
-    id: 'tea_set', tier: 1, kind: 'furniture', name: '高級魔法紅茶組', icon: 'furn_tea_set',
-    desc: '提神醒腦。露米婭工作時體力消耗 -50%。', cost: fixed(5), max: 1,
+    id: 'decor_slot_4', tier: 1, kind: 'slot', name: '休息室擴建：樓梯邊', icon: 'icon_decor_slot',
+    desc: '在樓梯邊多一個擺設位，可以多擺一件禮物。', cost: fixed(8), max: 1,
   },
   // Tier 2：服裝
   {
     id: 'outfit_maid', tier: 2, kind: 'outfit', name: '典雅女僕裝', icon: 'lumia_chibi_maid_idle',
-    desc: '待機時會鞠躬。指派在櫃台時：顧客耐心 +200%、售價 +50%。', cost: fixed(15), max: 1,
+    desc: '待機時會鞠躬。指派在櫃台時：售價 +50%；客人每次少買 20%，但照原本的數量付錢。', cost: fixed(15), max: 1,
   },
   {
     id: 'outfit_pajama', tier: 2, kind: 'outfit', name: '星空絨毛睡衣', icon: 'lumia_chibi_pajama_idle',
@@ -51,7 +47,7 @@ export const HAPPINESS_ITEMS: HappinessItem[] = [
   },
   {
     id: 'attunement', tier: 3, kind: 'talent', name: '魔力同調', icon: 'icon_attunement',
-    desc: '雙口冷凝管的雙倍機率 +5%（最多 10 次）。', cost: fixed(5), max: 10,
+    desc: '雙口冷凝管的雙倍機率 +10%（最多 5 次，價格遞增）。', cost: (n) => 3 + 2 * n, max: 5,
   },
   {
     id: 'green_thumb', tier: 3, kind: 'talent', name: '奇蹟綠手指', icon: 'icon_green_thumb',
@@ -75,12 +71,21 @@ export const HAPPINESS_ITEMS: HappinessItem[] = [
 export const HAPPINESS_MAP: Record<string, HappinessItem> =
   Object.fromEntries(HAPPINESS_ITEMS.map((i) => [i.id, i]));
 
+/**
+ * 開心度倍率 = (1 + 名聲 × renownPerLevel) × (1 + 羈絆 × bondPerLevel)。
+ * 名聲：累計收入每多 10 倍 +1 級（前期成長快）；羈絆：每兌換一件開心度物品 +1 級（少女的聲援不算，後期成長）。
+ * 心願、休息、觸碰、每日互動的開心度都乘上它；成就與禮物固定。
+ */
+export const BOND = {
+  renownPerLevel: 0.1,
+  bondPerLevel: 0.15,
+  /** 不算進羈絆等級的兌換項目（可無限購買） */
+  exclude: ['cheer'],
+};
+
 export const TALENT_FX = {
-  gramophoneSpeed: 0.1,
-  teaDrainMult: 0.5,
-  slimeRestPerHour: 0.05,
   cheerPrice: 0.2,
-  attunementChance: 0.05,
+  attunementChance: 0.1,
   telepathyCapHours: 72,
   celebrationPrice: 3,
   feverSeconds: 60,

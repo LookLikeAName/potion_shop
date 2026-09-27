@@ -1,6 +1,7 @@
 import type { MaterialId } from './config/plants';
 import type { PotionId } from './config/recipes';
 import { INITIAL_OPEN_SLOTS } from './config/balance';
+import { DECOR } from './config/gifts';
 import { CRATE_FOR, CRATE_MATERIALS, FLOATING_POT } from './config/upgrades';
 import {
   createCauldron, createInitialState, createSlot, SAVE_VERSION, type CustomerState, type GameSettings,
@@ -118,7 +119,10 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     mascot: { ...base.mascot, ...st.mascot },
     redeemed: { ...st.redeemed },
     achievements: { ...st.achievements },
-    giftsToday: { ...st.giftsToday },
+    gifts: { ...st.gifts },
+    decor: base.decor.map((d, i) => st.decor?.[i] ?? d),
+    materialRate: { ...base.materialRate, ...st.materialRate },
+    harvestedThisTick: { ...base.harvestedThisTick, ...st.harvestedThisTick },
     slots: base.slots.map((d, i) => ({ ...createSlot(d.open), ...d, ...st.slots?.[i] })),
     cauldrons: (st.cauldrons ?? base.cauldrons).map((c) => ({ ...createCauldron(c.recipe), ...c })),
     // 舊版顧客只有單一藥水 { potion, qty }：轉成訂單格式
@@ -126,7 +130,7 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
       const old = c as Omit<CustomerState, 'status'> & { status: string; potion?: PotionId; qty?: number };
       // 舊版「結帳中」（大家同時倒數）→ 備好貨排隊等結帳
       const status: CustomerState['status'] = old.status === 'checkout' ? 'ready' : c.status;
-      const extra = { status, arrive: old.arrive ?? 0, walk: old.walk ?? 0, express: old.express ?? false };
+      const extra = { status, arrive: old.arrive ?? 0, walk: old.walk ?? 0, express: old.express ?? false, payMult: old.payMult ?? 1 };
       if (old.lines) return { ...c, ...extra };
       return {
         ...c, ...extra, partial: false,
@@ -134,7 +138,37 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
       };
     }),
   };
+  // 舊版的每日送禮紀錄已經不用了
+  delete (state as Partial<GameState> & { giftDay?: string }).giftDay;
+  delete (state as Partial<GameState> & { giftsToday?: unknown }).giftsToday;
+  if ((st.version ?? 1) < 2) migrateHappiness(state);
   return { version: SAVE_VERSION, savedAt: raw.savedAt ?? Date.now(), state };
+}
+
+/** 版本 1 用開心度兌換的家具（當時的價格），改成禮物後退還開心度 */
+const LEGACY_FURNITURE: [string, number][] = [['gramophone', 3], ['tea_set', 5], ['slime_doll', 1]];
+const LEGACY_ATTUNEMENT = { max: 5, cost: 5 };
+
+/**
+ * 開心度系統重做（版本 2）：
+ * - 用開心度兌換過的家具轉成已擁有的禮物，依序擺到擺設位上，並退還當初花的開心度。
+ * - 魔力同調從 10 級（每級 5 點）改成 5 級：超過的等級退還開心度。
+ */
+function migrateHappiness(state: GameState): void {
+  const r = state.redeemed;
+  for (const [id, cost] of LEGACY_FURNITURE) {
+    if (!r[id]) continue;
+    delete r[id];
+    state.gifts[id] = true;
+    state.happiness += cost;
+    const empty = state.decor.slice(0, DECOR.baseSlots).findIndex((x) => !x);
+    if (empty >= 0) state.decor[empty] = id;
+  }
+  const att = r.attunement ?? 0;
+  if (att > LEGACY_ATTUNEMENT.max) {
+    state.happiness += (att - LEGACY_ATTUNEMENT.max) * LEGACY_ATTUNEMENT.cost;
+    r.attunement = LEGACY_ATTUNEMENT.max;
+  }
 }
 
 // ---------- 匯出 / 匯入（Base64，支援中文） ----------

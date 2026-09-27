@@ -3,18 +3,18 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { CUSTOMER, TICK, UPGRADE_FX } from '../src/game/config/balance';
-import { MATERIAL_IDS, PLANTS, type MaterialId } from '../src/game/config/plants';
+import { MATERIAL_IDS, PLANTS } from '../src/game/config/plants';
 import { RECIPES, type PotionId } from '../src/game/config/recipes';
 import {
-  CRATE_FOR, CRATE_MATERIALS, GLOBAL_UPGRADE_MAP, GLOBAL_UPGRADES, REFINE_FOR, SQUIRREL,
+  GLOBAL_UPGRADE_MAP, GLOBAL_UPGRADES, REFINE_FOR,
 } from '../src/game/config/upgrades';
-import * as cmd from '../src/game/commands';
 import { formatNumber } from '../src/game/format';
 import { simulateOffline } from '../src/game/offline';
-import { checkoutByClick, missingInputs, tick, type SimContext } from '../src/game/sim';
-import { createInitialState, type GameState } from '../src/game/state';
+import { tick, type SimContext } from '../src/game/sim';
+import { botClick, botShop, DEFAULT_BOT, mulberry32, type BotOptions } from './bot';
+import { createInitialState } from '../src/game/state';
 import {
-  arrivalRate, cauldronOutputPerSec, materialReserve, potOutputPerSec, potionReserve, recipeNeeds,
+  arrivalRate, cauldronOutputPerSec, potOutputPerSec, potionReserve, recipeNeeds,
 } from '../src/game/stats';
 
 const args = process.argv.slice(2);
@@ -39,17 +39,6 @@ if (argOf('--plant-yield')) {
 const CRATE = argOf('--crate');
 if (CRATE) [UPGRADE_FX.crateBasePct, UPGRADE_FX.crateStepPct] = CRATE.split(',').map(Number);
 const CHECKPOINTS = [1, 2, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 360].filter((m) => m <= MINUTES);
-
-/** 可重現的亂數 */
-function mulberry32(seed: number) {
-  return () => {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 interface Profile {
   name: string;
@@ -78,118 +67,12 @@ const PROFILES: Profile[] = [
   },
 ];
 
-// ---------- 機器人行為 ----------
-
-/** 點擊一下：優先幫備好貨的客人結帳 → 收成熟的植物 → 沒有火蜥蜴的大釜 → 還在長的盆栽 */
-function botClick(s: GameState, ctx: SimContext): void {
-  const buyer = s.customers.find((c) => c.status !== 'waiting' && !c.express);
-  if (buyer) return void checkoutByClick(s, buyer.id, ctx);
-  const ready = s.slots.findIndex((sl) => sl.plant && sl.ready);
-  if (ready >= 0) return void cmd.clickPlant(s, ready, ctx);
-  const manual = s.cauldrons.find((c) => c.salamander === 0 && (c.batch > 0 || missingInputs(s, c).length === 0));
-  if (manual) return void cmd.clickCauldron(s, manual.recipe, ctx);
-  const growing = s.slots.findIndex((sl) => sl.plant && !sl.fairy);
-  if (growing >= 0) return void cmd.clickPlant(s, growing, ctx);
-  const any = s.slots.findIndex((sl) => sl.plant);
-  if (any >= 0) cmd.clickPlant(s, any, ctx);
-}
-
-/**
- * 盆栽分配：--alloc 用字串指定 5 格各種什麼（R 紅心草、M 月光菇、S 星光藤蔓），預設 RMSRR
- * （第 2 格月光菇、第 3 格星光藤蔓、其他紅心草）。配方還沒解鎖時先種用得到的：S → M → R。
- */
-const ALLOC = (argOf('--alloc') ?? 'RMSRR').toUpperCase();
-
-function wantedPlant(s: GameState, i: number): MaterialId {
-  const has = (p: PotionId) => s.cauldrons.some((c) => c.recipe === p);
-  const want = ALLOC[i] ?? 'R';
-  if (want === 'S' && has('elixir')) return 'starvine';
-  if ((want === 'S' || want === 'M') && has('focus')) return 'moonshroom';
-  return 'redheart';
-}
-
-type Buy = { label: string; cost: number; run: () => boolean };
-
-function candidates(s: GameState, ctx: SimContext): Buy[] {
-  const out: Buy[] = [];
-  s.slots.forEach((slot, i) => {
-    if (!slot.open) return;
-    const want = wantedPlant(s, i);
-    if (!slot.plant) {
-      out.push({ label: `種植 ${PLANTS[want].name}`, cost: PLANTS[want].seedCost, run: () => cmd.plantSeed(s, i, want) });
-      return;
-    }
-    if (slot.plant !== want) {
-      const cost = cmd.replantCost(s, i, want);
-      if (cost !== null) out.push({ label: `改種 ${PLANTS[want].name}`, cost, run: () => cmd.replant(s, i, want, ctx) });
-    }
-    for (const kind of ['potLevel', 'rain', 'fairy'] as const) {
-      const key = { kind, slot: i };
-      const q = cmd.getQuote(s, key, 1);
-      if (q && q.count > 0) out.push({ label: `${kind}#${i}`, cost: q.cost, run: () => cmd.purchase(s, key, 1) });
-    }
-  });
-  for (const c of s.cauldrons) {
-    for (const kind of ['cauldronLevel', 'salamander'] as const) {
-      const key = { kind, recipe: c.recipe };
-      const q = cmd.getQuote(s, key, 1);
-      if (q && q.count > 0) out.push({ label: `${kind}:${c.recipe}`, cost: q.cost, run: () => cmd.purchase(s, key, 1) });
-    }
-  }
-  for (const p of cmd.nextLockedRecipes(s)) {
-    out.push({ label: `解鎖 ${RECIPES[p].name}`, cost: RECIPES[p].unlockCost, run: () => cmd.unlockRecipe(s, p) });
-  }
-  for (const u of GLOBAL_UPGRADES) {
-    const key = { kind: 'global' as const, id: u.id };
-    const q = cmd.getQuote(s, key, 1);
-    if (q && q.count > 0) out.push({ label: u.name, cost: q.cost, run: () => cmd.purchase(s, key, 1) });
-  }
-  return out;
-}
-
-/** 某個還沒買的收購箱，對應的庫存已經堆到保留量兩倍以上：玩家會想買它 */
-function crateNeeded(s: GameState, label: string): boolean {
-  if (!label.startsWith('收購箱：')) return false;
-  if (label === '收購箱：原料') {
-    return !s.upgrades[CRATE_MATERIALS] && MATERIAL_IDS.some((m) => s.materials[m] > materialReserve(s, m) * 2);
-  }
-  const p = s.cauldrons.map((c) => c.recipe).find((r) => label.endsWith(RECIPES[r].name));
-  return !!p && !s.upgrades[CRATE_FOR[p]] && s.potions[p] > Math.max(20, potionReserve(s, p) * 2);
-}
-
-/** 解鎖、種新植物（以及庫存堆積時對應的收購箱）優先存錢；其他就買最便宜的 */
-/**
- * 大釜順序：預設（--cauldron-order value）把高價配方拖到最左邊優先拿原料（靈藥 → 專注 → 微光），
- * 像真的玩家會做的；--cauldron-order unlock 則維持解鎖順序（微光在最左邊）
- */
-const CAULDRON_ORDER = argOf('--cauldron-order') ?? 'value';
-const VALUE_ORDER: PotionId[] = ['elixir', 'focus', 'glow'];
-
-function botArrange(s: GameState): void {
-  if (CAULDRON_ORDER !== 'value') return;
-  VALUE_ORDER.filter((p) => s.cauldrons.some((c) => c.recipe === p)).forEach((p, to) => {
-    const from = s.cauldrons.findIndex((c) => c.recipe === p);
-    if (from !== to) cmd.moveCauldron(s, from, to);
-  });
-}
-
-function botShop(s: GameState, ctx: SimContext, log: (label: string) => void): void {
-  botArrange(s);
-  for (let n = 0; n < 200; n++) {
-    const list = candidates(s, ctx);
-    // 第一隻算盤松鼠（自動結帳）也優先：沒有它時不點擊就賣不出去
-    const isPriority = (b: Buy) => /^(解鎖|種植|改種|fairy)/.test(b.label) || crateNeeded(s, b.label)
-      || (b.label === '算盤松鼠' && !s.upgrades[SQUIRREL]);
-    const priority = list.filter(isPriority).sort((a, b) => a.cost - b.cost)[0];
-    // 有優先項目時，只買價格低於它 10% 的小東西，其他錢存起來
-    const pick = priority && s.gold >= priority.cost
-      ? priority
-      : list.filter((b) => b.cost <= s.gold && (!priority || b.cost <= priority.cost * 0.1))
-        .sort((a, b) => a.cost - b.cost)[0];
-    if (!pick || !pick.run()) return;
-    log(pick.label);
-  }
-}
+/** 盆栽分配：--alloc 用字串指定 5 格各種什麼（R 紅心草、M 月光菇、S 星光藤蔓），預設 RMSRR */
+/** 大釜順序：--cauldron-order value（預設，高價配方拖到最左邊）或 unlock（維持解鎖順序） */
+const BOT: BotOptions = {
+  alloc: (argOf('--alloc') ?? DEFAULT_BOT.alloc).toUpperCase(),
+  cauldronOrder: argOf('--cauldron-order') === 'unlock' ? 'unlock' : 'value',
+};
 
 // ---------- 模擬 ----------
 
@@ -248,11 +131,11 @@ function simulate(p: Profile) {
     if (p.clicking(t)) {
       clickAcc += p.cps * TICK;
       while (clickAcc >= 1) {
-        botClick(s, ctx);
+        botClick(s, ctx, BOT);
         clickAcc -= 1;
       }
     }
-    if (p.shopping(t) && Math.floor(t * 10) % 10 === 0) botShop(s, ctx, log);
+    if (p.shopping(t) && Math.floor(t * 10) % 10 === 0) botShop(s, ctx, log, BOT);
     tick(s, TICK, ctx);
     for (const c of s.cauldrons) if (c.batch === 0) starved[c.recipe] = (starved[c.recipe] ?? 0) + TICK;
 
