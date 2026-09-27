@@ -171,6 +171,24 @@ html, body {
 .buy-btn:not(:disabled):active { transform: scale(0.96); }
 .buy-count { font-size: 0.8em; opacity: 0.8; }
 
+/* 盆栽：各種植物在這盆的等級 */
+.plant-levels { display: flex; flex-wrap: wrap; gap: 0.3em; margin: 0.1em 0 0.35em; }
+.plant-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: 0.75em;
+  padding: 0.1em 0.55em;
+  border-radius: 999px;
+  border: 2px solid var(--parchment-dark);
+  background: #f6ecd6;
+  color: var(--ink);
+}
+.plant-level.current { border-color: var(--teal); background: #e3f1ee; }
+.plant-level.never { color: var(--ink-soft); opacity: 0.7; }
+.plant-level small { color: var(--ink-soft); }
+.plant-level em { font-style: normal; font-weight: 700; color: var(--teal); }
+
 .replant { margin-top: 0.3em; border-top: 1px dashed var(--parchment-dark); padding-top: 0.3em; }
 .replant summary { cursor: pointer; font-size: 0.8em; font-weight: 700; color: var(--teal); padding: 0.2em 0; }
 .replant[open] summary { margin-bottom: 0.2em; }
@@ -185,6 +203,50 @@ html, body {
 .stepper-value { min-width: 3em; text-align: center; font-weight: 700; font-size: 1.1em; }
 .mat-row { border-top: 1px dashed var(--parchment-dark); padding: 0.3em 0 0.1em; }
 .mat-row .toggle { margin-top: 0.2em; }
+
+/* 收購箱：開關按鈕 + 一直顯示的保留量 */
+.crate-head { display: flex; align-items: center; gap: 0.35em; font-size: 0.9em; margin-top: 0.1em; }
+.crate-price { font-size: 0.8em; color: var(--teal); font-weight: 700; }
+.crate-head .switch { margin-left: auto; }
+.crate-row.off .stepper-value, .crate-row.off .stats b { color: var(--ink-soft); }
+.stepper-label { font-size: 0.8em; font-weight: 700; color: var(--ink-soft); }
+.switch {
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.15em 0.2em;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 0.85em;
+}
+.switch-track {
+  position: relative;
+  width: 2.6em;
+  height: 1.4em;
+  border-radius: 999px;
+  background: #cdbd9c;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: background 0.2s;
+}
+.switch-knob {
+  position: absolute;
+  top: 0.15em;
+  left: 0.15em;
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  background: #fffaf0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s;
+}
+.switch.on { color: var(--teal); }
+.switch.on .switch-track { background: var(--teal); }
+.switch.on .switch-knob { transform: translateX(1.2em); }
+.switch-label { min-width: 3em; text-align: left; }
 .btn {
   font: inherit;
   font-size: 0.85em;
@@ -258,9 +320,9 @@ html, body {
 .income-total { font-size: 1.35em; color: var(--ink); }
 .income-bar { display: flex; height: 0.7em; border-radius: 999px; overflow: hidden; background: #f0e4c8; margin: 0.35em 0; }
 .income-bar .seg { height: 100%; }
-.seg-0 { background: #e8a93a; }
-.seg-1 { background: #9a6a3e; }
-.seg-2 { background: #d97a8a; }
+.seg-0 { background: #b87d0a; }
+.seg-1 { background: #2a78d6; }
+.seg-2 { background: #c94f86; }
 .income-list { display: flex; flex-direction: column; gap: 0.2em; font-size: 0.82em; margin-bottom: 0.4em; }
 .income-list span { display: flex; align-items: center; gap: 0.35em; }
 .income-list b { margin-left: auto; }
@@ -357,6 +419,14 @@ html, body {
 @keyframes panic { 20%, 60% { transform: translateX(-4%); } 40%, 80% { transform: translateX(4%); } }
 .lumia-side { flex: 1; min-width: 0; }
 .lumia-side h2 { margin: 0.1em 0 0.3em; color: var(--teal); }
+/* 台詞框固定三行高：台詞長短不同時視窗大小不會跟著跳動（更長就在框內捲動） */
+.lumia-side .speech {
+  line-height: 1.5;
+  min-height: 0;
+  height: calc(3 * 1.5em + 1.2em + 4px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .speech {
   background: #fffaf0;
   border: 2px solid var(--parchment-dark);
@@ -577,3 +647,44 @@ html, body {
 @media (orientation: portrait) and (pointer: coarse) {
   #rotate-hint { display: flex; }
 }
+
+/* 產銷：可以點進去看圖表 */
+.clickable { cursor: pointer; transition: background 0.15s; }
+.flow-row.clickable:hover, .card.clickable:hover { background: #fdf3df; }
+.flow-row.clickable { border-radius: 8px; padding-left: 0.3em; padding-right: 0.3em; }
+.flow-more { font-size: 0.72em; font-weight: 700; color: var(--teal); white-space: nowrap; }
+.card-title .flow-more { margin-left: 0.4em; }
+
+/* 折線圖 */
+.chart { margin-top: 0.2em; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 0.2em 1em; font-size: 0.72em; color: var(--ink-soft); margin-bottom: 0.2em; }
+.chart-legend span { display: inline-flex; align-items: center; gap: 0.35em; }
+.chart-legend b { color: var(--ink); }
+.chart-key { display: inline-block; width: 1em; height: 3px; border-radius: 2px; }
+.chart-key.dashed { background: repeating-linear-gradient(90deg, #7a5c44 0 4px, transparent 4px 7px); }
+.chart-plot { position: relative; }
+.chart-svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.chart-grid { stroke: #e8dcc2; stroke-width: 1; }
+.chart-base { stroke: #cbb894; stroke-width: 1.5; }
+.chart-ref { stroke: #7a5c44; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.chart-cross { stroke: #7a5c44; stroke-width: 1; }
+.chart-ytick { font-size: 13px; fill: #7a5c44; text-anchor: end; }
+.chart-xtick { font-size: 12px; fill: #9a8266; }
+.chart-tip {
+  position: absolute;
+  top: 0;
+  transform: translateX(10px);
+  background: rgba(255, 250, 240, 0.97);
+  border: 2px solid var(--parchment-dark);
+  border-radius: 10px;
+  padding: 0.3em 0.55em;
+  font-size: 0.7em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+.chart-tip.left { transform: translateX(calc(-100% - 10px)); }
+.chart-tip-time { color: var(--ink-soft); margin-bottom: 0.1em; }
+.chart-tip-row { display: flex; align-items: center; gap: 0.4em; }
+.chart-tip-row b { color: var(--ink); }
+.chart-tip-row span { color: var(--ink-soft); }

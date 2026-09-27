@@ -1,13 +1,14 @@
 import { MATERIAL_IDS, PLANTS, type MaterialId } from '../../game/config/plants';
 import { RECIPES, type PotionId } from '../../game/config/recipes';
-import type { FlowReport, ItemFlow } from '../../game/flow';
-import { formatNumber, formatRate } from '../../game/format';
+import type { FlowReport, ItemFlow, ItemId } from '../../game/flow';
+import { formatExact, formatNumber, formatRate } from '../../game/format';
 import { customerDemand } from '../../game/sim';
 import type { GameState } from '../../game/state';
 import { brewPassiveSpeed, customerShare, recipeNeeds, sellPrice } from '../../game/stats';
 import { Icon } from '../Icon';
+import { LineChart } from '../LineChart';
 import { MarketHeat } from './CounterPanel';
-import { useGame } from '../store';
+import { flowDetail, useGame } from '../store';
 
 /** 大釜以目前速度全速熬煮時，每秒需要多少這種原料（只算有自動熬煮的大釜） */
 function brewDemand(s: GameState, m: MaterialId): number {
@@ -58,14 +59,19 @@ function Signed({ v }: { v: number }) {
 function FlowRow(props: {
   icon: string; name: string; stock: number; f: ItemFlow; usedLabel: string;
   demand?: { label: string; value: number }; hint: [Tone, string] | null;
+  /** 點了打開這一項的詳細圖表（詳細頁本身不給） */
+  onOpen?: () => void;
+  /** 庫存顯示完整數字（詳細頁） */
+  fullStock?: boolean;
 }) {
   const { f } = props;
   return (
-    <div class="flow-row">
+    <div class={`flow-row ${props.onOpen ? 'clickable' : ''}`} onClick={props.onOpen}>
       <div class="flow-head">
         <Icon id={props.icon} />
         <b>{props.name}</b>
-        <span class="flow-stock">庫存 {formatNumber(props.stock)}</span>
+        <span class="flow-stock">庫存 {props.fullStock ? fullCount(props.stock) : formatNumber(props.stock)}</span>
+        {props.onOpen && <span class="flow-more">圖表 ›</span>}
       </div>
       <div class="flow-grid">
         <span>產量<Signed v={f.made} /></span>
@@ -82,21 +88,22 @@ function FlowRow(props: {
 }
 
 /** 平均收入與來源（顧客、藥水收購箱、原料收購箱），以及顧客的訂單有沒有湊齊 */
-function IncomeCard({ r }: { r: FlowReport }) {
+function IncomeCard({ r, onOpen }: { r: FlowReport; onOpen?: () => void }) {
   const game = useGame();
   const s = game.state;
   const { income, orders } = r;
   const sources: [string, string, number][] = [
-    ['顧客', 'icon_gold', income.customers],
-    ['藥水收購箱', 'upg_crate', income.cratePotions],
-    ['原料收購箱', 'item_redheart', income.crateMaterials],
+    [INCOME_LABELS.customers, 'icon_gold', income.customers],
+    [INCOME_LABELS.cratePotions, 'upg_crate', income.cratePotions],
+    [INCOME_LABELS.crateMaterials, 'item_redheart', income.crateMaterials],
   ];
   const served = orders.full + orders.partial + orders.lost;
   return (
-    <div class="card">
+    <div class={`card ${onOpen ? 'clickable' : ''}`} onClick={onOpen}>
       <div class="card-title">
         <Icon id="icon_gold" /> 平均收入
         <span class="flow-stock"><b class="income-total">{formatRate(income.total)}</b> 金／秒</span>
+        {onOpen && <span class="flow-more">圖表 ›</span>}
       </div>
       <div class="income-bar">
         {sources.map(([label, , v], k) => income.total > 0 && v > 0 && (
@@ -132,6 +139,7 @@ export function FlowPanel() {
   const game = useGame();
   const s = game.state;
   const r = game.flow.report(s);
+  if (r && flowDetail.value) return <FlowDetail id={flowDetail.value} r={r} />;
   if (!r) {
     return <div class="cards"><div class="card"><p class="hint">統計中…（需要幾秒鐘的資料）</p></div></div>;
   }
@@ -142,9 +150,9 @@ export function FlowPanel() {
     <div class="cards">
       <p class="hint">
         最近 {Math.round(r.seconds)} 秒的平均（每秒）。「產量」少於「使用＋收購」時庫存會下降；
-        原料被收購代表產量有剩，大釜常在等原料則代表原料不夠。
+        原料被收購代表產量有剩，大釜常在等原料則代表原料不夠。點各項目可以看最近 30 秒的折線圖。
       </p>
-      <IncomeCard r={r} />
+      <IncomeCard r={r} onOpen={() => openDetail('income')} />
       <div class="card">
         <div class="card-title">原料</div>
         {mats.length === 0 && <p class="hint">還沒有種任何植物。</p>}
@@ -152,7 +160,7 @@ export function FlowPanel() {
           <FlowRow
             key={m} icon={`item_${m}`} name={PLANTS[m].name} stock={s.materials[m]} f={r.items[m]}
             usedLabel="熬煮" demand={{ label: '大釜全速需要', value: brewDemand(s, m) }}
-            hint={materialHint(s, m, r.items[m], r)}
+            hint={materialHint(s, m, r.items[m], r)} onOpen={() => openDetail(m)}
           />
         ))}
       </div>
@@ -163,10 +171,136 @@ export function FlowPanel() {
           <FlowRow
             key={p} icon={`potion_${p}`} name={RECIPES[p].name} stock={s.potions[p]} f={r.items[p]}
             usedLabel="售出" demand={{ label: '顧客需求約', value: customerDemand(s, p) }}
-            hint={potionHint(s, p, r.items[p], r)}
+            hint={potionHint(s, p, r.items[p], r)} onOpen={() => openDetail(p)}
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+/** 圖表顏色（已驗證在羊皮紙底色上的對比與色盲區分）：產量、使用、收購 */
+const FLOW_COLORS = { made: '#1f9e6a', used: '#e0662e', crate: '#2a78d6' };
+/** 收入來源的顏色：顧客、藥水收購箱、原料收購箱；合計用墨色 */
+const INCOME_COLORS = { customers: '#b87d0a', cratePotions: '#2a78d6', crateMaterials: '#c94f86', total: '#4a3426' };
+const INCOME_LABELS = { customers: '顧客', cratePotions: '藥水收購箱', crateMaterials: '原料收購箱' };
+const STOCK_COLOR = '#2f6f6a';
+const NET_COLOR = '#c94f86';
+/** 每種配方固定一個顏色（顏色跟著配方走，不跟著順序） */
+const RECIPE_COLORS: Record<PotionId, string> = { glow: '#e0662e', focus: '#2a78d6', elixir: '#1f9e6a' };
+
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+/** 帶正負號（淨變化用） */
+const signed = (fmt: (n: number) => string) => (n: number) => (n > 0 ? `+${fmt(n)}` : fmt(n));
+/** 庫存：完整數字，不縮寫 */
+const fullCount = (n: number) => Math.floor(n + 1e-9).toLocaleString('en-US');
+
+/** 打開某一項的詳細圖表，並捲回最上面 */
+function openDetail(id: ItemId | 'income'): void {
+  flowDetail.value = id;
+  document.querySelector('.drawer-body')?.scrollTo(0, 0);
+}
+
+function closeDetail(): void {
+  flowDetail.value = null;
+  document.querySelector('.drawer-body')?.scrollTo(0, 0);
+}
+
+/** 單一原料／藥水（或收入）的詳細頁：最近 30 秒的折線圖 */
+function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
+  const game = useGame();
+  const s = game.state;
+  const ser = game.flow.series(s);
+  const back = <button class="btn back-btn" onClick={closeDetail}>◀ 回到產銷總覽</button>;
+  if (!ser) {
+    return <div class="cards">{back}<div class="card"><p class="hint">統計中…（需要幾秒鐘的資料）</p></div></div>;
+  }
+  if (id === 'income') {
+    return (
+      <div class="cards">
+        {back}
+        <IncomeCard r={r} />
+        <div class="card">
+          <div class="card-title">每秒收入</div>
+          <LineChart
+            ago={ser.ago} format={formatRate} tipFormat={formatExact}
+            series={[
+              { label: '合計', color: INCOME_COLORS.total, values: ser.income.total },
+              ...(['customers', 'cratePotions', 'crateMaterials'] as const).map((k) => (
+                { label: INCOME_LABELS[k], color: INCOME_COLORS[k], values: ser.income[k] })),
+            ]}
+          />
+        </div>
+        <div class="card">
+          <div class="card-title">市場熱度</div>
+          <LineChart
+            ago={ser.ago} format={(n) => `×${n.toFixed(2)}`} yMax={1.5}
+            series={[{ label: '熱度', color: INCOME_COLORS.cratePotions, values: ser.market }]}
+            refLine={{ label: '平常', value: 1 }}
+          />
+          <p class="hint">熱度高於 1 時客人買得比產量多（囤貨派上用場），低於 1 時有剩（交給收購箱）。</p>
+        </div>
+      </div>
+    );
+  }
+  const isMat = id in s.materials;
+  const it = ser.items[id];
+  const name = isMat ? PLANTS[id as MaterialId].name : RECIPES[id as PotionId].name;
+  const icon = isMat ? `item_${id}` : `potion_${id}`;
+  const usedLabel = isMat ? '熬煮' : '售出';
+  const f = r.items[id];
+  const demand = isMat ? brewDemand(s, id as MaterialId) : customerDemand(s, id as PotionId);
+  const hint = isMat ? materialHint(s, id as MaterialId, f, r) : potionHint(s, id as PotionId, f, r);
+  // 原料：用到它的大釜；藥水：它自己的大釜
+  const users = isMat ? s.cauldrons.filter((c) => RECIPES[c.recipe].inputs[id as MaterialId]) : s.cauldrons.filter((c) => c.recipe === id);
+  return (
+    <div class="cards">
+      {back}
+      <div class="card">
+        <FlowRow
+          icon={icon} name={name} stock={isMat ? s.materials[id as MaterialId] : s.potions[id as PotionId]} f={f}
+          usedLabel={usedLabel} hint={hint} fullStock
+          demand={{ label: isMat ? '大釜全速需要' : '顧客需求約', value: demand }}
+        />
+      </div>
+      <div class="card">
+        <div class="card-title">每秒{isMat ? '產量' : '熬出'}與去向</div>
+        <LineChart
+          ago={ser.ago} format={formatRate} tipFormat={formatExact}
+          series={[
+            { label: isMat ? '產量' : '熬出', color: FLOW_COLORS.made, values: it.made },
+            { label: usedLabel, color: FLOW_COLORS.used, values: it.used },
+            { label: '收購', color: FLOW_COLORS.crate, values: it.crate },
+          ]}
+          refLine={demand > 0 ? { label: isMat ? '大釜全速需要' : '顧客需求約', value: demand } : undefined}
+        />
+      </div>
+      <div class="card">
+        <div class="card-title">庫存</div>
+        <LineChart ago={ser.ago} format={fullCount} yMode="fit" series={[{ label: '庫存', color: STOCK_COLOR, values: it.stock }]} />
+        <p class="hint">縱軸貼著這段時間的最低～最高庫存，數量很大時也看得出增減。</p>
+      </div>
+      <div class="card">
+        <div class="card-title">每秒淨變化</div>
+        <LineChart
+          ago={ser.ago} format={signed(formatRate)} tipFormat={signed(formatExact)} yMode="signed"
+          series={[{ label: '淨變化', color: NET_COLOR, values: it.net }]}
+        />
+        <p class="hint">產量 − {usedLabel} − 收購。在 0 以上是庫存在增加，以下是在減少。</p>
+      </div>
+      {users.length > 0 && (
+        <div class="card">
+          <div class="card-title">{isMat ? '用到它的大釜' : '大釜'}在等原料的時間</div>
+          <LineChart
+            ago={ser.ago} format={pct} yMax={1}
+            series={users.map((c) => ({
+              label: RECIPES[c.recipe].name, color: RECIPE_COLORS[c.recipe],
+              values: ser.starved[c.recipe],
+            }))}
+          />
+          <p class="hint">每一秒中，大釜湊不出一份原料、停下來等的時間比例。</p>
+        </div>
+      )}
     </div>
   );
 }

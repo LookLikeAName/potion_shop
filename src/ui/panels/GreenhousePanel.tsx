@@ -85,6 +85,7 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
       <div class="card-title">
         <Icon id={`item_${slot.plant}`} /> {p.name} <span class="lv">Lv {slot.level}</span>
       </div>
+      <PlantLevels slot={slot} />
       <div class="stats">
         <span>每次採收 <b>{formatNumber(harvestPerRound(s, i))}</b> 個</span>
         <span>生長 <b>{formatCycle(p.growTime / speed)}</b></span>
@@ -102,6 +103,27 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
         desc="植物一成熟就一口吞下，再吐到倉庫。自動採收"
       />
       <Replant i={i} slot={slot} />
+    </div>
+  );
+}
+
+/** 這個盆栽各種植物的培育紀錄：種植中的、種過的（等級、雨雲、花妖精）、沒種過的，調度時一眼看得出來 */
+function PlantLevels({ slot }: { slot: SlotState }) {
+  return (
+    <div class="plant-levels">
+      {MATERIAL_IDS.map((m) => {
+        const cur = slot.plant === m;
+        const rec = cur ? { level: slot.level, rain: slot.rain, fairy: slot.fairy } : slot.memory[m];
+        return (
+          <span key={m} class={`plant-level ${cur ? 'current' : ''} ${rec ? '' : 'never'}`} title={PLANTS[m].name}>
+            <Icon id={`item_${m}`} size={1} />
+            {rec ? <b>Lv {rec.level}</b> : <b>未種過</b>}
+            {rec && rec.rain > 0 && <small>雨雲 {rec.rain}</small>}
+            {rec?.fairy && <Icon id="upg_fairy" size={0.9} />}
+            {cur && <em>種植中</em>}
+          </span>
+        );
+      })}
     </div>
   );
 }

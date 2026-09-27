@@ -29,6 +29,11 @@ import {
 import { PaperDoll } from './paperDoll';
 import { FONT, Pic, TextureBank } from './textures';
 
+/** 頂部資源列的高度（舞台座標；小螢幕時 UI 會放大）：場景上方這段被它蓋住 */
+function topBarHeight(): number {
+  return document.querySelector<HTMLElement>('.topbar')?.offsetHeight ?? 76;
+}
+
 const text = (s: string, size: number, fill = 0xffffff, weight: '400' | '700' = '700') =>
   new Text({
     text: s,
@@ -248,6 +253,9 @@ function badge(onTap: () => void): { view: Container; label: Text } {
 
 // ---------- 盆栽 ----------
 
+/** 按住盆栽多久（毫秒）打開魔導書的這一盆 */
+const POT_HOLD_MS = 500;
+
 class PotView extends Container {
   readonly hud = new Container();
   private pot: Pic;
@@ -308,7 +316,38 @@ class PotView extends Container {
     this.eventMode = 'static';
     this.cursor = 'pointer';
     this.hitArea = new Rectangle(-58, -200, 116, 215);
-    this.on('pointerdown', () => this.tap());
+    // 點一下照常催熟／採收；按住不放 0.5 秒打開魔導書、捲到這一盆的卡片
+    this.on('pointerdown', (e: FederatedPointerEvent) => {
+      this.tap();
+      this.startHold(e.global.x, e.global.y);
+    });
+    const cancel = () => this.cancelHold();
+    this.on('pointerup', cancel);
+    this.on('pointerupoutside', cancel);
+    this.on('pointerout', cancel);
+    this.on('globalpointermove', (e: FederatedPointerEvent) => {
+      // 手指移動太多就不算長按
+      if (this.holdFrom && Math.hypot(e.global.x - this.holdFrom.x, e.global.y - this.holdFrom.y) > 12) this.cancelHold();
+    });
+  }
+
+  private holdTimer: ReturnType<typeof setTimeout> | null = null;
+  private holdFrom: { x: number; y: number } | null = null;
+
+  private startHold(x: number, y: number): void {
+    this.cancelHold();
+    this.holdFrom = { x, y };
+    this.holdTimer = setTimeout(() => {
+      this.holdTimer = null;
+      this.holdFrom = null;
+      openDrawer('greenhouse', `slot-${this.i}`);
+    }, POT_HOLD_MS);
+  }
+
+  private cancelHold(): void {
+    if (this.holdTimer) clearTimeout(this.holdTimer);
+    this.holdTimer = null;
+    this.holdFrom = null;
   }
 
   private tap(): void {
@@ -793,6 +832,8 @@ const NPC_FOR: Record<PotionId, string[]> = {
 const CUSTOMER_SPEED = CUSTOMER.walkSpeed;
 /** 訂單氣泡每一列的高度 */
 const ROW_H = 44;
+/** 訂單氣泡（最下面一列的中心）在客人頭頂上的高度（客人圖高約 183） */
+const CUSTOMER_BUBBLE_Y = -225;
 
 class CustomerView extends Container {
   targetX = OFFSTAGE_X;
@@ -837,15 +878,14 @@ class CustomerView extends Container {
     });
     this.bubbleH = n * ROW_H + 12;
     // 急單的耐心條、結帳進度條放在頭頂（氣泡收起來時也看得到）
-    this.bar.y = -226;
-    this.bubble.y = -258;
+    this.bubble.y = CUSTOMER_BUBBLE_Y;
     this.coin = new Pic(tex, 'icon_gold', 44, 44);
     this.coin.anchor.set(0.5);
     this.addChild(this.body, this.bubble, this.bar, this.coin);
     // 點客人結帳（備好貨的才會成交）
     this.eventMode = 'static';
     this.cursor = 'pointer';
-    this.hitArea = new Rectangle(-65, -240, 130, 250);
+    this.hitArea = new Rectangle(-58, -205, 116, 215);
     this.on('pointerdown', (e: FederatedPointerEvent) => {
       e.stopPropagation();
       onTap(this.id);
@@ -879,7 +919,7 @@ class CustomerView extends Container {
     this.body.x = Math.sin(this.punch * Math.PI * 4) * 6 * this.punch;
     // 每位客人都顯示訂單氣泡（放置遊戲需要一點資訊量）；相鄰的上下錯開
     this.bubble.visible = !this.leaving && !!c;
-    this.bubble.y = -258 - this.bubbleLift;
+    this.bubble.y = CUSTOMER_BUBBLE_Y - this.bubbleLift;
     // 可以點他結帳（還沒點過）：頭上跳動的金幣
     this.coin.visible = !this.leaving && !!c && c.status !== 'waiting' && !c.express;
     // 備好貨可以點：金幣在氣泡正上方跳動
@@ -985,7 +1025,7 @@ class CustomerLayer extends Container {
 
   posOf(id: number) {
     const v = this.views.get(id);
-    return v ? { x: v.x, y: v.y - 290 } : null;
+    return v ? { x: v.x, y: v.y - 257 } : null;
   }
 }
 
@@ -1021,6 +1061,12 @@ class SpeechBubble extends Container {
   private max = 1;
   private halfW = 0;
   private h = 0;
+  private bodyH = 0;
+  private dream = false;
+  /** 尖角方向：down = 泡泡在頭頂上；left／right = 泡泡在頭的右邊／左邊（頭頂空間不夠時） */
+  private tail: 'down' | 'left' | 'right' = 'down';
+
+  static readonly TAIL = 14;
 
   constructor() {
     super();
@@ -1032,28 +1078,57 @@ class SpeechBubble extends Container {
   show(line: string, dream: boolean, duration = MUTTER.duration): void {
     this.words.text = line;
     this.words.style.fill = dream ? 0x4a5a8a : 0x4a3426;
+    this.dream = dream;
     const padX = 18;
     const padY = 12;
-    const tail = 14;
     const w = this.words.width + padX * 2;
-    const h = this.words.height + padY * 2;
+    this.bodyH = this.words.height + padY * 2;
     this.halfW = w / 2;
-    this.h = h + tail;
-    this.words.y = -tail - padY;
-    const fill = dream ? 0xe8f0ff : 0xfffaf0;
-    const edge = dream ? 0x8aa0d8 : 0x7a5c44;
-    this.bg.clear().roundRect(-w / 2, -tail - h, w, h, 18).fill({ color: fill, alpha: 0.96 }).stroke({ width: 3, color: edge });
-    if (dream) {
-      // 夢話：往下飄的小泡泡代替尖角
-      this.bg.circle(-6, -tail + 5, 6).fill({ color: fill }).stroke({ width: 2, color: edge })
-        .circle(-14, 2, 4).fill({ color: fill }).stroke({ width: 2, color: edge });
-    } else {
-      this.bg.poly([-10, -tail - 2, 10, -tail - 2, -4, 0]).fill({ color: fill }).stroke({ width: 3, color: edge })
-        // 蓋掉尖角和框線的接縫
-        .rect(-8, -tail - 4, 16, 4).fill({ color: fill });
-    }
+    this.h = this.bodyH + SpeechBubble.TAIL;
+    this.words.y = -SpeechBubble.TAIL - padY;
+    this.draw();
     this.life = this.max = duration;
     this.visible = true;
+  }
+
+  /** 換尖角方向（泡泡本體位置不變：原點在本體正下方 TAIL 處） */
+  setTail(tail: 'down' | 'left' | 'right'): void {
+    if (tail === this.tail) return;
+    this.tail = tail;
+    if (this.visible) this.draw();
+  }
+
+  /** 側邊尖角的尖端相對於原點的位置 */
+  get sideTip(): { x: number; y: number } {
+    const t = SpeechBubble.TAIL;
+    const y = -t - this.bodyH / 2 + 6;
+    return this.tail === 'right' ? { x: this.halfW + t, y } : { x: -this.halfW - t, y };
+  }
+
+  private draw(): void {
+    const t = SpeechBubble.TAIL;
+    const w = this.halfW * 2;
+    const h = this.bodyH;
+    const fill = this.dream ? 0xe8f0ff : 0xfffaf0;
+    const edge = this.dream ? 0x8aa0d8 : 0x7a5c44;
+    this.bg.clear().roundRect(-w / 2, -t - h, w, h, 18).fill({ color: fill, alpha: 0.96 }).stroke({ width: 3, color: edge });
+    if (this.tail !== 'down') {
+      // 泡泡在頭的旁邊：尖角從本體側邊指向她
+      const side = this.tail === 'right' ? 1 : -1;
+      const ex = side * (w / 2);
+      const my = -t - h / 2;
+      const tip = this.sideTip;
+      this.bg.poly([ex - side * 2, my - 10, ex - side * 2, my + 8, tip.x, tip.y]).fill({ color: fill }).stroke({ width: 3, color: edge })
+        .rect(ex - side * 4 - (side > 0 ? 0 : 4), my - 8, 4, 14).fill({ color: fill });
+    } else if (this.dream) {
+      // 夢話：往下飄的小泡泡代替尖角
+      this.bg.circle(-6, -t + 5, 6).fill({ color: fill }).stroke({ width: 2, color: edge })
+        .circle(-14, 2, 4).fill({ color: fill }).stroke({ width: 2, color: edge });
+    } else {
+      this.bg.poly([-10, -t - 2, 10, -t - 2, -4, 0]).fill({ color: fill }).stroke({ width: 3, color: edge })
+        // 蓋掉尖角和框線的接縫
+        .rect(-8, -t - 4, 16, 4).fill({ color: fill });
+    }
   }
 
   hide(): void {
@@ -1196,15 +1271,31 @@ class LumiaView extends Container {
     this.placeBubble();
   }
 
-  /** 泡泡放在頭頂（有 zZ 時再高一點），靠近畫面邊緣時往內推 */
+  /**
+   * 泡泡放在頭頂（有 zZ 時再高一點），靠近畫面邊緣時往內推。
+   * 頭頂空間不夠（在二樓、泡泡會被頂部資源列擋住）時，改放在頭的旁邊，尖角指向她。
+   */
   private placeBubble(): void {
     const h = this.doll.pic.texture.height * this.doll.pic.baseScale;
     const { halfW, h: bh } = this.bubble.size;
     const margin = 12;
-    // 泡泡在獨立圖層，用場景座標定位（跟著她移動）
-    this.bubble.x = Math.max(margin + halfW, Math.min(W - margin - halfW, this.x));
+    const top = topBarHeight() + margin;
     const y = this.y - h - (this.zz.visible ? 44 : 12);
-    this.bubble.y = Math.max(y, margin + bh);
+    // 泡泡在獨立圖層，用場景座標定位（跟著她移動）
+    if (y - bh >= top) {
+      this.bubble.setTail('down');
+      this.bubble.x = Math.max(margin + halfW, Math.min(W - margin - halfW, this.x));
+      this.bubble.y = y;
+      return;
+    }
+    // 放在右邊；右邊放不下就放左邊。尖角尖端對著她頭的側邊
+    const headX = 34;
+    const headY = this.y - h * 0.72;
+    const right = this.x + headX + 2 * halfW + SpeechBubble.TAIL + margin <= W;
+    this.bubble.setTail(right ? 'left' : 'right');
+    const tip = this.bubble.sideTip;
+    this.bubble.x = this.x + (right ? headX : -headX) - tip.x;
+    this.bubble.y = Math.max(headY - tip.y, top + bh);
   }
 
   startDrag(): void {
@@ -1239,7 +1330,9 @@ class LumiaView extends Container {
         .circle(18, 32, 3).fill({ color: WISH_COLORS[w.rarity] ?? WISH_COLORS[0] }).stroke({ width: 2, color: 0x2b1d14 });
     }
     const h = this.doll.pic.texture.height * this.doll.pic.baseScale;
-    this.wishMark.position.set(-44, -h - 18 + Math.sin(this.t * 2.4) * 5);
+    // 在二樓時別被頂部資源列擋住
+    const minY = topBarHeight() + 30 - this.y;
+    this.wishMark.position.set(-44, Math.max(minY, -h - 18) + Math.sin(this.t * 2.4) * 5);
     // 閃亮心願會一閃一閃
     const pulse = w.rarity === 2 ? 1 + 0.12 * Math.sin(this.t * 8) : 1 + 0.05 * Math.sin(this.t * 3);
     this.wishMark.scale.set(pulse);
@@ -1501,9 +1594,67 @@ class FeverOverlay extends Graphics {
 
 // ---------- 升級道具（買了才出現在場景裡） ----------
 
+/** 滑鼠停在擺設上多久（秒；手機為長按）才顯示效果 */
+const DECOR_TIP_DELAY = 0.5;
+
+/** 休息室擺設的說明框：名稱 + 擺出來的效果 */
+class DecorTip extends Container {
+  private bg = new Graphics();
+  private title = new Text({ text: '', style: { fontFamily: FONT, fontSize: 22, fontWeight: '700', fill: 0x4a3426 } });
+  private body = new Text({
+    text: '',
+    style: {
+      fontFamily: FONT, fontSize: 18, fontWeight: '700', fill: 0x2f6f6a,
+      wordWrap: true, breakWords: true, wordWrapWidth: 300, lineHeight: 26,
+    },
+  });
+
+  constructor() {
+    super();
+    this.addChild(this.bg, this.title, this.body);
+    this.eventMode = 'none';
+    this.visible = false;
+  }
+
+  /** 放在物件（x 為中心、top～bottom 為上下緣）的上方；上方會被頂部資源列擋住時放在下方 */
+  show(title: string, body: string, x: number, top: number, bottom: number): void {
+    this.title.text = title;
+    this.body.text = body;
+    const pad = 14;
+    const w = Math.max(this.title.width, this.body.width) + pad * 2;
+    const h = this.title.height + 6 + this.body.height + pad * 2;
+    this.title.position.set(pad, pad);
+    this.body.position.set(pad, pad + this.title.height + 6);
+    this.bg.clear().roundRect(0, 0, w, h, 14).fill({ color: 0xfffaf0, alpha: 0.97 }).stroke({ width: 3, color: 0xd9a441 });
+    const margin = 10;
+    const above = top - h - 8;
+    this.position.set(
+      Math.max(margin, Math.min(W - margin - w, x - w / 2)),
+      above >= topBarHeight() + margin ? above : bottom + 8,
+    );
+    this.visible = true;
+  }
+
+  hide(): void {
+    this.visible = false;
+  }
+}
+
 class PropsLayer extends Container {
   private items: { upg: string; when: (s: GameState) => boolean; pic: Pic; bob: number; baseY: number }[] = [];
   private decor: Pic[];
+  /** 擺設說明框（畫在最上層，由 createScene 加到舞台） */
+  readonly tip = new DecorTip();
+  /** 滑鼠停在（或手指按住）第 k 格擺設上的時間 */
+  private hover: { k: number; t: number; touch: boolean } | null = null;
+  private tipFor = -1;
+  private suppressTap = false;
+
+  private endHover(): void {
+    this.hover = null;
+    this.tipFor = -1;
+    this.tip.hide();
+  }
   private bell: Pic;
   private bellPips = new Graphics();
   private bellPunch = 0;
@@ -1529,15 +1680,38 @@ class PropsLayer extends Container {
     add(SQUIRREL, 'upg_abacus_squirrel', PROPS.squirrel, 1);
     add('diffuser', 'upg_diffuser', PROPS.diffuser, 1.5);
     add('signboard', 'upg_signboard', PROPS.signboard, 0, 0);
-    // 休息室擺設位：擺出來的禮物（圖跟著擺的東西換）
-    this.decor = DECOR_POS.map((pos) => {
+    // 休息室擺設位：擺出來的禮物（圖跟著擺的東西換）。
+    // 點一下打開擺設頁面；滑鼠停在上面 0.5 秒（手機長按）顯示效果
+    this.decor = DECOR_POS.map((pos, k) => {
       const pic = new Pic(tex, 'furn_gramophone', pos.w, pos.h);
       pic.anchor.set(0.5, 1);
       pic.position.set(pos.x, pos.y);
-      // 點擺設打開「擺設」分頁
       pic.eventMode = 'static';
       pic.cursor = 'pointer';
-      pic.on('pointerdown', () => openDrawer('decor'));
+      pic.on('pointerover', (e: FederatedPointerEvent) => {
+        if (e.pointerType === 'mouse') this.hover = { k, t: 0, touch: false };
+      });
+      pic.on('pointerout', () => {
+        if (this.hover?.k === k && !this.hover.touch) this.endHover();
+      });
+      pic.on('pointerdown', (e: FederatedPointerEvent) => {
+        this.suppressTap = false;
+        if (e.pointerType !== 'mouse') this.hover = { k, t: 0, touch: true };
+      });
+      const release = () => {
+        if (this.hover?.touch) this.endHover();
+      };
+      pic.on('pointerup', release);
+      pic.on('pointerupoutside', release);
+      pic.on('pointertap', () => {
+        // 長按看完效果放開，不要順便打開頁面
+        if (this.suppressTap) {
+          this.suppressTap = false;
+          return;
+        }
+        this.endHover();
+        openDrawer('decor');
+      });
       pic.visible = false;
       this.addChild(pic);
       return pic;
@@ -1601,6 +1775,22 @@ class PropsLayer extends Container {
       pic.visible = !!gift;
       if (gift) pic.setId(gift.icon);
     });
+    // 停留 0.5 秒後顯示擺設的效果（擺設被換掉或收起來時跟著更新／關掉）
+    if (this.hover) {
+      this.hover.t += dt;
+      const k = this.hover.k;
+      const pic = this.decor[k];
+      const id = k < open ? s.decor[k] : null;
+      const gift = id && s.gifts[id] && pic.visible ? GIFT_MAP[id] : null;
+      if (!gift) {
+        this.endHover();
+      } else if (this.hover.t >= DECOR_TIP_DELAY && this.tipFor !== k) {
+        this.tipFor = k;
+        if (this.hover.touch) this.suppressTap = true;
+        const h = pic.texture.height * pic.baseScale;
+        this.tip.show(gift.name, `擺出來：${gift.desc}`, pic.x, pic.y - h, pic.y);
+      }
+    }
     // 招牌輕輕搖晃
     const sign = this.items.find((i) => i.upg === 'signboard')!.pic;
     sign.rotation = Math.sin(this.t * 1.3) * 0.05;
@@ -1879,7 +2069,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     // 她的點擊判定也在這些之上：重疊時優先抓得到她（擋住了就把她拖到別處）
     buildBackground(tex), props, ...potsByDepth, ...cauldrons, particles,
     ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud),
-    lumiaLayer, lumiaDrag.hit, customers, floats, speechLayer, fever, highlight, dragLayer,
+    lumiaLayer, lumiaDrag.hit, customers, floats, speechLayer, props.tip, fever, highlight, dragLayer,
   );
 
   const cauldronPoint = (s: GameState, recipe: PotionId) => {

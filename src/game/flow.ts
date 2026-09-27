@@ -8,7 +8,7 @@ import type { GameState } from './state';
 export type ItemId = MaterialId | PotionId;
 const ITEMS: ItemId[] = [...MATERIAL_IDS, ...POTION_IDS];
 
-/** 每個統計桶的長度（秒）與保留幾個桶：平均的是最近約 30 秒 */
+/** 每個統計桶的長度（秒）與保留幾個桶：平均與折線圖都只看最近約 30 秒（為了效能不保留更久） */
 const BUCKET_SEC = 1;
 const WINDOW = 30;
 
@@ -25,6 +25,8 @@ interface Bucket {
   starved: Record<PotionId, number>;
   income: Income;
   orders: Orders;
+  /** 桶結束時的市場熱度 */
+  market: number;
 }
 
 /** 收入來源（金幣） */
@@ -67,6 +69,25 @@ export interface FlowReport {
   orders: Orders;
 }
 
+/** 某種原料／藥水每一秒的數值 */
+export interface ItemSeries {
+  made: number[];
+  used: number[];
+  crate: number[];
+  /** 庫存淨變化／秒（= 產量 − 使用 − 收購） */
+  net: number[];
+  /** 那一秒結束時的庫存 */
+  stock: number[];
+}
+
+export interface FlowSeries {
+  ago: number[];
+  items: Record<ItemId, ItemSeries>;
+  /** 各配方的大釜在等原料的時間比例（0~1） */
+  starved: Record<PotionId, number[]>;
+  income: Record<keyof Income | 'total', number[]>;
+  market: number[];
+}
 const stockOf = (s: GameState, i: ItemId) => (i in s.materials ? s.materials[i as MaterialId] : s.potions[i as PotionId]);
 
 export class FlowTracker {
@@ -105,12 +126,13 @@ export class FlowTracker {
       for (const i of ITEMS) stock[i] = stockOf(s, i);
       b = {
         time: 0, stock, made: zeros(), crate: zeros(), starved: { glow: 0, focus: 0, elixir: 0 },
-        income: noIncome(), orders: noOrders(),
+        income: noIncome(), orders: noOrders(), market: s.market.value,
       };
       this.buckets.push(b);
       if (this.buckets.length > WINDOW) this.buckets.shift();
     }
     b.time += dt;
+    b.market = s.market.value;
     for (const c of s.cauldrons) if (c.batch === 0) b.starved[c.recipe] += dt;
   }
 
@@ -141,5 +163,46 @@ export class FlowTracker {
     }
     const total = income.customers + income.cratePotions + income.crateMaterials;
     return { seconds, items, starved, income: { ...income, total }, orders };
+  }
+
+  /**
+   * 最近每一秒的數值（折線圖用）：只取已經走完的 1 秒桶，最多 30 個。
+   * ago[k] = 第 k 點距離現在幾秒（負數，最後一點最接近 0）。
+   */
+  series(s: GameState): FlowSeries | null {
+    const done = this.buckets.filter((b, k) => k < this.buckets.length - 1 && b.time > 1e-6);
+    if (done.length < 2) return null;
+    const cur = this.cur!;
+    const items = {} as Record<ItemId, ItemSeries>;
+    for (const i of ITEMS) {
+      const it: ItemSeries = { made: [], used: [], crate: [], net: [], stock: [] };
+      done.forEach((b) => {
+        const next = this.buckets[this.buckets.indexOf(b) + 1];
+        const end = next ? next.stock[i] : stockOf(s, i);
+        const consumed = b.made[i] - (end - b.stock[i]);
+        it.made.push(b.made[i] / b.time);
+        it.used.push(Math.max(0, consumed - b.crate[i]) / b.time);
+        it.crate.push(b.crate[i] / b.time);
+        it.net.push((end - b.stock[i]) / b.time);
+        it.stock.push(end);
+      });
+      items[i] = it;
+    }
+    const starved = { glow: [], focus: [], elixir: [] } as Record<PotionId, number[]>;
+    for (const p of POTION_IDS) starved[p] = done.map((b) => b.starved[p] / b.time);
+    const income = { customers: [], cratePotions: [], crateMaterials: [], total: [] } as Record<keyof Income | 'total', number[]>;
+    for (const b of done) {
+      income.customers.push(b.income.customers / b.time);
+      income.cratePotions.push(b.income.cratePotions / b.time);
+      income.crateMaterials.push(b.income.crateMaterials / b.time);
+      income.total.push((b.income.customers + b.income.cratePotions + b.income.crateMaterials) / b.time);
+    }
+    let t = -cur.time;
+    const ago = done.map(() => 0);
+    for (let k = done.length - 1; k >= 0; k--) {
+      ago[k] = t;
+      t -= done[k].time;
+    }
+    return { ago, items, starved, income, market: done.map((b) => b.market) };
   }
 }

@@ -122,43 +122,53 @@ function shownMaterial(s: ReturnType<typeof useGame>['state'], m: MaterialId): b
 
 const PCT_STEPS = [-100, -10, 10, 100];
 
-/** 一種藥水或原料的收購設定：要不要賣 + 保留百分比 */
+/** 開關按鈕（賣／不賣） */
+export function Switch({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: [string, string] }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} class={`switch ${on ? 'on' : ''}`} onClick={() => onChange(!on)}>
+      <span class="switch-track"><span class="switch-knob" /></span>
+      <span class="switch-label">{on ? label[0] : label[1]}</span>
+    </button>
+  );
+}
+
+/**
+ * 一種藥水或原料的收購設定：要不要賣（開關）+ 保留百分比。
+ * 保留量不賣的時候也一直顯示、可以調整，先調好再打開賣出
+ */
 function CrateRow(props: {
   item: PotionId | MaterialId; icon: string; name: string; price: string; keep: string; base: string;
 }) {
   const game = useGame();
   const set = crateSetting(game.state, props.item);
   return (
-    <div class="mat-row">
-      <label class="toggle">
-        <input type="checkbox" checked={set.sell} onChange={(e) => game.setCrateSell(props.item, e.currentTarget.checked)} />
-        <Icon id={props.icon} /> {props.name}
-        <span class="buy-status">{set.sell ? props.price : '不賣'}</span>
-      </label>
-      {set.sell && (
-        <>
-          <div class="row stepper">
-            {PCT_STEPS.slice(0, 2).map((d) => (
-              <button key={d} class="btn" disabled={set.keepPct <= 0} onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}>
-                {d}%
-              </button>
-            ))}
-            <span class="stepper-value" title="保留百分比">{set.keepPct}%</span>
-            {PCT_STEPS.slice(2).map((d) => (
-              <button
-                key={d} class="btn" disabled={set.keepPct >= UPGRADE_FX.keepMax}
-                onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}
-              >
-                +{d}%
-              </button>
-            ))}
-          </div>
-          <div class="stats">
-            <span><b>{props.keep}</b></span>
-            <span>{props.base}</span>
-          </div>
-        </>
-      )}
+    <div class={`mat-row crate-row ${set.sell ? '' : 'off'}`}>
+      <div class="crate-head">
+        <Icon id={props.icon} /> <b>{props.name}</b>
+        <span class="crate-price">{props.price}</span>
+        <Switch on={set.sell} onChange={(on) => game.setCrateSell(props.item, on)} label={['收購中', '不賣']} />
+      </div>
+      <div class="row stepper">
+        <span class="stepper-label">保留</span>
+        {PCT_STEPS.slice(0, 2).map((d) => (
+          <button key={d} class="btn" disabled={set.keepPct <= 0} onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}>
+            {d}%
+          </button>
+        ))}
+        <span class="stepper-value" title="保留百分比">{set.keepPct}%</span>
+        {PCT_STEPS.slice(2).map((d) => (
+          <button
+            key={d} class="btn" disabled={set.keepPct >= UPGRADE_FX.keepMax}
+            onClick={() => game.setCrateKeep(props.item, set.keepPct + d)}
+          >
+            +{d}%
+          </button>
+        ))}
+      </div>
+      <div class="stats">
+        <span><b>{props.keep}</b></span>
+        <span>{props.base}</span>
+      </div>
     </div>
   );
 }

@@ -118,12 +118,12 @@ export const ASSETS: AssetDef[] = [
   a('furn_gramophone', 76, 80, 0xc59a3c, '留聲機', 'round'),
   a('furn_tea_set', 100, 100, 0xd9b38c, '紅茶組', 'round'),
 
-  // 顧客（原圖都朝左）
-  a('npc_novice_adventurer', 170, 215, 0x8f7a5a, '新手\n冒險者', 'round', -1),
-  a('npc_mage_apprentice', 170, 215, 0x5a6fae, '法師\n學徒', 'round', -1),
-  a('npc_elf_noble', 170, 215, 0x7fb89a, '精靈\n貴族', 'round', -1),
-  a('npc_dwarf_merchant', 185, 215, 0xa4553a, '矮人\n商人', 'round', -1),
-  a('npc_drunk_adventurer', 185, 215, 0xb0703a, '醉酒\n冒險者', 'round', -1),
+  // 顧客（原圖都朝左）：比露米婭的 Q 版圖稍大一點就好
+  a('npc_novice_adventurer', 145, 183, 0x8f7a5a, '新手\n冒險者', 'round', -1),
+  a('npc_mage_apprentice', 145, 183, 0x5a6fae, '法師\n學徒', 'round', -1),
+  a('npc_elf_noble', 145, 183, 0x7fb89a, '精靈\n貴族', 'round', -1),
+  a('npc_dwarf_merchant', 157, 183, 0xa4553a, '矮人\n商人', 'round', -1),
+  a('npc_drunk_adventurer', 157, 183, 0xb0703a, '醉酒\n冒險者', 'round', -1),
 ];
 
 export const ASSET_MAP: Record<string, AssetDef> = Object.fromEntries(ASSETS.map((d) => [d.id, d]));

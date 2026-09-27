@@ -44,6 +44,15 @@ export function formatFull(n: number): string {
   return Math.floor(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
 
+/**
+ * 精確數字（圖表提示框用）：不縮寫、加千分位；小於 100 的留到小數點後 2 位（每秒 0.14 瓶這種速率也看得出來）
+ */
+export function formatExact(n: number): string {
+  if (!Number.isFinite(n)) return '∞';
+  if (Math.abs(n) < 100) return n.toFixed(2).replace(/\.?0+$/, '') || '0';
+  return Math.round(n).toLocaleString('en-US');
+}
+
 export function formatHappiness(n: number): string {
   return n.toFixed(4);
 }
