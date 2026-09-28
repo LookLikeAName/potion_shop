@@ -22,3 +22,6 @@ __pycache__/
 Thumbs.db
 desktop.ini
 *:Zone.Identifier
+
+# Claude Code 的本機環境設定（不進版本控制）
+.claude/
