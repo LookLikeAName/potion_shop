@@ -11,6 +11,14 @@ export function uiFont(): string {
   return currentLang() === 'ja' ? FONT_JA : FONT_TC;
 }
 
+/** CG 只在介面（劇情、事件簿）用網頁圖片顯示，場景用不到 */
+const inScene = (def: AssetDef) => !def.id.startsWith('cg_');
+
+/** 場景要載入成貼圖的正式圖網址（開場預先下載用） */
+export function sceneTextureUrls(): string[] {
+  return ASSETS.filter(inScene).map((def) => ART_URLS[def.id]).filter((u): u is string => !!u);
+}
+
 /** 有正式圖就載入，沒有就產生「色塊 + 名稱」的佔位圖 */
 export class TextureBank {
   private map = new Map<string, Texture>();
@@ -18,8 +26,8 @@ export class TextureBank {
   constructor(private app: Application) {}
 
   async init(): Promise<void> {
-    // CG 只在介面（劇情、事件簿）用網頁圖片顯示，場景用不到：不預先載入成貼圖（每張 1792×1008，全部載入會佔掉上百 MB 的顯示記憶體、拖慢開場）
-    await Promise.all(ASSETS.filter((def) => !def.id.startsWith('cg_')).map(async (def) => {
+    // CG 不載入成貼圖（每張 1792×1008，全部載入會佔掉上百 MB 的顯示記憶體、拖慢開場）
+    await Promise.all(ASSETS.filter(inScene).map(async (def) => {
       const url = ART_URLS[def.id];
       if (url) {
         try {

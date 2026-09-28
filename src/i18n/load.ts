@@ -21,15 +21,10 @@ function detect(): Lang {
   try {
     saved = localStorage.getItem(STORAGE_KEY);
   } catch {
-    // 無痕模式等情況讀不到，照瀏覽器語言
+    // 無痕模式等情況讀不到，用預設語言
   }
   if (saved && ok.has(saved as Lang)) return saved as Lang;
-  for (const tag of navigator.languages ?? [navigator.language]) {
-    const low = tag.toLowerCase();
-    if (low.startsWith('zh')) return SOURCE_LANG;
-    if (low.startsWith('ja') && ok.has('ja')) return 'ja';
-    if (low.startsWith('en') && ok.has('en')) return 'en';
-  }
+  // 預設繁體中文（不看瀏覽器語言）；玩家在設定裡換過語言就記住
   return SOURCE_LANG;
 }
 

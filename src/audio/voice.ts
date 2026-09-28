@@ -25,6 +25,11 @@ export function loadVoiceManifest(): Promise<void> {
 
 export const hasVoice = (id: string) => id in manifest;
 
+/** 語音檔的網址（預先下載用；要先讀完清單）。給 scene 就只列那一段劇情的 */
+export const voiceUrls = (scene?: string): string[] =>
+  [...new Set(Object.entries(manifest).filter(([id]) => !scene || id.startsWith(`${scene}.`)).map(([, f]) => f))]
+    .map((f) => `${import.meta.env.BASE_URL}voice/${f}`);
+
 let current: { el: HTMLAudioElement; node: MediaElementAudioSourceNode } | null = null;
 
 export function stopVoice(): void {

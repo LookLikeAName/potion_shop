@@ -249,6 +249,7 @@
   "title.start": "開始遊戲",
   "title.continue": "繼續遊戲",
   "title.settings": "設定",
+  "title.loading": "準備工坊中⋯⋯ {pct}%",
   "settings.backToTitle": "回到標題畫面",
   "settings.audio": "聲音",
   "settings.audio.master": "總音量",

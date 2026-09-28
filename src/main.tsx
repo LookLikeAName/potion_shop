@@ -2,8 +2,8 @@ import { render } from 'preact';
 import { TabLock } from './engine/tabLock';
 import { installAudioUnlock, onAudioUnlock } from './audio/engine';
 import { playMusic, trackFor } from './audio/music';
-import { initSfx } from './audio/sfx';
 import { loadVoiceManifest } from './audio/voice';
+import { sceneReady, startPreload } from './assets/preload';
 import { t } from './i18n';
 import { initI18n } from './i18n/load';
 import { installCursors } from './ui/cursors';
@@ -29,9 +29,8 @@ function fitStage(stage: HTMLElement): number {
 async function main() {
   // 先決定語言、載入語言檔，之後所有文字才查得到
   await initI18n();
-  // 聲音：第一次點擊／按鍵時喚醒；音效先合成好、讀語音清單（都在背景進行，不擋遊戲啟動）
+  // 聲音：第一次點擊／按鍵時喚醒；先讀語音清單（音效在素材預先下載的最後一批準備）
   installAudioUnlock();
-  void initSfx();
   void loadVoiceManifest();
   // 配樂：第一次操作之後開始播（瀏覽器不讓網頁自己出聲）
   onAudioUnlock(() => playMusic(trackFor('main')));
@@ -45,8 +44,10 @@ async function main() {
   const hasLock = await lock.tryAcquire();
 
   const game = Game.fromStorage();
-  // 第一次進入遊戲：先顯示標題畫面（在標題畫面換了語言而重新載入的也是）
-  if (takeRememberedTitle() || game.isNew) titleOpen.value = true;
+  // 素材下載完之前都停在標題畫面（顯示進度）。第一次進入遊戲、或在標題畫面換了語言而重新載入的，
+  // 下載完之後留在標題畫面等玩家按開始；其他人下載完直接進遊戲
+  const stayOnTitle = takeRememberedTitle() || game.isNew;
+  titleOpen.value = true;
   game.onOffline = (r) => {
     if (r.seconds >= 60) offlineReport.value = r;
   };
@@ -72,8 +73,16 @@ async function main() {
 
   render(<App />, document.getElementById('ui')!);
 
+  // 依優先順序下載素材：標題的標誌與背景 → 場景貼圖 → 其餘
+  const preload = startPreload(!game.state.redeemed.opening);
+  void preload.all.then(() => {
+    if (!stayOnTitle) titleOpen.value = false;
+  });
+  await preload.scene;
   const resolution = Math.min(2, Math.max(0.75, scale * (window.devicePixelRatio || 1)));
   await createScene(document.getElementById('scene')!, game, resolution);
+  // 等場景畫出第一格，再把標題畫面的背景換成實際的遊戲畫面
+  requestAnimationFrame(() => requestAnimationFrame(() => { sceneReady.value = true; }));
 
   // 背景分頁時畫面更新會停止，靠計時器繼續推進（瀏覽器可能把它降到每分鐘一次，
   // 所以 Game 以真實經過時間計算）

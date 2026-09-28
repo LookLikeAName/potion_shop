@@ -27,6 +27,9 @@ const urlOf = (id: string) => {
   return file ? `${import.meta.env.BASE_URL}BGM/${encodeURIComponent(file)}` : null;
 };
 
+/** 曲子的網址（預先下載用） */
+export const musicUrl = (id: string | null): string | null => (id ? urlOf(id) : null);
+
 let current: { id: string; el: HTMLAudioElement; gain: GainNode } | null = null;
 const FADE = 1.2;
 

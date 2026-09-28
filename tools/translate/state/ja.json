@@ -4926,6 +4926,48 @@
     "locked": false,
     "time": "2026-09-28 20:19"
   },
+  "settings.audio": {
+    "hash": "95092381d633",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.audio.master": {
+    "hash": "eea7434ed339",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.audio.music": {
+    "hash": "449d8587ae3e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.audio.mute": {
+    "hash": "3a283f0a54dd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.audio.sfx": {
+    "hash": "0826314110e8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.audio.voice": {
+    "hash": "dd04f469d119",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
   "settings.backToTitle": {
     "hash": "051e565459a3",
     "by": "ai",
@@ -5205,6 +5247,97 @@
     "locked": false,
     "time": "2026-09-28 09:27"
   },
+  "settings.sfx.achievement": {
+    "hash": "ada62cb6e39f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.ambient": {
+    "hash": "830e151f3307",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.boil": {
+    "hash": "f9cf1fd8b693",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.brew": {
+    "hash": "c850b859ae3c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.event": {
+    "hash": "984055136025",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.harvest": {
+    "hash": "d110b7abac8c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.notify": {
+    "hash": "8a6bf94d52d8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.preview": {
+    "hash": "083d780276f4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.sale": {
+    "hash": "1faf695a2c81",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.tapCauldron": {
+    "hash": "dbb95990c4c6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.tapPot": {
+    "hash": "f5a7e32e12a5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.title": {
+    "hash": "14d5606f45c4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
+  "settings.sfx.wish": {
+    "hash": "bc1de6de9f0f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
+  },
   "settings.stats": {
     "hash": "85a7a46e4055",
     "by": "ai",
@@ -5428,6 +5561,13 @@
     "model": "gemini-3.5-flash-lite",
     "locked": false,
     "time": "2026-09-28 22:21"
+  },
+  "title.loading": {
+    "hash": "223d656085eb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-29 01:51"
   },
   "title.settings": {
     "hash": "b129cd5dc9a0",

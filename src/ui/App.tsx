@@ -15,6 +15,7 @@ import { HeartMeter, WishCard, fmtHeart } from './Happiness';
 import { LumiaModal } from './LumiaModal';
 import { CauldronOrderModal, TutorialCard } from './Tutorial';
 import { TitleScreen } from './Title';
+import { sceneReady } from '../assets/preload';
 import { tutorialStep } from '../game/tutorial';
 import { CauldronPanel } from './panels/CauldronPanel';
 import { CounterPanel } from './panels/CounterPanel';
@@ -43,16 +44,20 @@ export function App() {
   useEffect(() => {
     if (needOpening && !storyId.value) storyId.value = 'opening';
   }, [needOpening]);
+  // 開場下載素材時：場景畫好之前只顯示標題畫面（遊戲介面的圖示晚點再掛上，頻寬先給標誌、背景與場景）
+  const hud = sceneReady.value;
   return (
     <>
-      <TopBar />
-      <WishCard />
-      <EventBanner />
-      <TutorialCard />
-      <BuffBar />
+      {hud && <>
+        <TopBar />
+        <WishCard />
+        <EventBanner />
+        <TutorialCard />
+        <BuffBar />
+      </>}
       {/* 標題畫面蓋住遊戲；魔導書（標題的「設定」）在它上面打開 */}
       <TitleScreen />
-      <Drawer />
+      {(hud || drawerOpen.value) && <Drawer />}
       <LumiaModal />
       <EventDetailModal />
       {/* 信件與劇情疊在事件簿之上（從事件簿重讀信、讀完接著播感想時不會被擋住） */}
@@ -206,7 +211,8 @@ function Drawer() {
 
 function OfflineModal() {
   const r = offlineReport.value;
-  if (!r) return null;
+  // 標題畫面（包含開場下載素材時）關掉之後才顯示
+  if (!r || titleOpen.value) return null;
   const mats = MATERIAL_IDS.filter((m) => Math.abs(r.materials[m]) >= 1);
   const pots = POTION_IDS.filter((p) => Math.abs(r.potions[p]) >= 1);
   const sign = (n: number) => (n >= 0 ? '+' : '') + formatNumber(n);
