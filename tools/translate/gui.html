@@ -166,7 +166,8 @@ function counts() {
   for (const r of rows) {
     c[r.status]++;
     if (r.locked) c.locked++;
-    if (r.status !== 'ok' && !r.locked) c.todo++;
+    // 待處理由後端判斷：原文改過的一律算（鎖定的也是）
+    if (r.pending) c.todo++;
   }
   return c;
 }
@@ -176,7 +177,7 @@ function visible() {
   const f = $('file').value;
   return rows.filter((r) => {
     if (f && r.file !== f) return false;
-    if (filter === 'todo' && (r.status === 'ok' || r.locked)) return false;
+    if (filter === 'todo' && !r.pending) return false;
     if (['missing', 'stale', 'invalid', 'ok'].includes(filter) && r.status !== filter) return false;
     if (filter === 'locked' && !r.locked) return false;
     if (q && !(r.key.toLowerCase().includes(q) || asText(r.source).toLowerCase().includes(q) || asText(r.target).toLowerCase().includes(q))) return false;
@@ -205,7 +206,7 @@ function render() {
         ${r.by ? `<div class="note">${r.by === 'human' ? '人工' : 'AI'}・${esc(r.time)}</div>` : ''}
         ${r.issues.length ? `<div class="issues">${r.issues.map(esc).join('<br>')}</div>` : ''}
         <div class="rowbtns">
-          <button class="lock ${r.locked ? 'on' : ''}" title="鎖定後自動翻譯不會覆蓋">${r.locked ? '🔒 已鎖定' : '🔓 鎖定'}</button>
+          <button class="lock ${r.locked ? 'on' : ''}" title="鎖定後自動翻譯不會覆蓋（原文改過時例外：會重新排進待處理，重翻後解除鎖定）">${r.locked ? '🔒 已鎖定' : '🔓 鎖定'}</button>
           <button class="one" title="只重翻這一段">重翻</button>
           ${r.status === 'stale' && r.target ? '<button class="accept" title="原文的修改不影響譯文：保留目前譯文、標成正常">保留</button>' : ''}
         </div>

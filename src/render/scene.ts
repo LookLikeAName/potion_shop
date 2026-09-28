@@ -1,5 +1,6 @@
 import {
-  Application, BitmapFont, BitmapText, Container, Graphics, GraphicsContext, Rectangle, Text, type FederatedPointerEvent,
+  Application, BitmapFont, BitmapText, Container, Graphics, GraphicsContext, Rectangle, Sprite, Text, Texture,
+  type FederatedPointerEvent,
 } from 'pixi.js';
 import { ACHIEVEMENTS } from '../game/config/achievements';
 import { CUSTOMER, UPGRADE_FX } from '../game/config/balance';
@@ -15,6 +16,9 @@ import type { Game } from '../game/game';
 import { missingInputs, type CrateKind, type GameEvent } from '../game/sim';
 import { CRATE_FOR, CRATE_MATERIALS, SQUIRREL } from '../game/config/upgrades';
 import type { CustomerState, GameState } from '../game/state';
+import { tutorialStep } from '../game/tutorial';
+import { effect } from '@preact/signals';
+import { FLOAT_LIMITS, LOW_QUALITY_SCALE, PARTICLE_SCALE, decoTier, perf } from './perf';
 import {
   autoHarvest, brewPassiveSpeed, growthSpeed, hasAutoCheckout, payTime, has, isRelaxing, isResting, isSleeping, isTired, milestoneCount, recipeInputs,
   decorSlots,
@@ -27,7 +31,7 @@ import { EVENT_LINES, EVENT_MAP } from '../game/config/events';
 import { EventLayer } from './eventLayer';
 import {
   ASSIGN_ZONES, CAULDRON_X, CAULDRON_Y, CHECKOUT_X, COUNTER, DOOR, FLOATING_SLOT_FROM, FLOOR_1F_Y, FLOOR_2F_Y, LEAVE_Y,
-  CRATE_PANEL_Y, CRATE_POS, DECOR_POS, FLOOR_SPLIT_Y, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT, LUMIA_COUNTER, OFFSTAGE_X, PROPS,
+  CRATE_PANEL_Y, CRATE_POS, DECOR_POS, FLOOR_SPLIT_Y, H, LUMIA_AT_CAULDRON, LUMIA_AT_POT, LUMIA_COUNTER, LUMIA_COUNTER_FRONT, OFFSTAGE_X, PROPS,
   QUEUE_X, QUEUE_Y, REST_POS, SHELF_Y, SLOT_POS, W, ZONES,
 } from './layout';
 import { PaperDoll } from './paperDoll';
@@ -139,7 +143,9 @@ class ParticleLayer extends Container {
   private static readonly MAX_RINGS = 30;
 
   burst(x: number, y: number, color: number, count = 8, power = 1): void {
-    for (let k = 0; k < count; k++) {
+    // 效能設定：精簡時粒子少一點，最少時不噴
+    const n = Math.round(count * PARTICLE_SCALE[perf.value.effects]);
+    for (let k = 0; k < n; k++) {
       // 滿了就重用最舊的那一顆
       const old = this.items.length >= ParticleLayer.MAX ? this.items.shift()! : null;
       const g = old?.g ?? this.dots.get();
@@ -154,6 +160,7 @@ class ParticleLayer extends Container {
 
   /** 從中心擴散開的光環 */
   ring(x: number, y: number, color: number, size = 1): void {
+    if (perf.value.effects !== 'full') return;
     const old = this.rings.length >= ParticleLayer.MAX_RINGS ? this.rings.shift()! : null;
     const g = old?.g ?? this.ringPool.get();
     g.tint = color;
@@ -275,8 +282,10 @@ function setRateText(label: Text, tier: FastTier, rate: number, time: number): v
     rateTextAt.set(label, time);
     label.text = t('scene.perSec', { n: formatNumber(rate) });
   }
-  label.tint = tier === 3 ? rainbow(time * 0.8) : 0xffe066;
-  const beat = tier >= 2 ? 1 + 0.07 * Math.abs(Math.sin(time * 9)) : 1;
+  // 彩虹色與跳動是裝飾（效能設定精簡、最少時不做）
+  const deco = decoTier(tier);
+  label.tint = deco === 3 ? rainbow(time * 0.8) : 0xffe066;
+  const beat = deco >= 2 ? 1 + 0.07 * Math.abs(Math.sin(time * 9)) : 1;
   label.scale.set((fx.size / RATE_TEXT_SIZE) * beat);
 }
 
@@ -492,6 +501,9 @@ class PotView extends Container {
     const tier: FastTier = autoHarvest(s, slot) ? fastTier(def.growTime / growthSpeed(s, slot)) : 0;
     const fast = tier > 0;
     const fx = tier > 0 ? TIER_FX[tier as 1 | 2 | 3] : null;
+    // 裝飾（光暈、星星、彩虹、閃光、粒子、搖擺）照效能設定降級；fx 只管節奏
+    const deco = decoTier(tier);
+    const dfx = deco > 0 ? TIER_FX[deco as 1 | 2 | 3] : null;
     this.rate.update(dt);
     const potH = this.pot.texture.height * this.pot.baseScale;
     let popped = false;
@@ -510,12 +522,14 @@ class PotView extends Container {
     const plantH = this.plant.texture.height * this.plant.baseScale;
     // 植物根部對齊花盆盆口的土面（約在盆高 85% 處）
     this.plant.y = -potH * 0.85;
-    const color = tier === 3 ? rainbow(this.t * 0.8) : def.color;
+    const color = deco === 3 ? rainbow(this.t * 0.8) : def.color;
     if (popped && fx) {
       this.punch = 1;
       const py = this.y + this.plant.y - plantH * 0.7;
-      this.particles.burst(this.x, py, color, fx.burst, fx.power);
-      if (fx.ring) this.particles.ring(this.x, py, lighten(color, 0.3), tier === 3 ? 1.3 : 1);
+      if (dfx) {
+        this.particles.burst(this.x, py, color, dfx.burst, dfx.power);
+        if (dfx.ring) this.particles.ring(this.x, py, lighten(color, 0.3), deco === 3 ? 1.3 : 1);
+      }
     }
 
     const squash = 1 + Math.sin(this.punch * Math.PI) * (fast ? 0.22 : 0.12);
@@ -524,18 +538,18 @@ class PotView extends Container {
     const grow = fast ? 0.75 + 0.4 * (1 - (1 - this.plantPhase) ** 3) : 1;
     const base = this.plant.baseScale;
     this.plant.scale.set(base * grow * (fast ? squash : 1), base * grow * bob / squash);
-    this.plant.rotation = fx ? Math.sin(this.t * 22) * fx.sway : 0;
+    this.plant.rotation = dfx ? Math.sin(this.t * 22) * dfx.sway : 0;
     this.pot.scale.y = this.pot.baseScale / (1 + (squash - 1) * 0.4);
     // 2 級以上：每次「啵」花盆跟著閃一下
-    this.pot.tint = tier >= 2 ? lerpColor(0xffffff, lighten(color, 0.4), this.punch * 0.8) : 0xffffff;
-    this.drawAura(tier, color, plantH);
+    this.pot.tint = deco >= 2 ? lerpColor(0xffffff, lighten(color, 0.4), this.punch * 0.8) : 0xffffff;
+    this.drawAura(deco as FastTier, color, plantH);
     const top = this.plant.y - plantH;
     this.ready.y = top - 10 + Math.sin(this.t * 5) * 6;
     this.rain.y = Math.min(top, -potH - 110) - 22 + Math.sin(this.t * 2) * 4;
     this.fairy.y = -potH * 0.4 + Math.sin(this.t * 3 + 1) * 5;
 
     if (fast) {
-      this.bar.set(this.visPhase, tier === 3 ? lighten(color, 0.2) : shimmer(this.t));
+      this.bar.set(this.visPhase, deco === 3 ? lighten(color, 0.2) : shimmer(this.t));
       setRateText(this.rateText, tier, this.rate.value, this.t);
     } else {
       this.bar.set(slot.ready ? 1 : r, slot.ready ? 0xffd34d : lighten(def.color, 0.2));
@@ -620,6 +634,9 @@ class CauldronView extends Container {
   /** 龍息風箱的連擊／沸騰／冷卻字：放在鍋身上、畫在飄字上面（獨立圖層 top），才不會被產出的字擋住 */
   readonly top = new Container();
   private combo = text('', 26, 0xffb347);
+  /** 極速沸騰時字前面的火焰圖示、未解鎖配方字前面的鎖 */
+  private fireIcon: Pic;
+  private lockIcon: Pic;
   private comboPop = 0;
   private wasBoiling = false;
   private comboFill = 0xffb347;
@@ -670,16 +687,20 @@ class CauldronView extends Container {
     this.ladle = new Pic(tex, 'upg_servant_ladle');
     this.ladle.anchor.set(0.5, 0.9);
     this.combo.anchor.set(0.5);
+    this.fireIcon = new Pic(tex, 'icon_fire');
+    this.fireIcon.anchor.set(0.5);
+    this.lockIcon = new Pic(tex, 'icon_lock');
+    this.lockIcon.anchor.set(0.5);
     this.rateText.anchor.set(0.5);
     this.rateText.y = 90;
     this.addChild(this.aura, this.body, this.liquid, ...this.bubbles, this.flash, this.salamander, this.ladle);
     // 進度條、徽章、需求等資訊放在獨立圖層，畫在角色前面
     this.hud.position.copyFrom(this.position);
-    this.hud.addChild(this.bar, this.lv.view, this.title, this.info, this.needs, this.rateText);
-    this.top.addChild(this.combo);
+    this.hud.addChild(this.bar, this.lv.view, this.title, this.info, this.lockIcon, this.needs, this.rateText);
+    this.top.addChild(this.combo, this.fireIcon);
     this.top.eventMode = 'none';
     // 資訊層只有等級徽章可以點，其他文字與進度條都不擋點擊
-    for (const o of [this.bar, this.title, this.info, this.needs, this.rateText]) o.eventMode = 'none';
+    for (const o of [this.bar, this.title, this.info, this.lockIcon, this.needs, this.rateText]) o.eventMode = 'none';
 
     this.eventMode = 'static';
     this.cursor = 'pointer';
@@ -728,11 +749,16 @@ class CauldronView extends Container {
     const tier: FastTier = c && speed > 0 && this.sinceBrew < 1 ? fastTier(RECIPES[c.recipe].brewTime / speed) : 0;
     const fast = tier > 0;
     const fx = tier > 0 ? TIER_FX[tier as 1 | 2 | 3] : null;
+    // 裝飾（光暈、閃光、彩虹、泡泡數、粒子）照效能設定降級；fx 只管節奏
+    const deco = decoTier(tier);
+    const dfx = deco > 0 ? TIER_FX[deco as 1 | 2 | 3] : null;
     const brewing = !!c && (c.batch > 0 || fast);
     this.liquid.visible = brewing;
-    const bubbleCount = brewing ? fx?.bubbles ?? 3 : 0;
+    const bubbleCount = brewing ? dfx?.bubbles ?? 3 : 0;
     this.bubbles.forEach((b, k) => (b.visible = k < bubbleCount));
     this.combo.text = '';
+    this.fireIcon.visible = false;
+    this.lockIcon.visible = false;
     this.aura.clear();
     this.flash.clear();
     setRateText(this.rateText, tier, this.rate.value, this.t);
@@ -751,6 +777,9 @@ class CauldronView extends Container {
       this.info.text = t('scene.lockedRecipe', { name: r.name, cost: formatNumber(r.unlockCost) });
       // 相鄰兩個未解鎖的大釜上下錯開
       this.info.y = -60 - ((this.i - s.cauldrons.length) % 2) * 46;
+      // 鎖放在配方名稱（第一行）的左邊
+      this.lockIcon.visible = true;
+      this.lockIcon.position.set(-this.info.width / 2 - 16, this.info.y - this.info.height / 4);
       return;
     }
 
@@ -778,7 +807,7 @@ class CauldronView extends Container {
       this.visPhase = next % 1;
       if (popped) this.punch = 1;
     }
-    const color = tier === 3 ? rainbow(this.t * 0.8) : def.color;
+    const color = deco === 3 ? rainbow(this.t * 0.8) : def.color;
     const squash = 1 + Math.sin(this.punch * Math.PI) * (fast ? 0.05 + 0.03 * tier : 0.06);
     this.body.scale.y = this.body.baseScale / squash;
     this.body.scale.x = this.body.baseScale * (fast ? 1 + (squash - 1) * 0.5 : 1);
@@ -792,7 +821,7 @@ class CauldronView extends Container {
     // 極速沸騰：鍋身泛紅光閃爍；高速模式：鍋身跟著節奏泛出藥水色的光
     const beat = 0.5 + 0.5 * Math.sin(this.t * (10 + tier * 4));
     this.body.tint = boiling ? lerpColor(0xffffff, 0xffa060, 0.5 + 0.5 * Math.sin(this.t * 14))
-      : fx ? lerpColor(0xffffff, lighten(color, 0.35), fx.flash * 0.6 * beat) : 0xffffff;
+      : dfx ? lerpColor(0xffffff, lighten(color, 0.35), dfx.flash * 0.6 * beat) : 0xffffff;
 
     // 鍋內液體：灰階液面圖依配方著色，對齊各階大釜的鍋口
     const bw = this.body.texture.width * this.body.baseScale;
@@ -804,27 +833,27 @@ class CauldronView extends Container {
       this.liquid.tint = color;
       this.liquid.width = lw;
       // 高速模式：液面跟著翻騰
-      this.liquid.height = lw * 0.3 * (fx ? 1 + 0.18 * Math.sin(this.t * (18 + tier * 6)) : 1);
+      this.liquid.height = lw * 0.3 * (dfx ? 1 + 0.18 * Math.sin(this.t * (18 + deco * 6)) : 1);
       this.liquid.y = ly;
       const bubbleSpeed = fx?.bubbleSpeed ?? 1;
-      const rise = 28 + tier * 14;
+      const rise = 28 + deco * 14;
       this.bubbles.forEach((b, k) => {
         if (k >= bubbleCount) return;
         const ph = (this.t * (1.1 + k * 0.35) * bubbleSpeed + k * 0.37) % 1;
-        const size = (lw * 0.16) * (1 - ph * 0.5) * (fx ? 1 + tier * 0.12 : 1);
+        const size = (lw * 0.16) * (1 - ph * 0.5) * (dfx ? 1 + deco * 0.12 : 1);
         b.tint = lighten(color, 0.5);
         b.width = b.height = size;
         // 泡泡在鍋口寬度內平均分布
         const spread = bubbleCount > 1 ? k / (bubbleCount - 1) - 0.5 : 0;
-        b.position.set(spread * lw * 0.62 + (fx ? Math.sin(this.t * 7 + k) * 4 : 0), ly - ph * rise);
+        b.position.set(spread * lw * 0.62 + (dfx ? Math.sin(this.t * 7 + k) * 4 : 0), ly - ph * rise);
         b.alpha = 1 - ph;
       });
-      if (fx) this.drawFastFx(tier, color, lw, ly, beat);
-      if (popped && fx) {
+      if (dfx) this.drawFastFx(deco as FastTier, color, lw, ly, beat);
+      if (popped && dfx) {
         const px = this.x;
         const py = this.y + ly * this.scale.y;
-        this.particles.burst(px, py, color, fx.burst, fx.power);
-        if (fx.ring) this.particles.ring(px, py, lighten(color, 0.3), tier === 3 ? 1.4 : 1.1);
+        this.particles.burst(px, py, color, dfx.burst, dfx.power);
+        if (dfx.ring) this.particles.ring(px, py, lighten(color, 0.3), deco === 3 ? 1.4 : 1.1);
       }
     }
 
@@ -835,7 +864,7 @@ class CauldronView extends Container {
     }
 
     if (fast) {
-      this.bar.set(this.visPhase, tier === 3 ? lighten(color, 0.2) : shimmer(this.t));
+      this.bar.set(this.visPhase, deco === 3 ? lighten(color, 0.2) : shimmer(this.t));
     } else {
       this.bar.set(c.progress / def.brewTime, boiling ? 0xffa040 : lighten(def.color, 0.25));
     }
@@ -857,7 +886,12 @@ class CauldronView extends Container {
     if (has(s, 'bellows')) {
       this.combo.y = -bh * 0.5;
       const n = activeCombo(s, c);
-      if (boiling) this.combo.text = t('scene.boiling', { n: c.boil.toFixed(1) });
+      if (boiling) {
+        this.combo.text = t('scene.boiling', { n: c.boil.toFixed(1) });
+        this.fireIcon.visible = true;
+        this.fireIcon.position.set(-(this.combo.width / 2) - 18 * this.combo.scale.x, this.combo.y);
+        this.fireIcon.scale.set(this.fireIcon.baseScale * this.combo.scale.y);
+      }
       else if (c.boilCooldown > 0) this.combo.text = t('scene.cooldown', { n: Math.ceil(c.boilCooldown) });
       else if (n > 0) this.combo.text = t('scene.combo', { n, max: UPGRADE_FX.comboClicks });
       const fill = boiling ? 0xff8a3c : c.boilCooldown > 0 ? 0xbbbbbb : 0xffb347;
@@ -933,8 +967,8 @@ const NPC_FOR: Record<PotionId, string[]> = {
   elixir: ['npc_elf_noble', 'npc_mage_apprentice'],
 };
 
-/** 微服出巡的公主打扮成哪一種客人 */
-const PRINCESS_DISGUISE = 'npc_elf_noble';
+/** 微服出巡的公主：披著斗篷的專屬造型（兜帽底下藏著小皇冠） */
+const PRINCESS_DISGUISE = 'npc_evt_princess';
 
 /** 客人走路速度（px/秒，固定；要和模擬裡走到櫃台的時間一致） */
 const CUSTOMER_SPEED = CUSTOMER.walkSpeed;
@@ -965,7 +999,7 @@ class CustomerView extends Container {
 
   constructor(tex: TextureBank, public readonly id: number, c: CustomerState, onTap: (id: number) => void) {
     super();
-    // 微服出巡的公主：打扮成一般的精靈貴族客人，沒有訂單，頭上是「……」的小氣泡（在店裡東看西看）
+    // 微服出巡的公主：披著斗篷混在客人裡，沒有訂單，頭上是「……」的小氣泡（在店裡東看西看）
     const pool = c.princess ? [PRINCESS_DISGUISE] : NPC_FOR[c.lines[0].potion];
     this.body = new PaperDoll(tex, pool[c.id % pool.length]);
     this.x = OFFSTAGE_X;
@@ -1173,6 +1207,8 @@ interface Station {
   dir: 1 | -1;
   /** 走到這裡時可能說的話（休息室的家具旁邊） */
   talk?: string[];
+  /** 櫃台的站點：停下來時向客人鞠躬，站著時客人結帳也會鞠躬 */
+  counter?: boolean;
 }
 
 const LUMIA_SPEED = 120;
@@ -1295,6 +1331,8 @@ class SpeechBubble extends Container {
 
 /** 心願泡泡的顏色：普通、大心願、閃亮心願 */
 const WISH_COLORS = [0xff8fb8, 0x9a7cff, 0xffc93c];
+/** 結帳鞠躬的最短間隔（秒）：客人連續結帳時不會一直彎腰 */
+const BOW_COOLDOWN = 1.6;
 
 class LumiaView extends Container {
   private doll: PaperDoll;
@@ -1309,6 +1347,8 @@ class LumiaView extends Container {
   private mutterIn = 5 + Math.random() * 6;
   private sparkle = new Graphics();
   private target: Station | null = null;
+  /** 目前站定的站點（走路、瞬移、被拎著時是 null） */
+  private here: Station | null = null;
   private stay = 1.5;
   private stateKey = '';
   private t = 0;
@@ -1363,12 +1403,16 @@ class LumiaView extends Container {
     const cauldrons: Station[] = [];
     if (last >= 0) cauldrons.push({ x: CAULDRON_X[0] - LUMIA_AT_CAULDRON.dx, y: cy, pose: 'back', dir: 1 });
     if (last >= 1) cauldrons.push({ x: CAULDRON_X[last] + LUMIA_AT_CAULDRON.dx, y: cy, pose: 'back', dir: -1 });
-    const counter: Station = { ...LUMIA_COUNTER, pose: 'idle', dir: 1 };
+    // 櫃台：在櫃台旁與櫃台正前方之間來回走動（客人在右邊，都面向右）
+    const counter: Station[] = [
+      { ...LUMIA_COUNTER, pose: 'idle', dir: 1, counter: true },
+      { ...LUMIA_COUNTER_FRONT, pose: 'idle', dir: 1, counter: true },
+    ];
     // 自由活動時跟著模擬選的區域走（workZone 會回傳她目前的區域）
     switch (workZone(s)) {
-      case 'greenhouse': return pots.length ? pots : [counter];
-      case 'cauldron': return cauldrons.length ? cauldrons : [counter];
-      default: return [counter];
+      case 'greenhouse': return pots.length ? pots : counter;
+      case 'cauldron': return cauldrons.length ? cauldrons : counter;
+      default: return counter;
     }
   }
 
@@ -1387,6 +1431,22 @@ class LumiaView extends Container {
     this.zz.visible = false;
     this.bubble.hide();
     this.doll.update(dt);
+  }
+
+  /** 上一次鞠躬後經過的秒數（客人很多時不要一直彎腰） */
+  private sinceBow = 99;
+
+  /** 結帳成功：站在櫃台（沒有在走路、瞬移、被拎著）時向客人鞠躬 */
+  thankCustomer(): void {
+    if (this.dragging || this.poof || this.target || !this.here?.counter) return;
+    this.bow();
+  }
+
+  /** force：走到櫃台停下來時一定鞠躬（不管剛剛是不是才因為結帳鞠躬過） */
+  private bow(force = false): void {
+    if ((!force && this.sinceBow < BOW_COOLDOWN) || this.doll.bowing) return;
+    this.sinceBow = 0;
+    this.doll.bow();
   }
 
   /** 讓她說一句話（累倒、睡醒時）；之後重新計時下一次自言自語 */
@@ -1442,6 +1502,8 @@ class LumiaView extends Container {
 
   startDrag(): void {
     this.dragging = true;
+    this.here = null;
+    this.doll.cancelBow();
     this.poof = null;
     this.target = null;
     this.lastDragX = this.x;
@@ -1482,6 +1544,7 @@ class LumiaView extends Container {
 
   update(s: GameState, dt: number): void {
     this.t += dt;
+    this.sinceBow += dt;
     this.updateWishMark(s);
     // 換了服裝：同一個動作馬上換成新服裝的圖
     if (s.mascot.outfit !== this.outfit) this.setPose(s, this.pose);
@@ -1534,6 +1597,7 @@ class LumiaView extends Container {
         const all = this.stations(s);
         const options = all.filter((st) => Math.hypot(st.x - this.x, st.y - this.y) > 30);
         this.target = options[Math.floor(Math.random() * options.length)] ?? null;
+        if (this.target) this.here = null;
         this.stay = 3 + Math.random() * 5;
         // 只有一個點而且已經在那裡：擺好姿勢
         if (!this.target && all[0]) this.arrive(s, all[0]);
@@ -1564,6 +1628,7 @@ class LumiaView extends Container {
       this.y += (dy / dist) * step;
       this.setPose(s, tired ? 'tired_walk' : 'walk');
       doll.mode = 'walk';
+      doll.cancelBow();
       if (Math.abs(dx) > 2) doll.dir = dx > 0 ? 1 : -1;
     }
     this.updateZz(s, dt);
@@ -1571,7 +1636,11 @@ class LumiaView extends Container {
   }
 
   private arrive(s: GameState, st: Station): void {
+    const moved = this.here !== st;
+    this.here = st;
     this.position.set(st.x, st.y);
+    // 走到櫃台的站點停下來：向客人鞠躬
+    if (st.counter && moved) this.bow(true);
     this.setPose(s, st.pose === 'back' ? 'back' : st.pose === 'sleep' ? 'sleep' : 'idle');
     this.doll.mode = st.pose === 'back' ? 'work' : 'idle';
     this.doll.dir = st.dir;
@@ -1623,6 +1692,32 @@ class LumiaView extends Container {
   /** 互動判定用的範圍（相對於腳底） */
   get hitBox() {
     return new Rectangle(this.x - 55, this.y - 200, 110, 200);
+  }
+}
+
+/** 新手教學：上下跳動的箭頭，指著這一步要點的東西（箭頭尖端在 target） */
+class TutorialPointer extends Container {
+  private g = new Graphics();
+  private t = 0;
+
+  constructor() {
+    super();
+    this.g
+      .poly([-26, -70, 26, -70, 26, -34, 44, -34, 0, 0, -44, -34, -26, -34])
+      .fill({ color: 0xffd34d })
+      .stroke({ width: 5, color: 0x2b1d14, join: 'round' });
+    this.addChild(this.g);
+    this.eventMode = 'none';
+    this.visible = false;
+  }
+
+  update(target: { x: number; y: number } | null, dt: number): void {
+    this.visible = !!target;
+    if (!target) return;
+    this.t += dt;
+    const bob = Math.abs(Math.sin(this.t * 4)) * 16;
+    this.position.set(target.x, target.y - bob);
+    this.g.alpha = 0.85 + 0.15 * Math.sin(this.t * 8);
   }
 }
 
@@ -1721,17 +1816,85 @@ class LumiaDrag {
   }
 }
 
-/** 狂熱時刻：畫面邊框閃耀金光 */
-class FeverOverlay extends Graphics {
+/** 狂熱時刻的四周暈光：中間透明、往四周漸漸變成暖金色（只畫一次，用加亮混合疊在畫面上） */
+function feverVignette(): Texture {
+  const c = document.createElement('canvas');
+  c.width = 320;
+  c.height = 180;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(160, 90, 40, 160, 90, 190);
+  grad.addColorStop(0, 'rgba(255, 196, 96, 0)');
+  grad.addColorStop(0.55, 'rgba(255, 190, 90, 0)');
+  grad.addColorStop(0.85, 'rgba(255, 176, 72, 0.35)');
+  grad.addColorStop(1, 'rgba(255, 160, 60, 0.7)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 320, 180);
+  return Texture.from(c);
+}
+
+interface Mote { g: Graphics; life: number; max: number; vx: number; vy: number; r: number; phase: number }
+
+/**
+ * 狂熱時刻：畫面四周柔和的暖金色暈光（慢慢呼吸，開始、結束時淡入淡出），
+ * 加上從下往上慢慢飄的金色光點（數量跟著效能設定）
+ */
+class FeverOverlay extends Container {
   private t = 0;
+  /** 0 → 1：狂熱開始時淡入、結束時淡出 */
+  private k = 0;
+  private glow = new Sprite(feverVignette());
+  private motes: Mote[] = [];
+  private pool = new Pool(this, () => {
+    const g = new Graphics(DOT);
+    g.blendMode = 'add';
+    return g;
+  });
+  private spawnAcc = 0;
+
+  constructor() {
+    super();
+    this.eventMode = 'none';
+    this.glow.width = W;
+    this.glow.height = H;
+    this.glow.blendMode = 'add';
+    this.addChild(this.glow);
+    this.visible = false;
+  }
 
   update(s: GameState, dt: number): void {
     this.t += dt;
-    this.clear();
-    if (s.feverLeft <= 0) return;
-    const a = 0.45 + 0.35 * Math.sin(this.t * 6);
-    this.rect(8, 84, W - 16, H - 92).stroke({ width: 14, color: 0xffd34d, alpha: a });
-    this.rect(22, 98, W - 44, H - 120).stroke({ width: 6, color: 0xff8fb8, alpha: a * 0.7 });
+    const on = s.feverLeft > 0;
+    this.k = Math.max(0, Math.min(1, this.k + (on ? dt / 0.6 : -dt / 0.8)));
+    this.visible = this.k > 0 || this.motes.length > 0;
+    if (!this.visible) return;
+    // 暈光慢慢呼吸（約 2.6 秒一次），不閃爍
+    this.glow.alpha = this.k * (0.75 + 0.25 * Math.sin(this.t * 2.4));
+
+    // 光點：完整每秒約 22 顆，精簡 8 顆，最少不飄
+    const rate = on ? { full: 22, lite: 8, min: 0 }[perf.value.effects] : 0;
+    this.spawnAcc += rate * dt;
+    while (this.spawnAcc >= 1) {
+      this.spawnAcc -= 1;
+      const g = this.pool.get();
+      g.tint = Math.random() < 0.7 ? 0xffd98a : 0xfff4d6;
+      g.position.set(Math.random() * W, H - 20 + Math.random() * 40);
+      const life = 3 + Math.random() * 2.5;
+      this.motes.push({
+        g, life, max: life, vx: (Math.random() - 0.5) * 20, vy: -(90 + Math.random() * 110),
+        r: 2.5 + Math.random() * 3.5, phase: Math.random() * 6,
+      });
+    }
+    for (const m of this.motes) {
+      m.life -= dt;
+      m.g.x += (m.vx + Math.sin(this.t * 1.6 + m.phase) * 14) * dt;
+      m.g.y += m.vy * dt;
+      const age = 1 - m.life / m.max;
+      // 淡入、飄到一半最亮、最後淡出；閃爍很輕
+      const fade = Math.min(1, age * 5, (m.life / m.max) * 3);
+      m.g.alpha = Math.max(0, fade * (0.55 + 0.25 * Math.sin(this.t * 5 + m.phase)));
+      m.g.scale.set(m.r);
+    }
+    sweep(this.motes, (m) => this.pool.put(m.g));
   }
 }
 
@@ -2091,12 +2254,12 @@ class CauldronDrag {
 
 // ---------- 飄字 ----------
 
-/** 同時存在的飄字上限：產量極快時避免物件無限增加拖慢畫面（超過就把最舊的收掉，新的照樣出現） */
-const MAX_FLOATS = 250;
-/** 同一個來源（某一盆、某一口大釜…）同時最多幾個字：超過就收掉它最舊的字，避免殘影糊成一片 */
-const MAX_FLOATS_PER_SOURCE = 14;
-/** 同一個來源每一幀最多新增幾個字（一幀內湧出幾十個時，多的會疊在一起看不出來） */
-const MAX_NEW_PER_SOURCE_PER_FRAME = 3;
+/*
+ * 飄字的數量上限在 perf.ts 的 FLOAT_LIMITS（設定頁可以調）：
+ * 同時存在的上限（產量極快時避免物件無限增加拖慢畫面；超過就收掉最舊的，新的照樣出現）、
+ * 同一個來源（某一盆、某一口大釜…）同時最多幾個字（避免殘影糊成一片）、
+ * 同一個來源每一幀最多新增幾個字（一幀內湧出幾十個時，多的會疊在一起看不出來）
+ */
 /**
  * 每個來源估算每秒冒幾個字（指數平均，時間常數 FLOAT_RATE_TAU 秒）：
  * 超過 FLOAT_RATE_OK 個／秒時，那個來源的字動得更快、更早消失（最多快 FLOAT_MAX_SPEEDUP 倍），
@@ -2196,6 +2359,9 @@ class FloatLayer extends Container {
 
   spawn(s: string, x: number, y: number, color: number, opts: FloatOpts = {}): void {
     const { big = false, always = big, key = 'misc', launch = 1, spread = 1, bright = false } = opts;
+    // 效能設定的上限（「只顯示重要的」= 只留一定要顯示的字：收入、暴擊、雙倍、事件）
+    const lim = FLOAT_LIMITS[perf.value.floats];
+    if (lim.keyOnly && !always) return;
     let src = this.sources.get(key);
     if (!src) {
       src = { rate: 0, last: this.now, frame: 0, count: 0 };
@@ -2203,11 +2369,18 @@ class FloatLayer extends Container {
     }
     src.rate = src.rate * Math.exp(-(this.now - src.last) / FLOAT_RATE_TAU) + 1 / FLOAT_RATE_TAU;
     src.last = this.now;
-    if (!always && src.frame >= MAX_NEW_PER_SOURCE_PER_FRAME) return;
+    if (!always && src.frame >= lim.perFrame) return;
     src.frame++;
-    // 這個來源的字太多、或全部的字太多：收掉最舊的，讓新的出現
-    if (src.count >= MAX_FLOATS_PER_SOURCE) this.recycle(this.items.findIndex((it) => it.key === key));
-    if (this.items.length >= MAX_FLOATS) this.recycle(0);
+    // 這個來源的字太多、或全部的字太多：收掉最舊的，讓新的出現（設定調低上限時一次收到上限以內）
+    while (src.count >= lim.perSource) {
+      const i = this.items.findIndex((it) => it.key === key);
+      if (i < 0) {
+        src.count = 0;
+        break;
+      }
+      this.recycle(i);
+    }
+    while (this.items.length > 0 && this.items.length >= lim.total) this.recycle(0);
     const t = this.pool.get();
     if (t.text !== s) t.text = s;
     t.tint = color;
@@ -2322,6 +2495,13 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   const app = new Application();
   await app.init({ width: W, height: H, background: 0x1c130e, antialias: true, resolution, autoDensity: true });
   host.appendChild(app.canvas);
+  // 效能設定：畫面更新率上限、省電畫質（降低繪製解析度），改了馬上套用
+  effect(() => {
+    const p = perf.value;
+    app.ticker.maxFPS = p.fps === 30 ? 30 : 0;
+    const res = resolution * (p.quality === 'low' ? LOW_QUALITY_SCALE : 1);
+    if (app.renderer.resolution !== res) app.renderer.resize(W, H, res);
+  });
   if (import.meta.env.DEV) Object.assign(window, { __app: app });
   // 遊戲游標：場景物件設的 cursor（pointer／grab）換成遊戲的圖；一般狀態沿用頁面的游標
   const cursors = app.renderer.events.cursorStyles;
@@ -2344,6 +2524,30 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   const floats = new FloatLayer();
   const highlight = new ZoneHighlight();
   const fever = new FeverOverlay();
+  const pointer = new TutorialPointer();
+  // 教學箭頭指著的地方：第一個有植物的盆栽、第一口大釜、可以結帳的客人（頭上金幣的上方）、露米婭頭上
+  const pointerTarget = (s: GameState): { x: number; y: number } | null => {
+    switch (tutorialStep(s)) {
+      case 'pot': {
+        const i = s.slots.findIndex((sl) => sl.plant);
+        return i >= 0 ? pots[i].anchorPoint : null;
+      }
+      case 'cauldron': {
+        // 原料還不夠熬一鍋：先指回盆栽（有植物的第一盆）
+        const c = s.cauldrons[0];
+        const short = c.batch <= 0 && recipeInputs(s, c.recipe).some(([m, n]) => s.materials[m] < n);
+        const i = s.slots.findIndex((sl) => sl.plant);
+        return short && i >= 0 ? pots[i].anchorPoint : cauldrons[0].anchorPoint;
+      }
+      case 'checkout': {
+        const c = s.customers.find((x) => x.status !== 'waiting' && !x.express && !x.princess);
+        const p = c ? customers.feetOf(c.id) : null;
+        return p ? { x: p.x, y: p.y - 310 } : null;
+      }
+      case 'assign': return lumia.dragging ? null : { x: lumia.x, y: lumia.y - 230 };
+      default: return null;
+    }
+  };
   // 露米婭平常畫在盆栽與大釜前面；被拎起來時移到最上層
   const lumiaLayer = new Container();
   const dragLayer = new Container();
@@ -2376,7 +2580,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     // 她的點擊判定也在這些之上：重疊時優先抓得到她（擋住了就把她拖到別處）
     buildBackground(tex), props, ...potsByDepth, ...cauldrons, particles,
     ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud),
-    lumiaLayer, lumiaDrag.hit, customers, floats, ...cauldrons.map((c) => c.top), speechLayer, events, props.tip, fever, highlight, dragLayer,
+    lumiaLayer, lumiaDrag.hit, customers, floats, ...cauldrons.map((c) => c.top), speechLayer, events, props.tip, fever, pointer, highlight, dragLayer,
     tapFx,
   );
 
@@ -2430,6 +2634,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       // 極速沸騰：鍋身上的連擊字會變成「🔥 極速沸騰」並彈一下，不另外飄字（以前會被產出的字擋住）
       case 'sale': {
         props.bumpSquirrel();
+        lumia.thankCustomer();
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
         const note = e.tip ? t('float.tip') : e.rush ? t('float.rush') : e.partial ? t('float.partial') : '';
         floats.spawn(t('float.gold', { n: formatFull(e.gold) }) + note, p.x, p.y, 0xffd34d, { big: e.rush || e.tip, always: true, key: 'sale' });
@@ -2445,7 +2650,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       }
       case 'achievement': {
         const a = ACHIEVEMENTS.find((x) => x.id === e.id);
-        if (a) showToast(t('toast.achievement', { name: a.name, n: a.reward }));
+        if (a) showToast(t('toast.achievement', { name: a.name, n: a.reward }), 2200, { id: 'icon_trophy', glyph: '🏆' });
         break;
       }
       case 'wish': {
@@ -2454,7 +2659,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         if (e.result === 'new') {
           say(WISH_LINES.new);
           const r = WISH.rarities[s.wish?.rarity ?? 0];
-          if (s.wish && s.wish.rarity > 0) showToast(t('toast.bigWish', { name: r.name }));
+          if (s.wish && s.wish.rarity > 0) showToast(t('toast.bigWish', { name: r.name }), 2200, { id: 'icon_wish', glyph: '✨' });
         } else if (e.result === 'done') {
           say(WISH_LINES.done);
           floats.spawn(t('float.wishDone', { heart }), lumia.x + 120, lumia.y - 140, 0xff8fb8, { big: true });
@@ -2470,10 +2675,12 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         if (e.result === 'start') {
           lumia.say(EVENT_LINES.start[Math.floor(Math.random() * EVENT_LINES.start.length)]);
         } else if (e.result === 'done') {
-          const book = e.first ? t('toast.eventNewPage') : '';
-          showToast(t('toast.eventDone', { name: def.name, text: e.text ?? '' }) + book, 5000);
+          const book = e.first ? `　${t('toast.eventNewPage')}` : '';
+          // 前面放這個事件自己的圖（訪客、道具）
+          showToast(t('toast.eventDone', { name: def.name, text: e.text ?? '' }) + book, 5000, { id: def.icon, glyph: '🎉' });
+          // 主線的信：打開信（讀完接著播感想），不跳事件簿，免得蓋在信上
           if (e.letter !== undefined) letterOpen.value = e.letter;
-          if (e.first) showNewEventPage(e.id);
+          else if (e.first) showNewEventPage(e.id);
         } else {
           showToast(t('toast.eventLeft', { name: def.name }));
         }
@@ -2503,6 +2710,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     lumia.update(s, dt);
     lumiaDrag.update(s, dt);
     fever.update(s, dt);
+    pointer.update(pointerTarget(s), dt);
     events.update(s, dt);
     for (const e of game.drainEvents()) onEvent(e, s);
     particles.update(dt);

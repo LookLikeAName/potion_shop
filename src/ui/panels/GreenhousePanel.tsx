@@ -8,6 +8,7 @@ import { growthSpeed, harvestPerRound, milestoneMult, nextMilestone, potOutputPe
 import { t, tx } from '../../i18n';
 import { BuyButton } from '../BuyButton';
 import { GlobalUpgrades } from '../GlobalUpgrades';
+import { Glyph } from '../Glyph';
 import { Icon } from '../Icon';
 import { useGame } from '../store';
 
@@ -35,7 +36,7 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
     const nextToOpen = s.slots.findIndex((x) => !x.open);
     return (
       <div class="card locked" id={id}>
-        <div class="card-title">{t('green.lockedSlot', { n: i + 1 })}</div>
+        <div class="card-title"><Glyph id="icon_lock" text="🔒" size={1.1} /> {t('green.lockedSlot', { n: i + 1 })}</div>
         {i === nextToOpen ? (
           <BuyButton
             k={{ kind: 'global', id: FLOATING_POT }} title={t('green.summonPot')} icon="pot_hidden_slot"

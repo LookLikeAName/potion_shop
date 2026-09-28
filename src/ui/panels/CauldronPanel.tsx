@@ -13,6 +13,7 @@ import {
 import { t, tx } from '../../i18n';
 import { BuyButton } from '../BuyButton';
 import { GlobalUpgrades } from '../GlobalUpgrades';
+import { Glyph } from '../Glyph';
 import { Icon } from '../Icon';
 import { useGame } from '../store';
 
@@ -45,7 +46,7 @@ export function CauldronPanel() {
         const r = RECIPES[p];
         return (
           <div class="card locked" id={`recipe-${p}`} key={p}>
-            <div class="card-title"><Icon id={`potion_${p}`} /> 🔒 {r.name}</div>
+            <div class="card-title"><Icon id={`potion_${p}`} /> <Glyph id="icon_lock" text="🔒" size={1.1} /> {r.name}</div>
             <div class="stats">
               <Inputs r={r} />
               <span>{t('cauldron.brewTime', { n: r.brewTime })}</span>
@@ -82,7 +83,7 @@ function CauldronCard({ c }: { c: CauldronState }) {
     <div class="card" id={`recipe-${c.recipe}`}>
       <div class="card-title">
         <Icon id={`potion_${c.recipe}`} /> {r.name}
-        {refine > 0 && <span class="refine-stars" title={t('cauldron.refineLv', { n: refine })}>{'★'.repeat(refine)}</span>}
+        {refine > 0 && <span class="refine-stars" title={t('cauldron.refineLv', { n: refine })}>{Array.from({ length: refine }, (_, k) => <Glyph key={k} id="icon_star" text="★" size={0.9} />)}</span>}
         <span class="lv">Lv {c.level}</span>
       </div>
       <div class="stats">

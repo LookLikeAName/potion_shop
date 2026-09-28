@@ -194,33 +194,104 @@
     "Whoa, what's happening?",
     "There's a customer... No wait, a visitor!"
   ],
+  "speaker.lumia": "Lumia",
+  "speaker.book": "Grimoire (Master)",
+  "story.opening.title": "Prologue: Apprentice Manager",
   "story.celebration.title": "First Celebration Party",
-  "story.celebration.lines": [
-    "Lumia: Master, Master! Can you stay for a moment after we close today?",
-    "Lumia: Ta-da~! I made a cake with the leftover ingredients! Even though... it's a little bit lopsided.",
-    "Lumia: We couldn't have kept the potion shop open this long without all your help, Master.",
-    "Lumia: Cheers! To our potion shop, and... to Master!",
-    "(From today on, Lumia's confident smile makes customers willing to pay triple the price.)"
-  ],
-  "story.vow.title": "Oath Under the Stars",
-  "story.vow.lines": [
-    "Lumia: Master, there are so many stars out tonight.",
-    "Lumia: When I found you in the attic that day, I thought you were just a very, very old book.",
-    "Lumia: But you've taught me so much... not just recipes, but how to believe in myself.",
-    "Lumia: So I want to make a promise with you—let's keep running this shop together, always and forever.",
-    "Lumia: ......Thank you, Master.",
-    "(The Grimoire's pages emit a warm glow. \"Fever Time\" unlocked!)"
-  ],
+  "story.vow.title": "Vow Under the Starry Sky",
   "letter.1.title": "First Letter",
-  "letter.1.lines": [
-    "(Content for the 1st letter to be determined: will match the backstory later)"
+  "letter.1.to": "Dear Lumia,",
+  "letter.1.body": [
+    "How are you doing? Is the workshop business going smoothly?",
+    "While traveling, I passed through a small town and saw children playing on the street corner, which suddenly reminded me of you back then. Do you remember when we first met? At that time, I had just graduated from the academy and spent all my savings, barely managing to buy that rundown house at the edge of town to use as a workshop. Back then, I was a bona fide pauper.",
+    "Yet every time I went out, I would always see you sitting all alone on that very same street corner. Seeing your smudged yet stubborn little face, I couldn't bear it in the end and took you in. The workshop wasn't big, and sometimes we had to carefully budget even for bread, but somehow we managed to get by together.",
+    "Thank you so much for being willing to take over that workshop full of our memories."
+  ],
+  "letter.1.closing": [
+    "Wishing you good health,",
+    "Master"
   ],
   "letter.2.title": "Second Letter",
-  "letter.2.lines": [
-    "(Content for the 2nd letter to be determined: will match the backstory later)"
+  "letter.2.to": "Dear Lumia,",
+  "letter.2.body": [
+    "A traveling merchant told me that a very famous potion shop has appeared in our town, and the acting manager is a vibrant red-haired girl. It seems the workshop is in even better hands with you than when I ran it.",
+    "Watching you grow up day by day in the workshop—from cutting your finger while slicing Moonshrooms to eventually being able to independently brew the perfect Glimmer Tonic—you've always had a real talent for alchemy. So when you said you wanted to go to the big city academy to hone your skills, I was actually very supportive.",
+    "The day you left, you vowed solemnly that you would definitely come back to inherit the workshop and make it the most famous potion shop in the whole country. Honestly, I thought in my heart back then that you deserved a much wider sky and should walk your own path, without being tied down by my little workshop.",
+    "However, receiving the news that you've really been running the workshop so wonderfully still made me smile. I knew how important that place was to you. I'm so glad you were willing to take it on."
+  ],
+  "letter.2.closing": [
+    "May the starlight guide your path.",
+    "Master"
   ],
   "letter.3.title": "Third Letter",
-  "letter.3.lines": [
-    "(Content for the 3rd letter to be determined: will match the backstory later)"
-  ]
+  "letter.3.note": "The handwriting appears somewhat hurried and scrawled.",
+  "letter.3.to": "My Dearest Lumia,",
+  "letter.3.body": [
+    "When you read this letter, I am probably no longer in this world. Please forgive me for lying; those travel letters were actually prepared by me in advance and entrusted to the Merchant Guild to be sent out on schedule.",
+    "Ever since you went to study in the city, my health has been deteriorating day by day. I knew your coursework was heavy and didn't want to distract you, so I never told you.",
+    "As my body grew weaker, I also grew more timid. Rationally, I hoped you would spread your wings and fly to more distant places; but selfishly, I desperately wished you would return to my side and take over the shop that holds all our memories. Torn between duty and desire, I finally decided to be willful just this once.",
+    "I spent my entire life's savings to buy that special grimoire, stuffing all my knowledge—and even a replica of my own consciousness—into that book. That way, even if I am gone, I can pretend I am still right by your side.",
+    "I'm sorry, Lumia. Leaving the workshop to you and tricking you in this way. I have always remembered your vow to turn this place into the most famous potion workshop, but my true wish is simply for you to live a good life and smile every single day.",
+    "You are the proudest and most beloved daughter of my life."
+  ],
+  "letter.3.closing": [
+    "Forever loving you, Master"
+  ],
+  "script.opening.01": "Master—! I graduated! I'm back—!",
+  "script.opening.02": "Huh? Not here? The letter clearly said to come over today...",
+  "script.opening.03": "Lumia rummaged around the workshop, accidentally knocking over a few empty bottles, and finally discovered a thick, faintly glowing book deep inside the counter.",
+  "script.opening.04": "Wow, the cover of this book is so special, and there are traces of magic flowing on it...",
+  "script.opening.05": "Lumia reached out to touch the book, and it suddenly emitted a bright light, displaying text while speaking out loud.",
+  "script.opening.06": "Ouch! Don't poke so hard, I'm terribly fragile right now.",
+  "script.opening.07": "Waaaah! The, the book is talking?! Wait, this tone... Master!?",
+  "script.opening.07.act": "Falls backward in fright",
+  "script.opening.08": "Ahem, that's right, it's me. As you can see, this is a special magical tool. I happened to receive a commission for a long-distance journey with an undetermined return date. So that this workshop wouldn't go to waste, I left a portion of my consciousness inside this book.",
+  "script.opening.09": "A journey? How so sudden! And you didn't even let me see you off...",
+  "script.opening.10": "Well, things came up suddenly. Anyway, this potion shop is entrusted to you now, Lumia. Are you willing to take on this job and be the acting manager of this shop?",
+  "script.opening.11": "Leave it to me, Master! I'll definitely make this workshop rake in a fortune, and when you get back from your trip, I guarantee you'll be amazed!",
+  "script.opening.11.act": "Dusts off her skirt and stands up with sparkling eyes",
+  "script.opening.12": "Hehe, then I shall look forward to it, apprentice manager.",
+  "script.opening.12.act": "Chuckles softly",
+  "script.celebration.01": "Master, Master! Do you have a moment right now?",
+  "script.celebration.02": "Hm? Sure do, what is it?",
+  "script.celebration.03": "Tada~! I made a cake using the leftover materials! Even though... it's a tiny bit crooked.",
+  "script.celebration.04": "Is, is this a cake...?",
+  "script.celebration.04.act": "Looks at the cake that seems to have a potion baked right into it along with the bottle...",
+  "script.celebration.05": "Being able to run the potion shop until now is entirely thanks to Master! If it weren't for this grimoire guiding me, I'm sure I would've blown up the cauldron ages ago.",
+  "script.celebration.06": "Cheers! To our potion shop, and... to Master!",
+  "script.celebration.06.act": "Raises a cup filled with Glimmer Tonic",
+  "script.celebration.07": "Oh... oh! Cheers!",
+  "script.celebration.08": "(Good thing grimoires can't eat food...)",
+  "script.celebration.08.act": "Secretly sighs with relief",
+  "script.celebration.09": "Starting today, Lumia's confident smile makes customers willing to pay triple the price.",
+  "script.letter1.01": "Oh come on... Back then, Master kept failing the potion brews and we barely got by because I had to go gather Heartleaf in the forest.",
+  "script.letter1.01.act": "Carefully folds the letter with a gentle smile in her eyes",
+  "script.letter1.02": "I'm back, Master.",
+  "script.letter1.02.act": "Looks around the workshop that's finally running smoothly, gently strokes the cover of the grimoire, and murmurs",
+  "script.letter2.01": "Just being famous nationwide isn't enough! I'm going to make this the most famous potion workshop in the whole world, across the entire continent!",
+  "script.letter2.01.act": "Clenches both hands into tight fists, her eyes gleaming with determination",
+  "script.letter2.02": "Alright! Time to work hard on brewing potions today too! Master, just sit back and watch while you're away on your travels!",
+  "script.letter2.02.act": "Turns her head to look at the cauldron",
+  "script.letter3.01": "How could... No way... What do you mean by a long journey... You big dummy, Master...!",
+  "script.letter3.01.act": "Her hands tremble as she holds the letter, and big tears drip onto the parchment",
+  "script.letter3.02": "Lumia hugs the letter and cries out loud, weeping for a long, long time. When night falls, she wipes her swollen red eyes and walks up to the grimoire.",
+  "script.letter3.03": "Master, I received your wish. But I'm a witch who keeps her promises. This isn't just a wish anymore—it's my mission. I'll definitely show you the most famous potion workshop in the entire world!",
+  "script.letter3.03.act": "Takes a deep breath as her gaze becomes fiercely resolute",
+  "script.vow.01": "Look, Master. Even the kingdom's knights are lining up to buy our potions now.",
+  "script.vow.02": "Indeed, you've done wonderfully, Lumia. A hundred times better than I expected.",
+  "script.vow.03": "But I'm not planning to stop here. I want the story of this potion workshop to live on forever. Ten years, a hundred years, or even thousands of years from now, when people think of magic potions, they'll think of this place.",
+  "script.vow.04": "Master, this is my vow to you.",
+  "script.vow.04.act": "Gazing earnestly at the grimoire",
+  "script.vow.05": "...Lumia, you know it. I'm just a grimoire. I'm merely a simulation of the real Master's consciousness, a piece of pre-programmed magic code. Even so, are you really okay with this?",
+  "script.vow.05.act": "Pauses in silence for a moment",
+  "script.vow.06": "Master is Master, after all! Though if you really get down to it, it is a bit complicated... (Scratches her head)",
+  "script.vow.06.act": "Wears a bright, cheerful smile",
+  "script.vow.07": "Still, as long as this book is here, it feels like Master is always right by my side. Hearing your nagging every day and watching you guide me through brewing potions makes me so happy and completely at ease.",
+  "script.vow.08": "Thank you, Master. Thank you for choosing to stay and keep me company.",
+  "script.vow.09": "Sigh, there's just no reasoning with you. Since you've put it that way, I suppose I'll accompany you to fulfill this grand vow.",
+  "script.vow.09.act": "Lets out a helpless yet tender sigh",
+  "script.vow.10": "Besides... if this magical artifact of a body holds together well enough without breaking, perhaps I'll even get to witness the future you promised with my own eyes.",
+  "script.vow.11": "Yup! It's a promise, then!",
+  "script.vow.11.act": "Hugs the grimoire tightly",
+  "script.vow.12": "Beneath the night sky, a shooting star streaks past. The legend of the apprentice witch and the grimoire is only just beginning."
 }

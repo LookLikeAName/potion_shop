@@ -5,12 +5,13 @@ import { MATERIAL_IDS, type MaterialId } from './config/plants';
 import { POTION_IDS, type PotionId } from './config/recipes';
 import { EVENT, type EventId } from './config/events';
 import { WISH, type WishKind } from './config/wishes';
+import type { TutorialStep } from './tutorial';
 
 /**
  * 2：開心度系統重做（家具改成禮物與擺設、魔力同調改成 5 級）；3：突發事件重做（移除焦晶）；
  * 4：收購箱保留量從百分比改成「幾秒份」
  */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 6;
 
 /** 盆栽對某種植物的培育紀錄（改種後再種回來會恢復） */
 export interface PlotMemory {
@@ -143,6 +144,8 @@ export interface GameState {
   mascot: MascotState;
   /** 開心度兌換項目的購買次數 */
   redeemed: Record<string, number>;
+  /** 做過的新手教學步驟（tutorial.ts）；firstOrder = 第一位（只買一瓶的）客人已經來過 */
+  tutorial: Partial<Record<TutorialStep | 'firstOrder', true>>;
   /** 已達成的成就 */
   achievements: Record<string, boolean>;
   achievementTimer: number;
@@ -313,6 +316,21 @@ export function createMascot(): MascotState {
 const zeroRecord = <K extends string>(keys: K[]) =>
   Object.fromEntries(keys.map((k) => [k, 0])) as Record<K, number>;
 
+/**
+ * 新遊戲（沒有存檔時）：還沒看序章、還沒做新手教學。
+ * 序章播完、教學走到結帳才開店，第一位客人只買一瓶（tutorial.ts）
+ */
+export function createNewGame(): GameState {
+  const s = createInitialState();
+  s.redeemed = {};
+  s.tutorial = {};
+  return s;
+}
+
+/**
+ * 開局的店舖狀態，當成已經看過序章、做完教學（模擬與測試從這裡開始，照常營業）。
+ * 真正的新遊戲用 createNewGame
+ */
 export function createInitialState(): GameState {
   const slots = Array.from({ length: SLOT_COUNT }, (_, i) => createSlot(i < INITIAL_OPEN_SLOTS));
   slots[0].plant = 'redheart';
@@ -337,7 +355,8 @@ export function createInitialState(): GameState {
       materials: defaultMaterialSettings(),
     },
     mascot: createMascot(),
-    redeemed: {},
+    redeemed: { opening: 1 },
+    tutorial: { pot: true, cauldron: true, checkout: true, assign: true, order: true, firstOrder: true },
     achievements: {},
     achievementTimer: 0,
     feverLeft: 0,

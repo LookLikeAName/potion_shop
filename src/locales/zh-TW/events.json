@@ -137,11 +137,11 @@
   ],
   "event.letter.name": "遠方的來信",
   "event.letter.prompt": "貓頭鷹叼著一封信飛來了！點一下收信",
-  "event.letter.hint": "和露米婭的羈絆變深之後，會有遠方的來信…",
-  "event.letter.story": "（故事待定：之後配合背景故事撰寫）",
-  "event.letter.lumia": "（台詞待定）",
-  "event.letter.summary": "（簡介待定）",
-  "event.letter.need": "羈絆等級 2／4／6（依序寄來三封）",
+  "event.letter.hint": "「第一次的慶功宴」之後，和露米婭的羈絆變深時，會有遠方的來信…",
+  "event.letter.story": "旅行中的老師寄來的信。一隻貓頭鷹叼著信封，從很遠很遠的地方飛進了工坊。",
+  "event.letter.lumia": "是老師的字！……每一封我都會好好收著的。",
+  "event.letter.summary": "老師從遠方寄來的信",
+  "event.letter.need": "兌換「第一次的慶功宴」後，羈絆等級 13／14／15 時依序寄來三封（寄來後會一直等到你收下）",
   "event.letter.reward": [
     "{incomeSec} 秒份的收入",
     "一封信（收到的信可以在這裡重讀）"

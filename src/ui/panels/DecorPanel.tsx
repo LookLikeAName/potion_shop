@@ -5,6 +5,7 @@ import { formatNumber } from '../../game/format';
 import { decorSlots } from '../../game/stats';
 import { t, tl, tx } from '../../i18n';
 import { startGrabbing } from '../cursors';
+import { Glyph, Heart } from '../Glyph';
 import { Icon } from '../Icon';
 import { dragGhost, openDrawer, showToast, useGame } from '../store';
 
@@ -114,13 +115,13 @@ export function DecorPanel() {
             return (
               <div class={cls} data-slot={k} key={k} onClick={() => tapSlot(k)}>
                 {k >= open ? (
-                  <span class="slot-lock">🔒<small>{t('decor.lockedLine1')}<br />{t('decor.lockedLine2')}</small></span>
+                  <span class="slot-lock"><Glyph id="icon_lock" text="🔒" size={1.4} /><small>{t('decor.lockedLine1')}<br />{t('decor.lockedLine2')}</small></span>
                 ) : g ? (
                   <>
                     <div class="slot-art" onPointerDown={(e) => startDrag(e as PointerEvent, g.id, k)}>
                       <GiftArt gift={g} />
                     </div>
-                    <button class="slot-remove" aria-label={t('decor.remove')} onClick={(e) => { e.stopPropagation(); game.setDecor(k, null); }}>✕</button>
+                    <button class="slot-remove" aria-label={t('decor.remove')} onClick={(e) => { e.stopPropagation(); game.setDecor(k, null); }}><Glyph id="icon_close" text="✕" size={0.9} /></button>
                   </>
                 ) : (
                   <span class="slot-empty">＋</span>
@@ -136,7 +137,7 @@ export function DecorPanel() {
       </div>
 
       <div class="card" id="decor-book">
-        <div class="card-title">{t('decor.bookTitle')} <span class="lv">{count}/{GIFTS.length}</span></div>
+        <div class="card-title"><Glyph id="icon_gift" text="🎁" size={1.3} /> {t('decor.bookTitle')} <span class="lv">{count}/{GIFTS.length}</span></div>
         <p class="hint">{t('decor.bookHint')}</p>
         <div class="gift-book">
           {GIFTS.map((g, i) => {
@@ -160,7 +161,7 @@ export function DecorPanel() {
                 ) : (
                   <button class="buy-btn gift-buy" disabled={s.gold < g.price} onClick={() => buy(g)}>
                     <Icon id="icon_gold" size={1} /> {formatNumber(g.price)}
-                    <span class="buy-count">+{g.happiness}♥</span>
+                    <span class="buy-count">+{g.happiness}<Heart size={0.85} /></span>
                   </button>
                 )}
               </div>

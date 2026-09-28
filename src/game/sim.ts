@@ -16,6 +16,7 @@ import {
 import type { EventId } from './config/events';
 import { tickEvents } from './events';
 import { noteWish, tickWish } from './wishes';
+import { customersOpen } from './tutorial';
 
 export type GameEvent =
   | { type: 'harvest'; slot: number; material: MaterialId; amount: number; crit?: boolean; bounty?: boolean }
@@ -287,7 +288,8 @@ function tickMarket(s: GameState, dt: number, ctx: SimContext): void {
 // ---------- 顧客 ----------
 
 function tickCustomers(s: GameState, dt: number, ctx: SimContext): void {
-  if (s.cauldrons.length > 0) {
+  // 新手教學走到結帳之前不開店（tutorial.ts）
+  if (s.cauldrons.length > 0 && customersOpen(s)) {
     s.customerTimer += dt * arrivalRate(s);
     if (s.customerTimer >= CUSTOMER.interval) {
       if (s.customers.length < CUSTOMER.queueMax) {
@@ -364,14 +366,17 @@ function orderablePotions(s: GameState): PotionId[] {
 
 export function spawnCustomer(s: GameState, ctx: SimContext): CustomerState {
   const pool = orderablePotions(s);
-  const count = rollLineCount(s.cauldrons.length, ctx.rng());
+  // 開店的第一位客人只買一瓶（新手教學點一下就能結帳；跳過教學也一樣）
+  const first = !s.tutorial.firstOrder;
+  s.tutorial.firstOrder = true;
+  const count = first ? 1 : rollLineCount(s.cauldrons.length, ctx.rng());
   const maxQty = maxCustomerQty(s);
   const lines: OrderLine[] = [];
   for (let k = 0; k < count && pool.length > 0; k++) {
     const potion = pool.splice(Math.floor(ctx.rng() * pool.length), 1)[0];
     // 基本 1–3 瓶，乘上這種藥水大釜的等級（店越大，客人一次買越多）
     const base = CUSTOMER.qtyMin + Math.floor(ctx.rng() * (maxQty - CUSTOMER.qtyMin + 1));
-    lines.push({ potion, qty: Math.max(1, Math.round(base * orderScale(s, potion))), delivered: 0 });
+    lines.push({ potion, qty: first ? 1 : Math.max(1, Math.round(base * orderScale(s, potion))), delivered: 0 });
   }
   const patience = customerPatience(s);
   const c: CustomerState = {

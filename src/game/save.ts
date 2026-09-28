@@ -4,6 +4,7 @@ import { INITIAL_OPEN_SLOTS } from './config/balance';
 import { DECOR } from './config/gifts';
 import { CRATE_FOR, CRATE_MATERIALS, FLOATING_POT } from './config/upgrades';
 import { decorFx } from './stats';
+import { skipTutorial } from './tutorial';
 import {
   createCauldron, createInitialState, createSlot, SAVE_VERSION, type CrateSetting, type CustomerState, type GameSettings,
   type GameState, type SlotState,
@@ -132,6 +133,7 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
     settings: migrateSettings(base.settings, st.settings),
     mascot: { ...base.mascot, ...st.mascot },
     redeemed: { ...st.redeemed },
+    tutorial: { ...st.tutorial },
     achievements: { ...st.achievements },
     gifts: { ...st.gifts },
     decor: base.decor.map((d, i) => st.decor?.[i] ?? d),
@@ -159,6 +161,13 @@ function migrate(raw: Partial<SaveFile>): SaveFile {
   // 版本 3：焦晶移除了（從來沒有取得途徑，丟掉欄位就好）
   delete (state as Partial<GameState> & { charCrystal?: number }).charCrystal;
   if ((st.version ?? 1) < 2) migrateHappiness(state);
+  // 版本 5：加入序章（新遊戲一開始播放）。之前的存檔都已經開店了，當成看過（可以在深層羈絆回顧）
+  if ((st.version ?? 1) < 5) state.redeemed.opening = 1;
+  // 版本 6：加入新手教學。之前的存檔都已經在玩了，當成做過（第二口大釜的說明也不跳）
+  if ((st.version ?? 1) < 6) {
+    skipTutorial(state);
+    state.tutorial.firstOrder = true;
+  }
   // 舊版的心願沒有記錄時限有沒有算星燈：出題時就是照當時有沒有擺出星燈算的，當成現在的狀態
   if (state.wish && state.wish.lamp === undefined) state.wish.lamp = decorFx(state, 'wishTime');
   return { version: SAVE_VERSION, savedAt: raw.savedAt ?? Date.now(), state };

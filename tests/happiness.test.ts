@@ -6,9 +6,9 @@ import { WISH } from '../src/game/config/wishes';
 import { simulateOffline } from '../src/game/offline';
 import { parseSave } from '../src/game/save';
 import { harvest, tick, type GameEvent, type SimContext } from '../src/game/sim';
-import { createInitialState, type GameState } from '../src/game/state';
+import { createInitialState, createNewGame, type GameState } from '../src/game/state';
 import {
-  bondLevel, decorFx, decorSlots, displayedGifts, growthSpeed, happyMult, orderScale, plantClickPower, renownLevel,
+  bondLevel, bondProgress, decorFx, decorSlots, displayedGifts, growthSpeed, happyMult, orderScale, plantClickPower, renownLevel,
 } from '../src/game/stats';
 import { rollWish, tickWish, wishOptions } from '../src/game/wishes';
 
@@ -28,20 +28,30 @@ function opened(): GameState {
 }
 
 describe('名聲、羈絆與開心度倍率', () => {
-  it('名聲 = 累計收入的位數；羈絆 = 兌換次數（聲援不算）；倍率相乘', () => {
+  it('名聲 = 累計收入的位數；羈絆 = 累計獲得的開心度（兌換花掉的也算）；倍率相乘', () => {
     const s = createInitialState();
     expect(renownLevel(s)).toBe(0);
     s.stats.goldEarned = 12_345;
     expect(renownLevel(s)).toBe(4);
-    s.redeemed = { decor_slot_3: 1, attunement: 3, cheer: 10 };
-    expect(bondLevel(s)).toBe(4);
+    // 手上 20 + 花掉 3 = 23：過了 3／7／12／20 四個門檻
+    s.happiness = 20;
+    s.redeemed = { decor_slot_3: 1 };
+    expect(bondProgress(s)).toEqual({ level: 4, earned: 23, next: 28 });
     expect(happyMult(s)).toBeCloseTo((1 + 0.1 * 4) * (1 + 0.15 * 4));
+    // 兌換不會讓羈絆變少
+    expect(redeem(s, 'decor_slot_4')).toBe(true);
+    expect(bondLevel(s)).toBe(4);
+    s.happiness += 1000;
+    expect(bondProgress(s).level).toBe(15);
+    expect(bondProgress(s).next).toBeNull();
   });
 
   it('離線時開心度從 70% 開始線性衰退，24 小時後不再增加（有心電感應也一樣）', () => {
     const make = () => {
       const s = createInitialState();
       s.redeemed.telepathy = 1; // 離線上限 72 小時
+      // 累計 100（羈絆 Lv10，下一級 125）：過程中羈絆不會升級，倍率固定
+      s.happiness = 80;
       return s;
     };
     const perHour = (s: GameState) => MASCOT.offlineRestPerHour * happyMult(s) / 0.7;
@@ -245,6 +255,19 @@ describe('小心願', () => {
     expect(w1.timeMax).toBeCloseTo(w0.timeMax * GIFT_FX.wishTime);
     expect(w1.goal).toBe(w0.goal); // 題目量不變，只是多給時間
     expect(Math.abs(w1.reward / (w0.reward * GIFT_FX.wishReward) - 1)).toBeLessThan(0.05);
+  });
+});
+
+describe('序章', () => {
+  it('新遊戲還沒看過（一開始會播）；看完用 0 開心度兌換成擁有；版本 5 之前的存檔當成看過', () => {
+    const s = createNewGame();
+    expect(s.redeemed.opening).toBeUndefined();
+    expect(redeem(s, 'opening')).toBe(true);
+    expect(s.redeemed.opening).toBe(1);
+    expect(s.happiness).toBe(0);
+    const fresh = createNewGame();
+    expect(parseSave(JSON.stringify({ version: 5, savedAt: 1, state: fresh }))!.state.redeemed.opening).toBeUndefined();
+    expect(parseSave(JSON.stringify({ version: 4, savedAt: 1, state: { ...fresh, version: 4 } }))!.state.redeemed.opening).toBe(1);
   });
 });
 

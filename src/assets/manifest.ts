@@ -59,6 +59,9 @@ export const ASSETS: AssetDef[] = [
   a('icon_gold', 64, 64, 0xe8b93a, '金', 'circle'),
   a('icon_happiness', 64, 64, 0xff8fb8, '♥', 'circle'),
   a('icon_event_book', 64, 64, 0x6a8fd0, '簿', 'round'),
+  // 場景文字旁的小圖示（未解鎖配方的鎖、極速沸騰的火；介面用的圖示直接讀 ART_URLS，不必列在這裡）
+  a('icon_lock', 30, 30, 0xc9a44a, '鎖', 'circle'),
+  a('icon_fire', 32, 32, 0xff8a3c, '火', 'circle'),
 
   // 升級道具（場景內顯示）
   a('upg_raincloud', 80, 54, 0x8a9bb0, '雨雲', 'round'),
@@ -113,6 +116,16 @@ export const ASSETS: AssetDef[] = [
   a('icon_green_thumb', 64, 64, 0x6cc36a, '綠', 'circle'),
   a('icon_telepathy', 64, 64, 0xc9a0ff, '心', 'circle'),
   a('icon_fever', 64, 64, 0xffc234, '狂', 'circle'),
+  // 標題畫面的標誌：各語言的完整標誌 ui_logo_<語言>；沒有的語言用沒有文字的外框，遊戲名稱疊上去
+  a('ui_title_logo', 960, 480, 0xd9a441, '標誌', 'round'),
+  a('ui_logo_zh-TW', 960, 480, 0xd9a441, '標誌', 'round'),
+  a('ui_logo_ja', 960, 480, 0xd9a441, '標誌', 'round'),
+  a('ui_logo_en', 960, 480, 0xd9a441, '標誌', 'round'),
+  a('cg_opening', 64, 36, 0x6b3a26, '序', 'rect'),
+  // 三封信讀完後的感想
+  a('cg_letter1', 64, 36, 0xc9a06a, '信1', 'rect'),
+  a('cg_letter2', 64, 36, 0xcf7a3a, '信2', 'rect'),
+  a('cg_letter3', 64, 36, 0x3a4a6a, '信3', 'rect'),
   a('cg_celebration', 64, 36, 0xd9a441, '宴', 'rect'),
   a('cg_starry_vow', 64, 36, 0x3a4a8a, '誓', 'rect'),
 
@@ -146,6 +159,8 @@ export const ASSETS: AssetDef[] = [
   a('npc_elf_noble', 145, 183, 0x7fb89a, '精靈\n貴族', 'round', -1),
   a('npc_dwarf_merchant', 157, 183, 0xa4553a, '矮人\n商人', 'round', -1),
   a('npc_drunk_adventurer', 157, 183, 0xb0703a, '醉酒\n冒險者', 'round', -1),
+  // 微服出巡的公主：斗篷底下藏著小皇冠
+  a('npc_evt_princess', 145, 183, 0xb07a4a, '公主', 'round', -1),
 ];
 
 export const ASSET_MAP: Record<string, AssetDef> = Object.fromEntries(ASSETS.map((d) => [d.id, d]));

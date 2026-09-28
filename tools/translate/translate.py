@@ -1,7 +1,7 @@
 """
 命令列：翻譯語言檔。
 
-  python tools/translate/translate.py ja en          翻譯沒翻的、原文改過的、格式錯的（鎖定的不動）
+  python tools/translate/translate.py ja en          翻譯沒翻的、格式錯的（鎖定的不動），以及原文改過的（鎖定的也重翻）
   python tools/translate/translate.py ja --keys "event.*"   只翻符合的 key
   python tools/translate/translate.py ja --all       全部重翻（鎖定的一樣不動）
   python tools/translate/translate.py ja --check     只檢查，不呼叫 API
@@ -55,9 +55,9 @@ def main() -> int:
             continue
 
         if args.all:
-            keys = [r['key'] for r in rows if args.include_locked or not r['locked']]
+            keys = [r['key'] for r in rows if args.include_locked or not r['locked'] or r['status'] == 'stale']
         else:
-            keys = [r['key'] for r in rows if r['status'] != 'ok' and (args.include_locked or not r['locked'])]
+            keys = [r['key'] for r in rows if core.is_pending(r['status'], r['locked'], args.include_locked)]
         if args.keys:
             keys = [k for k in keys if any(fnmatchcase(k, pat) for pat in args.keys)]
         if not keys:

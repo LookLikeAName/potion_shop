@@ -2,8 +2,9 @@ import { EVENT_MAP, LETTERS, MERCHANT_OFFERS, RARITY_NAMES, type MerchantOffer }
 import { buffLabel } from '../game/events';
 import { t } from '../i18n';
 import { formatSeconds } from '../game/format';
+import { Glyph } from './Glyph';
 import { Icon } from './Icon';
-import { drawerOpen, letterOpen, useGame } from './store';
+import { drawerOpen, letterOpen, storyId, useGame } from './store';
 
 const clock = (sec: number) => {
   const s = Math.max(0, Math.ceil(sec));
@@ -26,7 +27,7 @@ export function EventBanner() {
         <Icon id={def.icon} size={1.3} />
         <span class="event-name">{def.name}</span>
         <span class="event-rarity">{RARITY_NAMES[def.rarity]}</span>
-        <span class={`event-time ${a.time <= 5 ? 'urgent' : ''}`}>⏳ {clock(a.time)}</span>
+        {!def.mainline && <span class={`event-time ${a.time <= 5 ? 'urgent' : ''}`}><Glyph id="icon_hourglass" text="⏳" size={0.95} /> {clock(a.time)}</span>}
       </div>
       <div class="event-prompt">{def.prompt}</div>
       {progress && <div class="event-progress">{progress}</div>}
@@ -49,13 +50,14 @@ export function EventBanner() {
           {a.options!.map((o, k) => (
             <button key={o} class="event-choice card-back" onClick={() => game.eventAction({ type: 'choose', index: k })}
               title={t('banner.flip')}>
-              <span class="card-star">★</span>
+              <span class="card-star"><Glyph id="icon_star" text="★" size={1.6} /></span>
               <small>{t('banner.cardN', { n: k + 1 })}</small>
             </button>
           ))}
         </div>
       )}
-      <div class="event-bar"><div class="event-fill" style={{ width: `${(a.time / a.timeMax) * 100}%` }} /></div>
+      {/* 主線事件不限時：不顯示倒數 */}
+      {!def.mainline && <div class="event-bar"><div class="event-fill" style={{ width: `${(a.time / a.timeMax) * 100}%` }} /></div>}
     </div>
   );
 }
@@ -78,19 +80,28 @@ export function BuffBar() {
   );
 }
 
-/** 師父的來信 */
+/** 遠方的來信：稱呼、內文、結尾（靠右）；收好之後接著播露米婭的感想 */
 export function LetterModal() {
   const i = letterOpen.value;
   if (i === null) return null;
   const l = LETTERS[i];
+  const keep = () => {
+    letterOpen.value = null;
+    storyId.value = l.scene;
+  };
   return (
     <div class="modal-back">
       <div class="modal letter">
-        <h2>✉ {l.title}</h2>
-        <div class="letter-body">
-          {l.lines.map((line, k) => <p key={k}>{line}</p>)}
+        <h2><Glyph id="icon_letter" text="✉" alt="evt_letter" size={1.2} /> {l.title}</h2>
+        {l.note && <div class="letter-note">{t('story.act', { act: l.note })}</div>}
+        <div class={`letter-body letter-${i + 1}`}>
+          <p class="letter-to">{l.to}</p>
+          {l.body.map((p, k) => <p key={k}>{p}</p>)}
+          <div class="letter-closing">
+            {l.closing.map((p, k) => <p key={k}>{p}</p>)}
+          </div>
         </div>
-        <button class="btn primary" onClick={() => (letterOpen.value = null)}>{t('letter.keep')}</button>
+        <button class="btn primary" onClick={keep}>{t('letter.keep')}</button>
       </div>
     </div>
   );

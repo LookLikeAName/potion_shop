@@ -1,10 +1,11 @@
 import { useState } from 'preact/hooks';
 import { formatDuration, formatNumber } from '../../game/format';
 import { clearSave, exportSave, importSave, toSaveFile } from '../../game/save';
-import { createInitialState } from '../../game/state';
+import { createNewGame } from '../../game/state';
 import { currentLang, t, tx, type Lang } from '../../i18n';
 import { availableLangs, switchLang } from '../../i18n/load';
-import { showToast, useGame } from '../store';
+import { drawerOpen, rememberTitle, showToast, titleOpen, useGame } from '../store';
+import { perf, setPerf, type PerfSettings } from '../../render/perf';
 
 /** 遊玩時間：合計 = 遊戲開著（其中畫面在前景）＋ 離開（關掉遊戲、離線） */
 function PlayTime() {
@@ -18,6 +19,35 @@ function PlayTime() {
         <span>{tx('settings.playBack', { t: <b>{formatDuration(Math.max(0, st.playOnline - st.playForeground))}</b> })}</span>
         <span>{tx('settings.playAway', { t: <b>{formatDuration(st.playAway)}</b> })}</span>
       </div>
+    </div>
+  );
+}
+
+/** 效能：特效、飄字、更新率、畫質（只影響畫面；存在這台裝置） */
+function PerfSettingsCard() {
+  const p = perf.value;
+  const row = <K extends keyof PerfSettings>(key: K, label: string, options: [PerfSettings[K], string][]) => (
+    <div class="perf-row">
+      <span class="perf-label">{label}</span>
+      <div class="chips">
+        {options.map(([v, name]) => (
+          <button key={String(v)} class={`chip ${p[key] === v ? 'active' : ''}`} onClick={() => setPerf({ [key]: v } as Partial<PerfSettings>)}>
+            {name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <div class="card">
+      <div class="card-title">{t('settings.perf')}</div>
+      <p class="hint">{t('settings.perfHint')}</p>
+      {row('effects', t('settings.effects'), [['full', t('settings.effects.full')], ['lite', t('settings.effects.lite')], ['min', t('settings.effects.min')]])}
+      {row('floats', t('settings.floats'), [
+        ['many', t('settings.floats.many')], ['normal', t('settings.floats.normal')], ['few', t('settings.floats.few')], ['key', t('settings.floats.key')],
+      ])}
+      {row('fps', t('settings.fps'), [[60, t('settings.fpsN', { n: 60 })], [30, t('settings.fpsN', { n: 30 })]])}
+      {row('quality', t('settings.quality'), [['high', t('settings.quality.high')], ['low', t('settings.quality.low')]])}
     </div>
   );
 }
@@ -57,19 +87,36 @@ export function SettingsPanel() {
       return;
     }
     clearSave();
-    game.replaceState(toSaveFile(createInitialState()));
+    // 重新開始 = 新遊戲：回到標題畫面，按「開始」後播序章、走新手教學
+    game.replaceState(toSaveFile(createNewGame()));
     setConfirmReset(false);
     showToast(t('settings.resetDone'));
+    drawerOpen.value = false;
+    titleOpen.value = true;
+  };
+
+  const backToTitle = () => {
+    game.save();
+    drawerOpen.value = false;
+    titleOpen.value = true;
   };
 
   const changeLang = (l: Lang) => {
     if (l === currentLang()) return;
     game.save();
+    // 在標題畫面換語言：重新載入之後回到標題畫面
+    if (titleOpen.value) rememberTitle();
     switchLang(l);
   };
 
   return (
     <div class="cards">
+      {/* 在標題畫面打開設定時不用再回到標題 */}
+      {!titleOpen.value && (
+        <div class="card">
+          <button class="btn" onClick={backToTitle}>{t('settings.backToTitle')}</button>
+        </div>
+      )}
       {/* 有第二種語言的語言檔時才出現 */}
       {availableLangs().length > 1 && <div class="card">
         <div class="card-title">{t('settings.language')}</div>
@@ -81,6 +128,7 @@ export function SettingsPanel() {
           ))}
         </div>
       </div>}
+      <PerfSettingsCard />
       <div class="card">
         <div class="card-title">{t('settings.stats')}</div>
         <PlayTime />

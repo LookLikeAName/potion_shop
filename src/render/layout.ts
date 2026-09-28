@@ -98,6 +98,8 @@ export const DECOR_POS = [
 
 // 露米婭的工作點：櫃台左側，以及站在盆栽/大釜前方偏右（背影），不完全擋住物件
 export const LUMIA_COUNTER = { x: 1090, y: 990 };
+/** 顧櫃台時也會走到櫃台正前方招呼客人（會擋到貓頭鷹和松鼠，但不擋到鈴鐺） */
+export const LUMIA_COUNTER_FRONT = { x: 1300, y: 990 };
 export const LUMIA_AT_POT = { dx: 44, dy: 50 };
 /**
  * 大釜在爐台上而且彼此很近，她只站在大釜列的兩側（最左那口的左邊、最右那口的右邊），

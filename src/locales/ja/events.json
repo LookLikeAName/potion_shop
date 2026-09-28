@@ -137,11 +137,11 @@
   ],
   "event.letter.name": "遠くからの手紙",
   "event.letter.prompt": "フクロウさんが手紙をくわえて飛んできたよ！手紙をタップして受け取ってね",
-  "event.letter.hint": "ルミアとの絆が深まると、遠くからお手紙が届くようになります……",
-  "event.letter.story": "（ストーリー未定：のちほど背景ストーリーに合わせて作成予定）",
-  "event.letter.lumia": "（セリフ未定）",
-  "event.letter.summary": "（あらすじ未定）",
-  "event.letter.need": "絆Lv2／4／6（順番に3通届きます）",
+  "event.letter.hint": "「はじめての打ち上げ」のあと、ルミアとの絆が深まると、遠くからお手紙が届くようになります……",
+  "event.letter.story": "旅をしている先生から届いた手紙。一羽のフクロウが封筒をくわえ、はるか遠くから工房へと飛んできた。",
+  "event.letter.lumia": "先生の文字だ！……一通一通、大切にとっておこっと。",
+  "event.letter.summary": "遠くにいる先生からの手紙",
+  "event.letter.need": "「はじめての打ち上げ」を交換したあと、絆Lv13／14／15で順番に3通届きます（届いたら受け取るまで待っています）",
   "event.letter.reward": [
     "{incomeSec}秒分の収入",
     "手紙1通（受け取った手紙はここで読み返せます）"

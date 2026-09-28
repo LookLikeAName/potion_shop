@@ -3,11 +3,12 @@ import { TabLock } from './engine/tabLock';
 import { t } from './i18n';
 import { initI18n } from './i18n/load';
 import { installCursors } from './ui/cursors';
+import { installUiArt } from './ui/uiArt';
 import { Game } from './game/game';
 import { createScene } from './render/scene';
 import { H, W } from './render/layout';
 import { App } from './ui/App';
-import { bindGame, lockState, offlineReport, showToast, uiTick } from './ui/store';
+import { bindGame, lockState, offlineReport, showToast, takeRememberedTitle, titleOpen, uiTick } from './ui/store';
 import './ui/styles.css';
 
 const AUTOSAVE_MS = 30_000;
@@ -25,6 +26,7 @@ async function main() {
   // 先決定語言、載入語言檔，之後所有文字才查得到
   await initI18n();
   installCursors();
+  installUiArt();
   const stage = document.getElementById('stage')!;
   const scale = fitStage(stage);
   window.addEventListener('resize', () => fitStage(stage));
@@ -33,6 +35,8 @@ async function main() {
   const hasLock = await lock.tryAcquire();
 
   const game = Game.fromStorage();
+  // 第一次進入遊戲：先顯示標題畫面（在標題畫面換了語言而重新載入的也是）
+  if (takeRememberedTitle() || game.isNew) titleOpen.value = true;
   game.onOffline = (r) => {
     if (r.seconds >= 60) offlineReport.value = r;
   };

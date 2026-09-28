@@ -137,11 +137,11 @@
   ],
   "event.letter.name": "Letter from Afar",
   "event.letter.prompt": "An owl flew over carrying a letter! Tap to receive it.",
-  "event.letter.hint": "As your bond with Lumia deepens, letters from afar will arrive...",
-  "event.letter.story": "(Story TBD: To be written later to match the background lore)",
-  "event.letter.lumia": "(Line TBD)",
-  "event.letter.summary": "(Summary TBD)",
-  "event.letter.need": "Bond Level 2 / 4 / 6 (three letters sent in order)",
+  "event.letter.hint": "After the First Celebration Party, letters from afar will arrive as your bond with Lumia deepens...",
+  "event.letter.story": "A letter sent by Master from afar. An owl carrying an envelope flies into the workshop from a very, very distant place.",
+  "event.letter.lumia": "It's Master's handwriting!... I'm going to keep every single letter safe.",
+  "event.letter.summary": "A letter sent from afar by Master",
+  "event.letter.need": "After redeeming the First Celebration Party, three letters arrive in order at Bond Level 13 / 14 / 15 (each one waits until you receive it)",
   "event.letter.reward": [
     "{incomeSec} seconds' worth of income",
     "A letter (received letters can be re-read here)"

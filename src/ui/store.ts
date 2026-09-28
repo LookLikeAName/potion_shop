@@ -16,13 +16,36 @@ export const drawerFocus = signal<string | null>(null);
 export const buyMode = signal<BuyMode>(1);
 export const offlineReport = signal<OfflineReport | null>(null);
 export const lockState = signal<'ok' | 'blocked' | 'lost'>('ok');
-export const toast = signal<{ id: number; text: string } | null>(null);
+/** 提示訊息；icon = 前面的小圖示（資源 ID），glyph = 沒有素材時顯示的文字符號 */
+export const toast = signal<{ id: number; text: string; icon?: string; glyph?: string } | null>(null);
 /** 露米婭互動視窗 */
 export const lumiaOpen = signal(false);
 /** 產銷分頁正在看哪一項的詳細圖表（null = 總覽） */
 export const flowDetail = signal<ItemId | 'income' | null>(null);
 /** 拖曳中的擺設：跟著指標的圖（#ui 內的座標） */
 export const dragGhost = signal<{ icon: string; x: number; y: number } | null>(null);
+/** 標題畫面：第一次進入遊戲（沒有存檔、或重新開始）時顯示；之後可以從設定回到標題 */
+export const titleOpen = signal(false);
+
+const TITLE_KEY = 'idle-potion-shop/title';
+/** 在標題畫面換語言時頁面會重新載入：記下來，載入後回到標題畫面 */
+export function rememberTitle(): void {
+  try {
+    sessionStorage.setItem(TITLE_KEY, '1');
+  } catch {
+    // 存不了就算了（重新載入後直接進遊戲）
+  }
+}
+/** 載入時要不要回到標題畫面（讀一次就清掉） */
+export function takeRememberedTitle(): boolean {
+  try {
+    const v = sessionStorage.getItem(TITLE_KEY) === '1';
+    sessionStorage.removeItem(TITLE_KEY);
+    return v;
+  } catch {
+    return false;
+  }
+}
 /** 正在播放的劇情 ID */
 export const storyId = signal<string | null>(null);
 /** 正在讀的來信（第幾封） */
@@ -68,9 +91,9 @@ export function openDrawer(tab: DrawerTab, focus: string | null = null): void {
 
 let toastId = 0;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
-export function showToast(text: string, ms = 2200): void {
+export function showToast(text: string, ms = 2200, icon?: { id: string; glyph?: string }): void {
   const id = ++toastId;
-  toast.value = { id, text };
+  toast.value = { id, text, icon: icon?.id, glyph: icon?.glyph };
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     if (toast.value?.id === id) toast.value = null;

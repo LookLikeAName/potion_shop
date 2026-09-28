@@ -6,6 +6,13 @@
   --teal: #2f6f6a;
   --gold: #d9a441;
   --leather: #2b1d14;
+  /* 魔導書：皮革封面、書頁 */
+  --cover: #6b3a26;
+  --cover-dark: #3e2217;
+  --page: #f5e8c8;
+  --page-deep: #e9d6ab;
+  --page-edge: #d8c093;
+  --stitch: rgba(232, 190, 110, 0.75);
   --danger: #c0443e;
   --uiz: 1;
   font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif;
@@ -95,47 +102,78 @@ html, body {
 .book-btn:active { transform: scale(0.96); }
 
 /* ---------- 魔導書抽屜 ---------- */
+/* 整個抽屜是一本打開的魔導書：外面是皮革封面（書籤列就在書脊上），裡面是一頁羊皮紙 */
 .drawer {
   position: absolute;
   top: calc(76px * var(--uiz));
   right: 0;
   bottom: 0;
-  width: min(calc(640px * var(--uiz)), 100%);
+  /* 改寬度時也要改 .wish-card.shift、.event-banner.shift、.tutorial-card.shift */
+  width: min(calc(660px * var(--uiz)), 100%);
   display: flex;
-  background: var(--parchment);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
+  padding: 0.45em 0.45em 0.45em 0;
+  border-radius: 16px 0 0 16px;
+  background: var(--tex-leather, none), linear-gradient(100deg, var(--cover-dark), var(--cover) 18%, var(--cover-dark));
+  background-size: calc(256px * var(--uiz)), cover;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(0, 0, 0, 0.35);
   transform: translateX(105%);
   transition: transform 0.25s ease;
 }
 .drawer.open { transform: translateX(0); }
 /* 左側的書籤列：只有圖示，滑過時在左邊（書的外面）顯示名稱；目前的書籤和紙面連在一起 */
+/* 書脊：一道金色縫線；書籤是從書頁伸出來的緞帶（尾端剪成燕尾），每個分頁一個顏色 */
 .bookmarks {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35em;
-  padding: 0.3em 0 0.6em 0.35em;
-  background: var(--teal);
+  align-items: flex-end;
+  gap: 0.4em;
+  padding: 0.2em 0 0.6em 0.3em;
+  border-right: 2px dashed var(--stitch);
+  margin-right: 0.35em;
 }
 .bookmark {
+  --ribbon: #8c5a3c;
   font: inherit;
   position: relative;
-  width: 2.9em;
-  height: 2.7em;
+  width: 3em;
+  height: 2.6em;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 0 0 0 0.4em;
+  margin-right: -0.4em;
   border: none;
-  border-radius: 12px 0 0 12px;
-  background: rgba(246, 236, 214, 0.3);
+  background: none;
+  isolation: isolate;
   cursor: var(--cursor-pointer, pointer);
-  transition: background 0.15s;
+  transition: width 0.15s;
 }
-.bookmark:hover { background: rgba(246, 236, 214, 0.55); }
-.bookmark.active { background: var(--parchment); }
-.bookmark .icon { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35)); }
-.bookmark-glyph { font-size: 1.5em; line-height: 1; color: var(--ink); }
+/* 緞帶本體畫在 ::before（燕尾的裁切不能裁到 ::after 的名稱提示） */
+.bookmark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(transparent 12%, rgba(255, 255, 255, 0.25) 13%, transparent 16%, transparent 84%, rgba(0, 0, 0, 0.18) 87%, transparent 88%),
+    linear-gradient(var(--ribbon), color-mix(in srgb, var(--ribbon) 70%, #000));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0.55em 50%);
+  filter: brightness(0.8) saturate(0.85);
+  transition: filter 0.15s;
+}
+.bookmark:hover { width: 3.25em; }
+.bookmark:hover::before, .bookmark.active::before { filter: none; }
+.bookmark.active { width: 3.5em; }
+.bookmark.bm-greenhouse { --ribbon: #5f9a55; }
+.bookmark.bm-cauldron { --ribbon: #cf7a3a; }
+.bookmark.bm-counter { --ribbon: #c99a2e; }
+.bookmark.bm-flow { --ribbon: #4f7fbf; }
+.bookmark.bm-lumia { --ribbon: #d0678f; }
+.bookmark.bm-settings { --ribbon: #8a6fb5; }
+.bookmark .icon { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45)); }
+/* 還沒有素材時的文字符號 */
+.bookmark .glyph { font-size: 1.5em; color: #fff6e0; }
 .bookmark::after {
   content: attr(data-label);
   position: absolute;
@@ -155,24 +193,56 @@ html, body {
   transition: opacity 0.12s, transform 0.12s;
 }
 .bookmark:hover::after, .bookmark:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
-.close { font: inherit; background: none; border: none; color: #eaf5f2; cursor: var(--cursor-pointer, pointer); padding: 0.3em 0; margin-bottom: 0.2em; width: 2.9em; }
-.drawer-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.close { font: inherit; background: none; border: none; color: #f6e3b4; cursor: var(--cursor-pointer, pointer); padding: 0.3em 0; margin-bottom: 0.2em; width: 2.9em; }
+/* 書頁：羊皮紙（有素材時疊上紙張紋理），靠書脊的一側有裝訂的陰影，右邊露出幾層書頁的邊 */
+.drawer-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px 12px 12px 4px;
+  background: var(--tex-page, none), radial-gradient(ellipse at 55% 35%, #fbf2dc, var(--page) 55%, var(--page-deep));
+  background-size: calc(512px * var(--uiz)), cover;
+  box-shadow:
+    inset 1.2em 0 1.2em -0.9em rgba(90, 55, 25, 0.5),
+    2px 0 0 var(--page-deep), 4px 0 0 var(--page-edge), 6px 0 0 var(--page-deep), 8px 0 0 var(--page-edge);
+}
 /* 目前分頁的名稱（觸控裝置沒有滑過提示，也看得到在哪一頁）＋購買數量 */
-.drawer-title { display: flex; align-items: center; gap: 0.6em; padding: 0.45em 0.8em; border-bottom: 2px solid var(--parchment-dark); min-height: 2.4em; }
-.drawer-title > b { font-size: 1.05em; color: var(--ink); white-space: nowrap; }
+/* 章節標題：下面一條裝飾線（有素材時用花紋分隔線） */
+.drawer-title {
+  display: flex; align-items: center; gap: 0.6em; padding: 0.45em 0.9em 0.55em 1.1em; min-height: 2.4em;
+  border-bottom: 3px double rgba(138, 100, 36, 0.55);
+  border-image: var(--ui-divider, none) 0 0 100% 0 / 0 0 0.9em 0 stretch;
+}
+.drawer-title > b { font-size: 1.1em; color: #5a3a22; white-space: nowrap; letter-spacing: 0.05em; }
 .modes { display: flex; align-items: center; gap: 0.4em; margin-left: auto; font-size: 0.8em; color: var(--ink-soft); }
 .mode { font: inherit; padding: 0.15em 0.7em; border: 2px solid var(--ink-soft); border-radius: 999px; background: none; color: var(--ink); cursor: var(--cursor-pointer, pointer); }
 .mode.active { background: var(--ink); color: var(--parchment); }
-.drawer-body { flex: 1; overflow-y: auto; padding: 0.6em 0.8em 2em; overscroll-behavior: contain; touch-action: pan-y; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 0.6em 0.8em 2em 1.1em; overscroll-behavior: contain; touch-action: pan-y; scrollbar-color: #b58d5a transparent; }
 
 .cards { display: flex; flex-direction: column; gap: 0.7em; }
+/* 卡片：夾在書頁上的紙條（有素材時四角加上花紋） */
 .card {
-  background: #fffaf0;
-  border: 2px solid var(--parchment-dark);
-  border-radius: 14px;
+  position: relative;
+  background: rgba(255, 250, 238, 0.82);
+  border: 1.5px solid var(--page-edge);
+  border-radius: 10px;
   padding: 0.6em 0.8em;
+  box-shadow: 0 2px 0 rgba(120, 85, 45, 0.12), 0 3px 8px rgba(120, 85, 45, 0.08);
 }
-.card.locked { background: #efe4cc; }
+.card::before, .card::after {
+  content: '';
+  position: absolute;
+  width: 1.4em;
+  height: 1.4em;
+  background: var(--ui-corner, none) center / contain no-repeat;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.card::before { top: 3px; left: 3px; }
+.card::after { bottom: 3px; right: 3px; transform: rotate(180deg); }
+.card.locked { background: rgba(232, 218, 188, 0.85); }
+.glyph { display: inline-block; line-height: 1; vertical-align: middle; }
 .card.flash { animation: flash 1.2s ease; }
 @keyframes flash { 0%, 60% { box-shadow: 0 0 0 4px var(--gold); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .card-title { font-weight: 700; font-size: 1.05em; display: flex; align-items: center; gap: 0.35em; margin-bottom: 0.3em; }
@@ -304,6 +374,42 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 .btn.danger { color: var(--danger); border-color: var(--danger); }
 .save-text { width: 100%; height: 4.5em; font-size: 0.65em; font-family: monospace; margin-top: 0.4em; user-select: text; -webkit-user-select: text; }
 
+/* ---------- 標題畫面 ---------- */
+/* 蓋住整個遊戲畫面：背景是實際的遊戲畫面調暗；上方是標誌，下方是按鈕 */
+.title-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6% 16px 8%;
+  background: radial-gradient(ellipse at 50% 40%, rgba(18, 12, 8, 0.4), rgba(18, 12, 8, 0.72));
+  animation: title-in 0.6s ease;
+}
+@keyframes title-in { from { opacity: 0; } }
+.title-logo {
+  display: grid;
+  place-items: center;
+  width: min(calc(900px * var(--uiz)), 90%);
+}
+.title-logo > * { grid-area: 1 / 1; }
+.title-emblem, .title-logo-full { width: 100%; height: auto; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.5)); }
+/* 遊戲名稱：依目前語言疊在標誌中央 */
+.title-name {
+  margin: 0;
+  padding: 0 0.4em;
+  font-size: calc(64px * var(--uiz));
+  line-height: 1.2;
+  text-align: center;
+  color: #fff4d6;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 0 2px #5a3a1a, 0 3px 0 #8a5a24, 0 0 12px rgba(255, 210, 120, 0.8), 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+.title-buttons { display: flex; flex-direction: column; align-items: center; gap: 0.8em; }
+.title-btn { min-width: calc(280px * var(--uiz)); font-size: calc(24px * var(--uiz)); padding: 0.45em 1.4em; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45); }
+
 /* ---------- 視窗 ---------- */
 .modal-back {
   position: absolute;
@@ -374,23 +480,62 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 .flow-hint.warn { background: #fbe1d6; color: #9a3a22; }
 .flow-hint.ok { background: #dff0dc; color: #2f6b38; }
 .flow-hint.info { background: #e8e2d4; color: var(--ink-soft); }
+/*
+ * 狂熱時刻：和頂列、魔導書按鈕同一套（深色皮革底、金色描邊與金字）。
+ * 可以用時一道光慢慢掃過、外圈金光呼吸；今天用過就安靜的灰色；進行中按鈕本身變成倒數條
+ */
 .fever-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   font: inherit;
   font-weight: 700;
-  padding: 0.3em 0.8em;
-  border-radius: 999px;
-  border: 2px solid #ffd34d;
-  background: linear-gradient(90deg, #ff8fb8, #ffd34d, #9ee8ff);
-  color: var(--leather);
+  padding: 0.3em 0.9em;
+  border-radius: 12px;
+  border: 2px solid var(--gold);
+  background: linear-gradient(#4a3020, #2b1d14);
+  color: #ffd98a;
   cursor: var(--cursor-pointer, pointer);
   white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
 }
-.fever-btn:disabled { filter: grayscale(0.9); opacity: 0.6; cursor: var(--cursor-disabled, default); }
-.fever-btn.active { animation: fever 0.6s ease-in-out infinite alternate; }
-@keyframes fever { to { filter: brightness(1.3); transform: scale(1.05); } }
+.fever-label { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 0.3em; }
+.fever-btn:disabled { color: #a8957a; border-color: #7a6448; background: #33251a; cursor: var(--cursor-disabled, default); }
+.fever-btn:disabled .icon { filter: grayscale(1); opacity: 0.6; }
+.fever-btn.ready:active { transform: scale(0.96); }
+.fever-btn.ready { animation: fever-breathe 2.4s ease-in-out infinite; }
+/* 掃過的一道光（每 3.5 秒一次） */
+.fever-btn.ready::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 236, 180, 0.45) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: fever-sheen 3.5s ease-in-out infinite;
+}
+@keyframes fever-breathe {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 200, 90, 0); }
+  50% { box-shadow: 0 0 12px 1px rgba(255, 200, 90, 0.55); }
+}
+@keyframes fever-sheen {
+  0%, 55% { transform: translateX(-120%); }
+  85%, 100% { transform: translateX(120%); }
+}
+/* 進行中：金色填滿隨剩餘時間縮短（沒填滿的部分是淺色，深色字在兩邊都看得清楚），外圈穩定的金光 */
+.fever-btn.active {
+  color: #2b1d14;
+  background: #f1e2bc;
+  border-color: #ffd98a;
+  box-shadow: 0 0 14px 2px rgba(255, 200, 90, 0.6);
+  cursor: default;
+}
+.fever-fill {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  width: calc(var(--left, 1) * 100%);
+  background: linear-gradient(#ffe49a, var(--gold));
+  transition: width 0.25s linear;
+}
 
 .meter { display: flex; align-items: center; gap: 0.5em; font-size: 0.8em; margin: 0.3em 0; }
 .meter-label { width: 2.6em; color: var(--ink-soft); font-weight: 700; }
@@ -400,6 +545,9 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 
 .chip-label { font-size: 0.75em; font-weight: 700; color: var(--ink-soft); margin-top: 0.5em; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.35em; margin: 0.25em 0; }
+/* 效能設定：每一列 = 名稱 + 選項 */
+.perf-row { margin-top: 0.45em; }
+.perf-label { font-size: 0.8em; font-weight: 700; color: var(--ink-soft); }
 .chip {
   font: inherit;
   font-size: 0.8em;
@@ -534,7 +682,8 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
   transition: right 0.25s ease;
   pointer-events: none !important;
 }
-.wish-card.shift { right: calc(min(calc(640px * var(--uiz)), 100%) + 16px * var(--uiz)); }
+/* 魔導書打開時讓到書的左邊（660px 要和 .drawer 的寬度一致；.tutorial-card.shift 也是） */
+.wish-card.shift { right: calc(min(calc(660px * var(--uiz)), 100%) + 16px * var(--uiz)); }
 .wish-card.rarity-1 { border-color: #9a7cff; }
 .wish-card.rarity-2 { border-color: #ffc93c; animation: wish-shine 1.4s ease-in-out infinite alternate; }
 @keyframes wish-shine { to { box-shadow: 0 0 18px 4px rgba(255, 201, 60, 0.7); } }
@@ -550,6 +699,34 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 .rarity-2 .wish-fill { background: linear-gradient(90deg, #ffe08a, #ffb300); }
 .wish-foot { display: flex; justify-content: space-between; margin-top: 0.25em; font-size: 0.9em; color: var(--ink-soft); }
 .wish-reward { color: #c0487a; font-weight: 700; }
+
+/* 新手教學：畫面上方中央的教學卡（位置和事件橫幅一樣，事件進行中先讓開；魔導書打開時往左讓） */
+.tutorial-card {
+  position: absolute;
+  top: calc(76px * var(--uiz) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(520px * var(--uiz));
+  max-width: calc(100% - 24px);
+  background: rgba(255, 250, 240, 0.97);
+  border: 3px solid var(--gold);
+  border-radius: 14px;
+  padding: 0.45em 0.8em 0.6em;
+  font-size: 0.85em;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  animation: event-in 0.3s ease;
+}
+.tutorial-card.shift { left: calc((100% - min(calc(660px * var(--uiz)), 100%)) / 2); }
+.tutorial-head { display: flex; align-items: center; gap: 0.5em; color: var(--teal); }
+.tutorial-n { font-size: 0.75em; font-weight: 700; color: #fff; background: var(--teal); border-radius: 999px; padding: 0 0.6em; }
+.tutorial-skip {
+  margin-left: auto; font: inherit; font-size: 0.75em; color: var(--ink-soft); background: none; border: none;
+  text-decoration: underline; cursor: var(--cursor-pointer, pointer);
+}
+.tutorial-card p { margin: 0.3em 0 0.1em; line-height: 1.55; text-align: left; }
+.tutorial-card .btn { margin-top: 0.4em; }
+.tutorial-modal p { text-align: left; line-height: 1.7; }
 
 /* 突發事件：畫面上方中央的橫幅（魔導書打開時往左讓） */
 .event-banner {
@@ -568,7 +745,8 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
   pointer-events: none !important;
   animation: event-in 0.3s ease;
 }
-.event-banner.shift { left: calc((100% - min(calc(640px * var(--uiz)), 100%)) / 2); }
+/* 魔導書打開時置中在書左邊剩下的空間（660px 要和 .drawer 的寬度一致） */
+.event-banner.shift { left: calc((100% - min(calc(660px * var(--uiz)), 100%)) / 2); }
 .event-banner.rarity-1 { border-color: #9a7cff; }
 .event-banner.rarity-2 { border-color: #ffc93c; animation: event-in 0.3s ease, wish-shine 1.4s ease-in-out infinite alternate; }
 @keyframes event-in { from { opacity: 0; transform: translate(-50%, -12px); } }
@@ -612,8 +790,19 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 
 /* 來信 */
 .modal.letter { background: #fffaf0; }
-.letter-body { text-align: left; line-height: 1.7; font-size: 0.9em; margin-bottom: 0.6em; }
-.letter-body p { margin: 0.3em 0; }
+.modal.letter { width: min(calc(760px * var(--uiz)), 96%); }
+.letter-body {
+  text-align: left; line-height: 1.8; font-size: 0.95em; margin-bottom: 0.6em;
+  max-height: 60vh; overflow-y: auto; padding: 0.4em 0.8em;
+  background: repeating-linear-gradient(transparent 0 1.7em, rgba(160, 120, 70, 0.14) 1.7em calc(1.7em + 1px));
+}
+.letter-body p { margin: 0.5em 0; text-indent: 2em; }
+.letter-body .letter-to, .letter-closing p { text-indent: 0; }
+.letter-closing { text-align: right; margin-top: 1em; }
+.letter-note { color: #8a6a4a; font-style: italic; font-size: 0.85em; margin-bottom: 0.4em; }
+/* 第三封：字跡潦草、急促 */
+.letter-3 p { letter-spacing: 0.02em; transform: rotate(-0.25deg); }
+.letter-3 p:nth-child(even) { transform: rotate(0.3deg); }
 
 /* 事件簿 */
 .milestones { display: flex; flex-direction: column; gap: 0.2em; font-size: 0.78em; }
@@ -782,8 +971,11 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 }
 .drag-ghost img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-.story-back { background: rgba(18, 12, 8, 0.85); }
-.story { width: min(calc(1100px * var(--uiz)), 96%); }
+/* 用 container 單位量畫面還剩多高：CG 以外（標題、台詞框、按鈕列、邊距）大約 18em */
+.story-back { background: rgba(18, 12, 8, 0.85); container-type: size; }
+.story { position: relative; width: min(calc(1100px * var(--uiz)), 96%); }
+/* 畫面矮的時候（手機橫向，介面放大）CG 跟著縮小，整個視窗放得下、不用捲動 */
+.story .cg { width: clamp(12em, calc((100cqh - 18em) * 16 / 9), 100%); margin-inline: auto; }
 .cg {
   aspect-ratio: 16 / 9;
   background: linear-gradient(135deg, #3b2718, #2f6f6a);
@@ -796,7 +988,42 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
   overflow: hidden;
 }
 .cg img { width: 100%; height: 100%; object-fit: cover; }
-.story-line { text-align: left; min-height: 3em; }
+/*
+ * 台詞框：固定成「名字列＋三行台詞」的高度（最長的台詞約三行），換句子時視窗大小不變；
+ * 真的超過（翻譯變長、很窄的螢幕）才在框裡捲動
+ */
+.story-line {
+  text-align: left;
+  height: calc(1.9em + 3 * 1.05 * 1.6em + 1.4em);
+  box-sizing: border-box;
+  overflow-y: auto;
+  animation: story-in 0.2s ease;
+}
+@keyframes story-in { from { opacity: 0.3; transform: translateY(3px); } }
+/* 名字＋動作同一列（動作小字接在名字後面，太長時換行） */
+.story-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15em 0.6em; margin: -0.15em 0 0.3em; }
+.story-name {
+  flex-shrink: 0;
+  padding: 0.05em 0.7em;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9em;
+  color: #fff;
+  background: var(--cover);
+}
+.who-lumia .story-name { background: #c0567e; }
+.story-act { color: #8a6a4a; font-size: 0.78em; font-style: italic; }
+.story-text { font-size: 1.05em; line-height: 1.6; }
+/* 旁白與場景描述：沒有名字，置中斜體 */
+/* 用 margin 置中（justify-content: center 在內容超過時會切掉上面、捲不到） */
+.who-narration { text-align: center; display: flex; flex-direction: column; }
+.who-narration .story-text { margin-block: auto; }
+.who-narration .story-text { font-style: italic; color: #6a4e34; }
+.story-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6em; margin-top: 0.6em; }
+.story-foot .btn { margin: 0; }
+.story-page { color: var(--ink-soft, #8a6a4a); font-size: 0.85em; }
+/* 信件的感想沒有 CG：視窗窄一點 */
+.story.no-cg { width: min(calc(760px * var(--uiz)), 96%); }
 
 /* ---------- 手機直向提示 ---------- */
 #rotate-hint {

@@ -45,8 +45,11 @@ const text = (s: string, size: number, fill = 0xffffff) =>
     style: { fontFamily: uiFont(), fontSize: size, fill, fontWeight: '700', align: 'center', stroke: { color: 0x2b1d14, width: Math.max(3, size / 6) } },
   });
 
-/** 會蓋住場景的介面（舞台座標）；pointer-events: none 的也算，因為會擋住視線 */
-const UI_BLOCKERS = ['.topbar', '.event-banner', '.wish-card', '.buff-bar', '.drawer.open'];
+/**
+ * 會蓋住場景、要把目標推開的介面（舞台座標）；pointer-events: none 的也算，因為會擋住視線。
+ * 打開的魔導書不算：它疊在最上層，目標留在原位被蓋住就好（推開會擠成一團），收起來就看得到
+ */
+const UI_BLOCKERS = ['.topbar', '.event-banner', '.wish-card', '.buff-bar'];
 
 function uiBlockers(): Rect[] {
   const stage = document.getElementById('stage');
@@ -78,6 +81,9 @@ class Target extends Container {
   punch = 0;
   /** 被介面蓋住時自動推開（拖曳中的不推，才會跟著手指） */
   avoidUi = true;
+  /** 這一幀被介面推開的位移（下一幀先還原，介面收起來後就回到原位） */
+  pushX = 0;
+  pushY = 0;
   private phase = Math.random() * 6;
 
   constructor(readonly r: number, onTap: (t: Target, e: FederatedPointerEvent) => void, color = 0xfff6c0) {
@@ -180,20 +186,33 @@ export class EventLayer extends Container {
     }
     if (a && this.stage) {
       this.lastActive = a;
+      this.unpush();
       this.stage.update(dt, a, s);
       this.avoidUi();
     }
   }
 
+  /** 還原上一幀的推開位移：不會自己移動的目標（收購箱的光圈等）在介面收起來後回到原位 */
+  private unpush(): void {
+    for (const c of this.root.children) {
+      if (!(c instanceof Target)) continue;
+      c.x -= c.pushX;
+      c.y -= c.pushY;
+      c.pushX = c.pushY = 0;
+    }
+  }
+
   /**
-   * 要點的東西不能被蓋在場景上的介面擋住（頂列、事件橫幅、小心願、增益列、打開的魔導書）：
-   * 重疊時往最近的空位推開（往下、往左或往右，不往上）
+   * 要點的東西不能被蓋在場景上的介面擋住（頂列、事件橫幅、小心願、增益列；魔導書除外）：
+   * 重疊時往最近的空位推開（往下、往左或往右，不往上）。位移記在 pushX／pushY，下一幀先還原再重算
    */
   private avoidUi(): void {
     const blockers = uiBlockers();
     if (blockers.length === 0) return;
     for (const c of this.root.children) {
       if (!(c instanceof Target) || !c.alive || !c.avoidUi) continue;
+      const x0 = c.x;
+      const y0 = c.y;
       const m = c.r * 1.3;
       for (const b of blockers) {
         if (c.x + m <= b.x || c.x - m >= b.x + b.w || c.y + m <= b.y || c.y - m >= b.y + b.h) continue;
@@ -207,6 +226,8 @@ export class EventLayer extends Container {
         else if (best === left) c.x -= left;
         else c.x += right;
       }
+      c.pushX = c.x - x0;
+      c.pushY = c.y - y0;
     }
   }
 

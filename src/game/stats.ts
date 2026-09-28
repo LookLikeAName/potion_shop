@@ -338,9 +338,28 @@ export function renownLevel(s: GameState): number {
   return Math.max(0, Math.floor(Math.log10(Math.max(1, s.stats.goldEarned)) + 1e-9));
 }
 
-/** 羈絆等級：用開心度兌換過幾件東西（可重複的算次數；少女的聲援不算） */
+/** 兌換花掉的開心度（依目前的價格表，從購買次數算回來） */
+export function happinessSpent(s: GameState): number {
+  let n = 0;
+  for (const i of HAPPINESS_ITEMS) for (let k = 0; k < redeemed(s, i.id); k++) n += i.cost(k);
+  return n;
+}
+
+/** 累計獲得的開心度 = 手上的 + 花掉的（羈絆的經驗值） */
+export function happinessEarned(s: GameState): number {
+  return s.happiness + happinessSpent(s);
+}
+
+/** 羈絆等級：累計獲得的開心度到了幾個門檻 */
 export function bondLevel(s: GameState): number {
-  return HAPPINESS_ITEMS.reduce((n, i) => n + (BOND.exclude.includes(i.id) ? 0 : redeemed(s, i.id)), 0);
+  return bondProgress(s).level;
+}
+
+/** 羈絆等級與往下一級的進度（next = null：已經滿級） */
+export function bondProgress(s: GameState): { level: number; earned: number; next: number | null } {
+  const earned = happinessEarned(s);
+  const level = BOND.levels.filter((x) => earned + 1e-9 >= x).length;
+  return { level, earned, next: BOND.levels[level] ?? null };
 }
 
 /** 開心度倍率：心願、休息、觸碰、每日互動的開心度都乘上它 */

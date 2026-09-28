@@ -41,6 +41,8 @@ export interface EventDef {
   lumia: string;
   /** 擺出這件禮物時出現率 ×2 */
   decor?: string;
+  /** 主線事件：條件達成就出現（不等檢定），不限時，一直等到玩家完成 */
+  mainline?: boolean;
 }
 
 const EVENT_TEXT = ['name', 'prompt', 'hint', 'story', 'lumia'] as const;
@@ -103,9 +105,9 @@ const RAW_EVENTS: Omit<EventDef, (typeof EVENT_TEXT)[number]>[] = [
     icon: 'evt_dream', decor: 'dream_catcher',
   },
   {
-    // 寄信人與內容待定（配合之後的背景故事），先用佔位文字
+    // 主線：寄信人與內容待定（配合之後的背景故事），先用佔位文字
     id: 'letter', zone: 'any', rarity: 2, kind: 'tap', time: 20, goal: 1,
-    icon: 'evt_letter', decor: 'tea_set',
+    icon: 'evt_letter', mainline: true,
   },
   {
     id: 'fortune', zone: 'any', rarity: 1, kind: 'choice', time: 30, goal: 1,
@@ -220,10 +222,7 @@ export const FORTUNE_CARDS = Object.fromEntries(
 export const FORTUNE_FX = { speed: 2, price: 1.5, arrival: 2, buffSec: 180, goldSec: 300 };
 
 /**
- * 三封來信（依序寄來；收齊之後再來的信隨機重讀一封）。
- * 內容待定：之後配合完整的背景故事（露米婭的出身、和老師認識的契機、老師為什麼是魔導書）撰寫，
- * 和兩個開心度劇情、開頭場景串在一起。目前先用佔位文字（語言檔 letter.<n>.title／lines）。
+ * 三封遠方的來信：主線故事的中段（第一次的慶功宴 → 三封信 → 星空下的誓約），內容與條件在 story.ts。
+ * 兌換慶功宴之後，羈絆到 bond 級就寄來下一封（不等檢定直接出現、不限時，直到收下）；收齊之後不再寄來。
  */
-export const LETTERS: { title: string; lines: string[]; bond: number }[] = [2, 4, 6].map((bond, k) =>
-  localizedList(localized({ bond }, `letter.${k + 1}`, ['title']), `letter.${k + 1}`, ['lines']),
-);
+export { LETTERS } from './story';

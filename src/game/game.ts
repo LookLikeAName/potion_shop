@@ -9,9 +9,10 @@ import { FlowTracker } from './flow';
 import { simulateOffline, type OfflineReport } from './offline';
 import { loadGame, saveGame, type SaveFile } from './save';
 import { checkoutByClick, tick, type GameEvent, type SimContext } from './sim';
-import { createInitialState, type GameState } from './state';
+import { createNewGame, type GameState } from './state';
 import { DisplayQueue } from './displayQueue';
 import { eventAction, type EventAction, type EventActionResult } from './events';
+import { finishTutorial, noteTutorial, skipTutorial, tutorialStep, type TutorialStep } from './tutorial';
 
 /** 一次補算最多跑幾個 tick（再多就走離線結算） */
 const MAX_CATCHUP_TICKS = Math.ceil(OFFLINE.reportThreshold / TICK);
@@ -39,11 +40,17 @@ export class Game {
       // 產銷統計要看到每一個事件；給畫面的佇列會把同一來源太多的事件合併
       this.flow.note(e);
       this.events.push(e);
+      // 新手教學：第一次收成、熬出藥水、賣出
+      noteTutorial(this.state, e);
     },
   };
 
+  /** 沒有存檔、這次是新遊戲（顯示標題畫面） */
+  readonly isNew: boolean;
+
   constructor(save: SaveFile | null) {
-    this.state = save?.state ?? createInitialState();
+    this.isNew = !save;
+    this.state = save?.state ?? createNewGame();
     // 從存檔時間開始補算，第一次 advance() 就會處理離線收益
     this.last = save ? Math.min(save.savedAt, Date.now()) : Date.now();
   }
@@ -61,6 +68,13 @@ export class Game {
     }
     const elapsed = Math.max(0, (now - this.last) / 1000);
     this.last = now;
+
+    // 標題畫面開著：遊戲不前進（不計算產量），這段時間算在「開著但在背景」的遊玩時間
+    if (this.titleHold) {
+      if (elapsed <= OFFLINE.reportThreshold) this.state.stats.playOnline += elapsed;
+      this.acc = 0;
+      return;
+    }
 
     if (elapsed > OFFLINE.reportThreshold) {
       this.acc = 0;
@@ -88,6 +102,14 @@ export class Game {
     this.paused = true;
   }
 
+  /** 標題畫面開著時停住遊戲（見 advance） */
+  private titleHold = false;
+  setTitleHold(on: boolean): void {
+    // 開始／結束的那一刻先把之前的時間算完，才不會把標題畫面的時間算進產量（或反過來）
+    this.advance();
+    this.titleHold = on;
+  }
+
   resume(): void {
     this.paused = false;
     this.last = Date.now();
@@ -97,7 +119,7 @@ export class Game {
   /** 從存檔重新載入（另一個分頁交還控制權時） */
   reload(): void {
     const save = loadGame();
-    this.state = save?.state ?? createInitialState();
+    this.state = save?.state ?? createNewGame();
     this.events.clear();
     this.flow.reset();
     this.acc = 0;
@@ -182,7 +204,21 @@ export class Game {
   }
 
   assignLumia(a: Assignment) {
-    this.run(() => cmd.assignLumia(this.state, a));
+    this.run(() => {
+      cmd.assignLumia(this.state, a);
+      // 教學第 4 步（露米婭的指派）：真的換了指派也算看懂了
+      if (tutorialStep(this.state) === 'assign') finishTutorial(this.state, 'assign');
+    });
+  }
+
+  /** 教學：按「知道了」 */
+  finishTutorial(step: TutorialStep) {
+    this.run(() => finishTutorial(this.state, step));
+  }
+
+  /** 教學：跳過 */
+  skipTutorial() {
+    this.run(() => skipTutorial(this.state));
   }
 
   /** 觸碰立繪；1 秒內觸碰 4 下以上算狂戳 */

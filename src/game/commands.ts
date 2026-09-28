@@ -2,8 +2,9 @@
 import {
   CUSTOMER, INITIAL_OPEN_SLOTS, LEVEL_COST_GROWTH, SLOT_NEIGHBORS, TIER_MULT, UPGRADE_FX,
 } from './config/balance';
+import { LETTERS } from './config/events';
 import { GIFT_MAP } from './config/gifts';
-import { HAPPINESS_MAP, TALENT_FX } from './config/happiness';
+import { HAPPINESS_MAP, STORY, TALENT_FX } from './config/happiness';
 import {
   MASCOT, OUTFITS, type Assignment, type OutfitId, type Reaction, type TouchPart,
 } from './config/mascot';
@@ -13,7 +14,7 @@ import { FLOATING_POT, GLOBAL_UPGRADE_MAP, TARGET_UPGRADES, maxLevelOf } from '.
 import { quote, type BuyMode, type Quote } from './costs';
 import { advanceBrew, harvest, settlePlant, spawnCustomer, tryStartBrew, type SimContext } from './sim';
 import { createCauldron, type CauldronState, type CrateSetting, type GameState } from './state';
-import { brewClickPower, decorSlots, happyMult, has, plantClickPower, shearsChance } from './stats';
+import { brewClickPower, decorSlots, happyMult, has, plantClickPower, renownLevel, shearsChance } from './stats';
 import { noteWish, syncWishLamp } from './wishes';
 
 // ---------- 點擊 ----------
@@ -197,10 +198,29 @@ export function redeemCost(s: GameState, id: string): number | null {
   return item.cost(owned);
 }
 
+/** 開放條件的進度（目前／需要） */
+export interface RedeemLock {
+  letters: { n: number; need: number };
+  renown: { n: number; need: number };
+}
+
+/**
+ * 還沒開放兌換：星空下的誓約（結局）要先收齊三封遠方的來信、店舖名聲到 STORY.vowRenown 級。
+ * 回傳各條件的進度（顯示用，含已達成的），全部達成 = null
+ */
+export function redeemLock(s: GameState, id: string): RedeemLock | null {
+  if (id !== 'vow' || (s.redeemed.vow ?? 0) > 0) return null;
+  const lock: RedeemLock = {
+    letters: { n: s.events.letters, need: LETTERS.length },
+    renown: { n: renownLevel(s), need: STORY.vowRenown },
+  };
+  return lock.letters.n < lock.letters.need || lock.renown.n < lock.renown.need ? lock : null;
+}
+
 export function redeem(s: GameState, id: string): boolean {
   const cost = redeemCost(s, id);
   // 開心度有小數，但只能花整數部分
-  if (cost === null || Math.floor(s.happiness + 1e-9) < cost) return false;
+  if (cost === null || redeemLock(s, id) || Math.floor(s.happiness + 1e-9) < cost) return false;
   s.happiness -= cost;
   s.redeemed[id] = (s.redeemed[id] ?? 0) + 1;
   return true;

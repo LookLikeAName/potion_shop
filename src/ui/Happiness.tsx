@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { WISH } from '../game/config/wishes';
 import { formatFull } from '../game/format';
 import { t } from '../i18n';
+import { Glyph } from './Glyph';
 import { wishText } from '../game/wishes';
 import { drawerOpen, openDrawer, useGame } from './store';
 
@@ -73,8 +74,8 @@ export function WishCard() {
   return (
     <div class={`wish-card rarity-${w.rarity} ${drawerOpen.value ? 'shift' : ''}`}>
       <div class="wish-head">
-        <span class="wish-name">{t('wish.title', { name: r.name })}</span>
-        <span class={`wish-time ${secs <= 30 ? 'urgent' : ''}`}>⏳ {time}</span>
+        <span class="wish-name"><Glyph id="icon_wish" text="♥" alt="icon_happiness" size={1} /> {t('wish.title', { name: r.name })}</span>
+        <span class={`wish-time ${secs <= 30 ? 'urgent' : ''}`}><Glyph id="icon_hourglass" text="⏳" size={0.95} /> {time}</span>
       </div>
       <div class="wish-text">{wishText(w)}</div>
       <div class="wish-bar"><div class="wish-fill" style={{ width: `${pct}%` }} /></div>

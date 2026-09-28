@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EVENT, EVENTS, EVENT_FX, MERCHANT_FX } from '../src/game/config/events';
 import { CRATE_FOR } from '../src/game/config/upgrades';
+import { redeem, redeemLock } from '../src/game/commands';
 import { eventAction, eventAvailable, eventPool, incomeSec, startEvent, tickEvents } from '../src/game/events';
 import { parseSave } from '../src/game/save';
 import { tick, type GameEvent, type SimContext } from '../src/game/sim';
@@ -224,6 +225,87 @@ describe('事件的操作與獎勵', () => {
     s.events.active = null;
     tickEvents(s, 0.1, c);
     expect(s.customers.some((x) => x.princess)).toBe(false);
+  });
+});
+
+describe('主線：遠方的來信', () => {
+  /** 已兌換慶功宴、羈絆滿級（累計開心度 300） */
+  function story(): GameState {
+    const s = opened();
+    s.redeemed.celebration = 1;
+    s.happiness = 300 - 25;
+    return s;
+  }
+  const receive = (s: GameState, c: SimContext) => eventAction(s, { type: 'hit' }, c);
+
+  it('慶功宴之前不會寄來，也不會出現在隨機檢定裡', () => {
+    const s = story();
+    delete s.redeemed.celebration;
+    s.happiness = 1000;
+    const c = ctx(seeded(3));
+    for (let t = 0; t < 10 * 3600; t++) {
+      tickEvents(s, 1, c);
+      expect(s.events.active?.id).not.toBe('letter');
+      if (s.events.active) s.events.active = null;
+    }
+    expect(eventAvailable(story(), 'letter', ctx())).toBe(false);
+  });
+
+  it('羈絆到了就馬上寄來（不等檢定）、不限時，收下後照順序算', () => {
+    const s = story();
+    s.happiness = 200 - 25; // 剛好 Lv13
+    s.events.timer = 9999;
+    const c = ctx();
+    tickEvents(s, 0.1, c);
+    expect(s.events.active?.id).toBe('letter');
+    expect(s.events.active?.letter).toBe(0);
+    for (let t = 0; t < 3600; t++) tickEvents(s, 1, c);
+    expect(s.events.active?.id).toBe('letter');
+    receive(s, c);
+    expect(s.events.letters).toBe(1);
+    expect(c.events.some((e) => e.type === 'event' && e.result === 'done' && e.letter === 0)).toBe(true);
+    // 第二封要 Lv14：還沒到就不會來
+    for (let t = 0; t < 3600; t++) {
+      tickEvents(s, 1, c);
+      expect(s.events.active?.id).not.toBe('letter');
+      if (s.events.active) s.events.active = null;
+    }
+  });
+
+  it('背景分頁、離線時不會出現；回到頁面時就在等著', () => {
+    const s = story();
+    tickEvents(s, 1, ctx(() => 0.5, { foreground: false }));
+    tickEvents(s, 1, ctx(() => 0.5, { offline: true }));
+    expect(s.events.active).toBeNull();
+    tickEvents(s, 1, ctx());
+    expect(s.events.active?.id).toBe('letter');
+  });
+
+  it('三封依序寄來；收齊後不再出現。誓約要收齊三封、名聲 13 級才開放兌換', () => {
+    const s = story();
+    const c = ctx(seeded(5));
+    s.stats.goldEarned = 1e13; // 名聲 13
+    expect(redeemLock(s, 'vow')).toEqual({ letters: { n: 0, need: 3 }, renown: { n: 13, need: 13 } });
+    expect(redeem(s, 'vow')).toBe(false);
+    const got: number[] = [];
+    for (let t = 0; t < 5 * 3600; t++) {
+      tickEvents(s, 1, c);
+      const a = s.events.active;
+      if (a?.id === 'letter') {
+        got.push(a.letter!);
+        receive(s, c);
+      } else if (a) s.events.active = null;
+    }
+    expect(got).toEqual([0, 1, 2]);
+    expect(s.events.letters).toBe(3);
+    expect(redeemLock(s, 'vow')).toBeNull();
+    // 名聲不夠也不行
+    s.stats.goldEarned = 1e12;
+    expect(redeemLock(s, 'vow')?.renown).toEqual({ n: 12, need: 13 });
+    expect(redeem(s, 'vow')).toBe(false);
+    s.stats.goldEarned = 1e13;
+    expect(redeem(s, 'vow')).toBe(true);
+    expect(redeemLock(s, 'vow')).toBeNull();
   });
 });
 

@@ -5,6 +5,7 @@ import {
 } from '../../game/config/events';
 import { codexCount, codexMilestones } from '../../game/stats';
 import { t } from '../../i18n';
+import { Glyph } from '../Glyph';
 import { Icon } from '../Icon';
 import { eventDetail, eventNewPage, letterOpen, openDrawer, useGame } from '../store';
 
@@ -41,7 +42,7 @@ export function EventBookPanel() {
         <div class="milestones">
           {miles.map((m) => (
             <span key={m} class={`milestone ${count >= m ? 'done' : ''}`}>
-              {count >= m ? '✔' : '・'} {t(m === EVENTS.length ? 'book.milestoneAll' : 'book.milestone', { n: m, pct: EVENT.incomePerMilestone * 100 })}
+              {count >= m ? <Glyph id="icon_check" text="✔" size={0.9} /> : '・'} {t(m === EVENTS.length ? 'book.milestoneAll' : 'book.milestone', { n: m, pct: EVENT.incomePerMilestone * 100 })}
             </span>
           ))}
         </div>
@@ -94,12 +95,12 @@ export function EventDetailModal() {
   return (
     <div class="modal-back" onClick={(ev) => ev.target === ev.currentTarget && close()}>
       <div class={`modal event-detail rarity-${def.rarity}`}>
-        <button class="close modal-close" onClick={close} aria-label={t('common.close')}>✕</button>
+        <button class="close modal-close" onClick={close} aria-label={t('common.close')}><Glyph id="icon_close" text="✕" size={1.2} /></button>
         <div class="event-detail-head">
           <span class="gift-no">No.{String(idx + 1).padStart(2, '0')}</span>
           <h2>{done || seen ? def.name : t('common.unknown')}</h2>
           <span class={`event-rarity-chip r${def.rarity}`}>{RARITY_NAMES[def.rarity]}</span>
-          {fresh && <span class="event-new-page">{t('book.newPage')}</span>}
+          {fresh && <span class="event-new-page"><Icon id="icon_event_book" size={1} /> {t('book.newPage')}</span>}
         </div>
         <div class={`cg event-cg ${done ? '' : 'locked'}`}>
           {done && cg ? <img src={cg} alt={def.name} />
@@ -121,7 +122,7 @@ export function EventDetailModal() {
             {id === 'letter' && s.events.letters > 0 && (
               <div class="event-letters">
                 {LETTERS.slice(0, s.events.letters).map((l, k) => (
-                  <button key={k} class="buy-btn" onClick={() => (letterOpen.value = k)}>✉ {l.title}</button>
+                  <button key={k} class="buy-btn" onClick={() => (letterOpen.value = k)}><Glyph id="icon_letter" text="✉" alt="evt_letter" /> {l.title}</button>
                 ))}
               </div>
             )}

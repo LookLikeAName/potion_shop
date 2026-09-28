@@ -378,7 +378,7 @@ describe('離線休息', () => {
 });
 
 describe('狂熱時刻', () => {
-  it('需要「星空下的誓言」；每天一次、60 秒；期間生長與熬煮 ×10、自動採收', () => {
+  it('需要「星空下的誓約」；每天一次、60 秒；期間生長與熬煮 ×10、自動採收', () => {
     const s = createInitialState();
     expect(canStartFever(s, 'd1')).toBe(false);
     s.redeemed.vow = 1;
@@ -418,6 +418,7 @@ describe('舊存檔相容（M3）', () => {
   it('沒有看板娘欄位的存檔可以載入', () => {
     const save = parseSave(JSON.stringify({ version: 1, savedAt: 1, state: { gold: 5 } }))!;
     expect(save.state.mascot).toMatchObject({ assignment: 'patrol', stamina: 100, outfit: 'default' });
-    expect(save.state.redeemed).toEqual({});
+    // 舊存檔：序章當成看過，其他什麼都沒兌換
+    expect(save.state.redeemed).toEqual({ opening: 1 });
   });
 });

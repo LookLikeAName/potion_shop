@@ -1,6 +1,6 @@
 // 開心度兌換（企劃書第 8 章）
 
-import { localized, localizedList } from '../../i18n';
+import { localized } from '../../i18n';
 
 export type HappinessKind = 'slot' | 'outfit' | 'talent' | 'story';
 
@@ -63,33 +63,53 @@ const RAW_ITEMS: Omit<HappinessItem, 'name' | 'desc'>[] = [
     id: 'telepathy', tier: 3, kind: 'talent', icon: 'icon_telepathy',
     cost: fixed(20), max: 1,
   },
-  // Tier 4：深層羈絆
+  // Tier 4：深層羈絆（主線：序章 → 慶功宴 → 三封遠方的來信 → 星空下的誓約；劇本在 story.ts）
   {
-    id: 'celebration', tier: 4, kind: 'story', icon: 'cg_celebration',
-    cost: fixed(50), max: 1,
+    // 序章：不用兌換，新遊戲一開始就播放，看完就算擁有（之後可以回顧）
+    id: 'opening', tier: 4, kind: 'story', icon: 'icon_grimoire',
+    cost: fixed(0), max: 1,
+  },
+  // 劇情的圖示都用魔導書（CG 縮成小圖示看不清楚，也會先暴露劇情畫面）
+  {
+    id: 'celebration', tier: 4, kind: 'story', icon: 'icon_grimoire',
+    cost: fixed(25), max: 1,
   },
   {
-    id: 'vow', tier: 4, kind: 'story', icon: 'cg_starry_vow',
-    cost: fixed(100), max: 1,
+    // 結局：收齊三封信、名聲到 STORY.vowRenown 級才能兌換（commands.redeemLock）
+    id: 'vow', tier: 4, kind: 'story', icon: 'icon_grimoire',
+    cost: fixed(125), max: 1,
   },
 ];
 
-/** 文字在語言檔 redeem.<id>.name／desc */
-export const HAPPINESS_ITEMS: HappinessItem[] = RAW_ITEMS.map((i) => localized(i, `redeem.${i.id}`, ['name', 'desc']));
+/**
+ * 主線的條件。
+ * 誓約的名聲：劇情是「連王國的騎士團都要排隊買」，店要夠有名。npm run happiness：名聲 13 級在積極 8h44m、
+ * 純掛機 22h、關掉頁面 37h 達成，都在第三封信之前，所以不會拉長遊戲，只是保證劇情合理；
+ * 14 級要到積極 18h、純掛機 42h、關掉頁面 68h，會把結局延後太多。
+ */
+export const STORY = {
+  vowRenown: 13,
+};
+
+/** 文字在語言檔 redeem.<id>.name／desc（{renown} = 誓約要的名聲等級） */
+export const HAPPINESS_ITEMS: HappinessItem[] = RAW_ITEMS.map((i) =>
+  localized(i, `redeem.${i.id}`, ['name', 'desc'], () => ({ renown: STORY.vowRenown })));
 
 export const HAPPINESS_MAP: Record<string, HappinessItem> =
   Object.fromEntries(HAPPINESS_ITEMS.map((i) => [i.id, i]));
 
 /**
  * 開心度倍率 = (1 + 名聲 × renownPerLevel) × (1 + 羈絆 × bondPerLevel)。
- * 名聲：累計收入每多 10 倍 +1 級（前期成長快）；羈絆：每兌換一件開心度物品 +1 級（少女的聲援不算，後期成長）。
+ * 名聲：累計收入每多 10 倍 +1 級（前期成長快）；
+ * 羈絆：看露米婭累計獲得的開心度（兌換花掉的也算），到 levels[n-1] 升到 Lv n。
+ * Lv1～11 照「兌換件數」時期的成長曲線訂（倍率節奏不變）；Lv13～15 是三封遠方來信的條件，
+ * 和慶功宴（累計約 160）、誓約（累計約 316）之間的間隔差不多（npm run happiness 的主線時間表）。
  * 心願、休息、觸碰、每日互動的開心度都乘上它；成就與禮物固定。
  */
 export const BOND = {
   renownPerLevel: 0.1,
   bondPerLevel: 0.15,
-  /** 不算進羈絆等級的兌換項目（可無限購買） */
-  exclude: ['cheer'],
+  levels: [3, 7, 12, 20, 28, 38, 50, 62, 78, 100, 125, 160, 200, 240, 280],
 };
 
 export const TALENT_FX = {
@@ -99,11 +119,4 @@ export const TALENT_FX = {
   celebrationPrice: 3,
   feverSeconds: 60,
   feverMult: 10,
-};
-
-/** 劇情事件：標題與台詞在語言檔 story.<id>.title／lines */
-const story = (id: string, cg: string) => localizedList(localized({ cg }, `story.${id}`, ['title']), `story.${id}`, ['lines']);
-export const STORIES: Record<string, { title: string; cg: string; lines: string[] }> = {
-  celebration: story('celebration', 'cg_celebration'),
-  vow: story('vow', 'cg_starry_vow'),
 };

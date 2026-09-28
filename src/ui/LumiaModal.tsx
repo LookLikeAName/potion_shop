@@ -6,6 +6,7 @@ import { formatHappiness } from '../game/format';
 import { isRelaxing, isResting, isSleeping, isTired, workZone } from '../game/stats';
 import type { GameState } from '../game/state';
 import { t, tx } from '../i18n';
+import { Glyph } from './Glyph';
 import { lumiaOpen, useGame } from './store';
 
 const pick = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
@@ -126,7 +127,7 @@ export function LumiaModal() {
   return (
     <div class="modal-back" onClick={(e) => e.target === e.currentTarget && (lumiaOpen.value = false)}>
       <div class="modal lumia-modal">
-        <button class="close modal-close" onClick={() => (lumiaOpen.value = false)} aria-label={t('common.close')}>✕</button>
+        <button class="close modal-close" onClick={() => (lumiaOpen.value = false)} aria-label={t('common.close')}><Glyph id="icon_close" text="✕" size={1.2} /></button>
         <div class={`portrait ${portrait.chibi ? 'chibi' : ''} react-${reaction}`} key={anim}>
           {/* 觸碰區跟著圖片本身（圖片縮放、靠底對齊時，頭的判定才會在頭上）：上方是頭，下方是臉頰／身體 */}
           <div class="portrait-figure">

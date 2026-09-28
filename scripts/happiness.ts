@@ -17,7 +17,7 @@ import { simulateOffline } from '../src/game/offline';
 import { tick, type GameEvent, type SimContext } from '../src/game/sim';
 import { createInitialState, type GameState } from '../src/game/state';
 import { bondLevel, decorSlots, happyMult, renownLevel } from '../src/game/stats';
-import { EVENT, EVENT_FX } from '../src/game/config/events';
+import { EVENT, EVENT_FX, LETTERS } from '../src/game/config/events';
 import { botClick, botEvent, botShop, DEFAULT_BOT, mulberry32, type Buy } from './bot';
 
 const args = process.argv.slice(2);
@@ -34,7 +34,7 @@ if (argOf('--bond')) BOND.bondPerLevel = Number(argOf('--bond'));
 if (argOf('--coef')) for (const k of ['harvest', 'brew', 'crate'] as const) WISH.goalCoef[k] = Number(argOf('--coef'));
 
 /** 兌換目標：聲援以外的全部 */
-const GOAL_ITEMS = HAPPINESS_ITEMS.filter((i) => !BOND.exclude.includes(i.id));
+const GOAL_ITEMS = HAPPINESS_ITEMS.filter((i) => i.id !== 'cheer');
 const goalCost = GOAL_ITEMS.reduce((n, i) => n + Array.from({ length: i.max }, (_, k) => i.cost(k)).reduce((a, b) => a + b, 0), 0);
 
 /** 擺設偏好：積極玩家重視心願與點擊，掛機玩家重視休息與離線 */
@@ -116,6 +116,7 @@ function simulate(kind: 'active' | 'idle' | 'away') {
     }
     if (e.type === 'achievement') src.achievement += ACHIEVEMENTS.find((a) => a.id === e.id)?.reward ?? 0;
     if (e.type === 'event' && e.result === 'done') {
+      if (e.letter !== undefined) log(`✉ ${LETTERS[e.letter].title}（羈絆 Lv ${bondLevel(s)}）`);
       if (e.first) src.event += EVENT.firstHappy * happyMult(s);
       if (e.id === 'dream') src.event += EVENT_FX.dream.happy * happyMult(s);
     }
@@ -150,6 +151,11 @@ function simulate(kind: 'active' | 'idle' | 'away') {
     lastT = s.time;
   };
   const shop = (minutes: number) => {
+    // 名聲 10 級以上記下達成時間（星空下的誓約的名聲條件用）
+    const renown = renownLevel(s);
+    if (renown >= 10) log(`★ 名聲 Lv ${renown}`);
+    // 主線的信不限時，打開遊戲時一定會收下（掛機、離線的玩家也是）
+    if (s.events.active?.id === 'letter') botEvent(s, ctx);
     botShop(s, ctx, () => {}, DEFAULT_BOT, giftBuys(s, minutes, onGift));
     redeemAll(s, log, spend);
     arrangeDecor(s, PREFS[kind]);
@@ -229,6 +235,8 @@ function simulate(kind: 'active' | 'idle' | 'away') {
     touch();
     for (let h = 1; h <= IDLE_HOURS; h++) {
       simulateOffline(s, h === 1 ? 3600 - 600 : 3600);
+      // 上線：信在離線期間達成條件的話，一回到頁面就寄來
+      tick(s, TICK, ctx);
       shop(60);
       if (h % 24 === 0) {
         day++;

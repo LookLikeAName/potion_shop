@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { OFFLINE } from '../game/config/balance';
 import { GIFT_MAP } from '../game/config/gifts';
+import { TALENT_FX } from '../game/config/happiness';
 import { MASCOT, OUTFITS } from '../game/config/mascot';
 import { MATERIAL_IDS, PLANTS } from '../game/config/plants';
 import { POTION_IDS, RECIPES } from '../game/config/recipes';
@@ -8,9 +9,13 @@ import type { BuyMode } from '../game/costs';
 import { formatDuration, formatNumber } from '../game/format';
 import { canStartFever } from '../game/commands';
 import { t, tx } from '../i18n';
+import { Glyph } from './Glyph';
 import { Icon } from './Icon';
 import { HeartMeter, WishCard, fmtHeart } from './Happiness';
 import { LumiaModal } from './LumiaModal';
+import { CauldronOrderModal, TutorialCard } from './Tutorial';
+import { TitleScreen } from './Title';
+import { tutorialStep } from '../game/tutorial';
 import { CauldronPanel } from './panels/CauldronPanel';
 import { CounterPanel } from './panels/CounterPanel';
 import { DecorPanel, DragGhost } from './panels/DecorPanel';
@@ -22,30 +27,46 @@ import { BuffBar, EventBanner, LetterModal } from './Events';
 import { EventBookPanel, EventDetailModal } from './panels/EventBookPanel';
 import {
   buyMode, drawerFocus, drawerOpen, drawerTab, eventDetail, letterOpen, lockState, lumiaOpen, offlineReport, openDrawer,
-  requestTakeover, storyId, toast, useGame, type DrawerTab,
+  requestTakeover, storyId, titleOpen, toast, useGame, type DrawerTab,
 } from './store';
 
 export function App() {
   const game = useGame();
   // 劇情、信件、離線報告、互動視窗開著時，事件的計時暫停（不會在看劇情時錯過事件）
   const hold = !!storyId.value || letterOpen.value !== null || !!offlineReport.value || lumiaOpen.value
-    || !!eventDetail.value || lockState.value !== 'ok';
+    || !!eventDetail.value || lockState.value !== 'ok' || tutorialStep(game.state) === 'order' || titleOpen.value;
   useEffect(() => game.setEventHold(hold), [hold]);
+  // 標題畫面：後面是實際的遊戲畫面（調暗），但遊戲不前進、不計算產量
+  useEffect(() => game.setTitleHold(titleOpen.value), [titleOpen.value]);
+  // 新遊戲：按下標題畫面的「開始」之後先播序章（看完才算擁有）
+  const needOpening = !game.state.redeemed.opening && lockState.value === 'ok' && !titleOpen.value;
+  useEffect(() => {
+    if (needOpening && !storyId.value) storyId.value = 'opening';
+  }, [needOpening]);
   return (
     <>
       <TopBar />
       <WishCard />
       <EventBanner />
+      <TutorialCard />
       <BuffBar />
+      {/* 標題畫面蓋住遊戲；魔導書（標題的「設定」）在它上面打開 */}
+      <TitleScreen />
       <Drawer />
       <LumiaModal />
-      <StoryModal />
       <EventDetailModal />
+      {/* 信件與劇情疊在事件簿之上（從事件簿重讀信、讀完接著播感想時不會被擋住） */}
       <LetterModal />
+      <StoryModal />
+      <CauldronOrderModal />
       <OfflineModal />
       <LockOverlay />
       <DragGhost />
-      {toast.value && <div class="toast" key={toast.value.id}>{toast.value.text}</div>}
+      {toast.value && (
+        <div class="toast" key={toast.value.id}>
+          {toast.value.icon && <Glyph id={toast.value.icon} text={toast.value.glyph} size={1.2} />} {toast.value.text}
+        </div>
+      )}
     </>
   );
 }
@@ -73,34 +94,43 @@ function TopBar() {
 
       <FeverButton />
       <button class="book-btn" onClick={() => (drawerOpen.value = !drawerOpen.value)}>
-        {t('top.book')}
+        <Glyph id="icon_grimoire" text="📖" alt="icon_event_book" size={1.3} /> {t('top.book')}
       </button>
     </div>
   );
 }
 
-/** 狂熱時刻（星空下的誓言解鎖）：每天一次 */
+/** 狂熱時刻（星空下的誓約解鎖）：每天一次 */
 function FeverButton() {
   const game = useGame();
   const s = game.state;
   if (!s.redeemed.vow) return null;
-  if (s.feverLeft > 0) return <div class="fever-btn active"><Icon id="icon_fever" /> {t('top.feverOn', { n: Math.ceil(s.feverLeft) })}</div>;
+  // 進行中：按鈕本身就是倒數條（金色填滿隨剩餘時間縮短）
+  if (s.feverLeft > 0) {
+    const left = Math.min(1, s.feverLeft / TALENT_FX.feverSeconds);
+    return (
+      <div class="fever-btn active" style={{ '--left': left }}>
+        <span class="fever-fill" />
+        <span class="fever-label"><Icon id="icon_fever" /> {t('top.feverOn', { n: Math.ceil(s.feverLeft) })}</span>
+      </div>
+    );
+  }
   const ready = canStartFever(s, game.today);
   return (
-    <button class="fever-btn" disabled={!ready} onClick={() => game.startFever()} title={t('top.feverTip')}>
-      <Icon id="icon_fever" /> {t(ready ? 'top.fever' : 'top.feverUsed')}
+    <button class={`fever-btn ${ready ? 'ready' : ''}`} disabled={!ready} onClick={() => game.startFever()} title={t('top.feverTip')}>
+      <span class="fever-label"><Icon id="icon_fever" /> {t(ready ? 'top.fever' : 'top.feverUsed')}</span>
     </button>
   );
 }
 
 /** 魔導書的分頁：左側的書籤，只顯示圖示（名稱在語言檔 tab.<id>，滑過時顯示）；沒有圖的用文字符號 */
-const TABS: { id: DrawerTab; icon?: string; glyph?: string }[] = [
+const TABS: { id: DrawerTab; icon: string; glyph?: string }[] = [
   { id: 'greenhouse', icon: 'pot_t2' },
   { id: 'cauldron', icon: 'cauldron_t1' },
   { id: 'counter', icon: 'upg_abacus_squirrel' },
-  { id: 'flow', icon: 'icon_gold' },
+  { id: 'flow', icon: 'icon_ledger', glyph: '📊' },
   { id: 'lumia', icon: 'lumia_chibi_idle' },
-  { id: 'settings', glyph: '⚙' },
+  { id: 'settings', icon: 'icon_settings', glyph: '⚙' },
 ];
 
 /** 禮物圖鑑、事件簿是露米婭分頁底下的頁面 */
@@ -135,13 +165,13 @@ function Drawer() {
   return (
     <aside class={`drawer ${open ? 'open' : ''}`}>
       <nav class="bookmarks">
-        <button class="close" onClick={() => (drawerOpen.value = false)} aria-label={t('common.close')}>✕</button>
+        <button class="close" onClick={() => (drawerOpen.value = false)} aria-label={t('common.close')}><Glyph id="icon_close" text="✕" size={1.2} /></button>
         {TABS.map((x) => (
           <button
-            key={x.id} class={`bookmark ${bookmarkOf(tab) === x.id ? 'active' : ''}`}
+            key={x.id} class={`bookmark bm-${x.id} ${bookmarkOf(tab) === x.id ? 'active' : ''}`}
             data-label={t(`tab.${x.id}`)} aria-label={t(`tab.${x.id}`)} onClick={() => (drawerTab.value = x.id)}
           >
-            {x.icon ? <Icon id={x.icon} size={1.8} /> : <span class="bookmark-glyph">{x.glyph}</span>}
+            {x.glyph ? <Glyph id={x.icon} text={x.glyph} alt={x.id === 'flow' ? 'icon_gold' : undefined} size={1.8} /> : <Icon id={x.icon} size={1.8} />}
           </button>
         ))}
       </nav>

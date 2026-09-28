@@ -208,26 +208,31 @@
     "locked": false,
     "time": "2026-09-28 09:56"
   },
-  "bond.bondHow": {
-    "hash": "bb6c2a2c507c",
+  "bond.bondMax": {
+    "hash": "e69acf4b926d",
     "by": "ai",
-    "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 17:37"
+  },
+  "bond.bondNext": {
+    "hash": "d7fee8c8bd9b",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 17:37"
   },
   "bond.eventsBtn": {
-    "hash": "c9cf940fff78",
+    "hash": "e3fd6a83f673",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 14:58"
   },
   "bond.giftsBtn": {
-    "hash": "ca440ac85c2e",
+    "hash": "da72d7adcac3",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 14:58"
   },
   "bond.hint": {
     "hash": "a4a404351566",
@@ -341,11 +346,11 @@
     "time": "2026-09-28 09:57"
   },
   "book.newPage": {
-    "hash": "ebed0e1b62cb",
+    "hash": "dbb96c982997",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 14:58"
   },
   "book.record": {
     "hash": "d45738baeb07",
@@ -998,11 +1003,11 @@
     "time": "2026-09-28 09:57"
   },
   "decor.bookTitle": {
-    "hash": "22ba3ebe5daf",
+    "hash": "3af6b860c75c",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 14:58"
   },
   "decor.dragIn": {
     "hash": "fb3888f16e62",
@@ -1621,18 +1626,18 @@
     "time": "2026-09-28 09:56"
   },
   "event.letter.hint": {
-    "hash": "081fbcaa2ac5",
+    "hash": "96e71cbb214f",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 17:37"
   },
   "event.letter.lumia": {
-    "hash": "8cad7f3fcd31",
+    "hash": "54df0414b190",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
   },
   "event.letter.name": {
     "hash": "2549d2250f4e",
@@ -1642,11 +1647,11 @@
     "time": "2026-09-28 09:56"
   },
   "event.letter.need": {
-    "hash": "a06aa9514c51",
+    "hash": "5183eccb60b3",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 17:37"
   },
   "event.letter.prompt": {
     "hash": "aaae06e261f4",
@@ -1663,18 +1668,18 @@
     "time": "2026-09-28 09:56"
   },
   "event.letter.story": {
-    "hash": "bd51a1468bf4",
+    "hash": "9895ae32f3bc",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
   },
   "event.letter.summary": {
-    "hash": "433c9731e739",
+    "hash": "f3e306ea3b29",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
   },
   "event.lines.start": {
     "hash": "0073d2d0da57",
@@ -3221,11 +3226,11 @@
     "time": "2026-09-28 09:56"
   },
   "green.lockedSlot": {
-    "hash": "b73efd146f39",
+    "hash": "53823c41abf0",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 14:58"
   },
   "green.manualHarvest": {
     "hash": "7e95cde3417c",
@@ -3388,12 +3393,19 @@
     "locked": false,
     "time": "2026-09-28 09:57"
   },
-  "letter.1.lines": {
-    "hash": "94e3c443203d",
+  "letter.1.body": {
+    "hash": "ff5625105787",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
+  },
+  "letter.1.closing": {
+    "hash": "ce979e32b72a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
   },
   "letter.1.title": {
     "hash": "f3f253d9cc95",
@@ -3402,12 +3414,26 @@
     "locked": false,
     "time": "2026-09-28 09:56"
   },
-  "letter.2.lines": {
-    "hash": "637fb16b71d8",
+  "letter.1.to": {
+    "hash": "ff6e7bebb608",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
+  },
+  "letter.2.body": {
+    "hash": "e0beb196a6e4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "letter.2.closing": {
+    "hash": "605ee22da03b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
   },
   "letter.2.title": {
     "hash": "9edd17de757e",
@@ -3416,12 +3442,33 @@
     "locked": false,
     "time": "2026-09-28 09:56"
   },
-  "letter.3.lines": {
-    "hash": "b043a9377d38",
+  "letter.2.to": {
+    "hash": "ff6e7bebb608",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
+  },
+  "letter.3.body": {
+    "hash": "60d989226ffc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "letter.3.closing": {
+    "hash": "d47bda040580",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "letter.3.note": {
+    "hash": "5cefd3580703",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
   },
   "letter.3.title": {
     "hash": "2e3c5c292c39",
@@ -3429,6 +3476,13 @@
     "model": "gemini-3.5-flash-lite",
     "locked": false,
     "time": "2026-09-28 09:56"
+  },
+  "letter.3.to": {
+    "hash": "e87aabfc04fb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
   },
   "letter.keep": {
     "hash": "1a2e4028467a",
@@ -3522,11 +3576,11 @@
     "time": "2026-09-28 09:56"
   },
   "lumia.achievements": {
-    "hash": "357502ebe895",
+    "hash": "ada62cb6e39f",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 14:58"
   },
   "lumia.asleep": {
     "hash": "4ad522e9c7fa",
@@ -4110,11 +4164,11 @@
     "time": "2026-09-28 09:56"
   },
   "redeem.celebration.name": {
-    "hash": "b8a447d05bea",
-    "by": "ai",
+    "hash": "680ab2e30b39",
+    "by": "human",
     "model": "gemini-3.5-flash-lite",
-    "locked": false,
-    "time": "2026-09-28 09:56"
+    "locked": true,
+    "time": "2026-09-28 17:37"
   },
   "redeem.cheer.desc": {
     "hash": "f1d1790594f7",
@@ -4180,11 +4234,39 @@
     "time": "2026-09-28 09:56"
   },
   "redeem.intro": {
-    "hash": "b821b2698303",
+    "hash": "96eba9e6cd87",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 17:37"
+  },
+  "redeem.lockLetters": {
+    "hash": "d01dc8c62cbc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "redeem.lockRenown": {
+    "hash": "747e406ad4d4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "redeem.opening.desc": {
+    "hash": "9c71e70b8bf7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "redeem.opening.name": {
+    "hash": "617c7a1ef79d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
   },
   "redeem.outfit_gardener.desc": {
     "hash": "dcf65d854380",
@@ -4341,18 +4423,18 @@
     "time": "2026-09-28 09:56"
   },
   "redeem.vow.desc": {
-    "hash": "8aa2d041b4bf",
+    "hash": "5a13a3ba5c7e",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
   },
   "redeem.vow.name": {
-    "hash": "7f055771e2a9",
+    "hash": "5e76d4d02958",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
   },
   "scene.assigned": {
     "hash": "d0f9363a2079",
@@ -4369,11 +4451,11 @@
     "time": "2026-09-28 09:57"
   },
   "scene.boiling": {
-    "hash": "55b061dd588c",
+    "hash": "3ccce6561cf8",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 16:41"
   },
   "scene.brewing": {
     "hash": "729f4b99f545",
@@ -4418,11 +4500,11 @@
     "time": "2026-09-28 09:57"
   },
   "scene.lockedRecipe": {
-    "hash": "95c32419c110",
+    "hash": "5559a5f65acb",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 16:41"
   },
   "scene.perSec": {
     "hash": "f323174c0350",
@@ -4445,6 +4527,412 @@
     "locked": false,
     "time": "2026-09-28 09:57"
   },
+  "script.celebration.01": {
+    "hash": "c420c3799e2b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.02": {
+    "hash": "25c36b8f8afe",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.03": {
+    "hash": "0889eb63a19f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.04": {
+    "hash": "6482f57ed56c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.04.act": {
+    "hash": "48764ec6b865",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.05": {
+    "hash": "656b81d1bed1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.06": {
+    "hash": "e4702bcdd39d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.06.act": {
+    "hash": "6f77d4c0e5bc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.07": {
+    "hash": "f547ed4427f4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.08": {
+    "hash": "208d9d54e6f9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.08.act": {
+    "hash": "0e2eb782a77a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.celebration.09": {
+    "hash": "1457035538a0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter1.01": {
+    "hash": "3f196651a8e0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter1.01.act": {
+    "hash": "7912fb664c60",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter1.02": {
+    "hash": "b74acb49f839",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter1.02.act": {
+    "hash": "ce4b4c6aeb3c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter2.01": {
+    "hash": "6e5d08a3e82c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter2.01.act": {
+    "hash": "6e55da9bdc5b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter2.02": {
+    "hash": "22ecb323e078",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter2.02.act": {
+    "hash": "8344a98a9f1e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter3.01": {
+    "hash": "43501b3b1414",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter3.01.act": {
+    "hash": "f765b084559f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter3.02": {
+    "hash": "ec9c0e484c40",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter3.03": {
+    "hash": "c4593fe6f6dd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.letter3.03.act": {
+    "hash": "205b5fd59ef5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.01": {
+    "hash": "80988a0d5e7c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.02": {
+    "hash": "8c8475a52e6a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.03": {
+    "hash": "2a83c3398ef8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.04": {
+    "hash": "e2404b09345d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.05": {
+    "hash": "7920712843d7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.06": {
+    "hash": "46ccc27f594e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.07": {
+    "hash": "7fc4c7bd0052",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.07.act": {
+    "hash": "a3f8d6a6ef64",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.08": {
+    "hash": "82a0a22301c9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.09": {
+    "hash": "dc0fdc152d34",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.10": {
+    "hash": "572c2ebce6ea",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.11": {
+    "hash": "7aa1ac32056a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.11.act": {
+    "hash": "c345d3d20e86",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.12": {
+    "hash": "ae1f1e385efb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.opening.12.act": {
+    "hash": "1b1809cea74f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.01": {
+    "hash": "1645fd4da7b2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.02": {
+    "hash": "8d39a203a532",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.03": {
+    "hash": "bda1a9f3174c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.04": {
+    "hash": "76cf78bdcca4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.04.act": {
+    "hash": "7d5410838fad",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.05": {
+    "hash": "e81f96beacf1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.05.act": {
+    "hash": "1e00935cc260",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.06": {
+    "hash": "f66857aca8e9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.06.act": {
+    "hash": "372e79ceac5e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.07": {
+    "hash": "a5ab8cc04ccc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.08": {
+    "hash": "fa050cf40237",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.09": {
+    "hash": "f229c01569c2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.09.act": {
+    "hash": "ef7fabcf19d2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.10": {
+    "hash": "c71ef6a60ddc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.11": {
+    "hash": "3687bfab409a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.11.act": {
+    "hash": "4f3f36a073c3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "script.vow.12": {
+    "hash": "3e359f02376b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "settings.backToTitle": {
+    "hash": "051e565459a3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
   "settings.copied": {
     "hash": "a968aaad1293",
     "by": "ai",
@@ -4466,12 +4954,89 @@
     "locked": false,
     "time": "2026-09-28 09:57"
   },
+  "settings.effects": {
+    "hash": "360354dfa135",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.effects.full": {
+    "hash": "8f0d927bcb56",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.effects.lite": {
+    "hash": "e67cc200d2cb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.effects.min": {
+    "hash": "702c7d26b9ae",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
   "settings.export": {
     "hash": "e9912cbfe411",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
     "time": "2026-09-28 09:57"
+  },
+  "settings.floats": {
+    "hash": "de88303f15ff",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.floats.few": {
+    "hash": "4cfba1a65388",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.floats.key": {
+    "hash": "f58a90cdc3d5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.floats.many": {
+    "hash": "b0458427a89f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.floats.normal": {
+    "hash": "136dc2a776d3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.fps": {
+    "hash": "ccbef0848219",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.fpsN": {
+    "hash": "974ca7baaefd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
   },
   "settings.goldEarned": {
     "hash": "73e10583d3cb",
@@ -4514,6 +5079,20 @@
     "locked": true,
     "time": "2026-09-28 09:58"
   },
+  "settings.perf": {
+    "hash": "f775759c8ccb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.perfHint": {
+    "hash": "a63f57032ee5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
   "settings.playAway": {
     "hash": "c58a771e6875",
     "by": "ai",
@@ -4548,6 +5127,27 @@
     "model": "gemini-3.5-flash-lite",
     "locked": false,
     "time": "2026-09-28 09:57"
+  },
+  "settings.quality": {
+    "hash": "72ab2d63256a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.quality.high": {
+    "hash": "7c956f87c83b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "settings.quality.low": {
+    "hash": "a8f16b27fe4f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
   },
   "settings.reset": {
     "hash": "698a84ff1172",
@@ -4619,6 +5219,20 @@
     "locked": false,
     "time": "2026-09-28 09:57"
   },
+  "speaker.book": {
+    "hash": "d5f1e2e15b28",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
+  "speaker.lumia": {
+    "hash": "d6ac775a0788",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
+  },
   "status.exhausted": {
     "hash": "35779ff5edab",
     "by": "ai",
@@ -4668,12 +5282,12 @@
     "locked": false,
     "time": "2026-09-28 09:56"
   },
-  "story.celebration.lines": {
-    "hash": "f0d14ad3a4d3",
+  "story.act": {
+    "hash": "33776dcfc9c9",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
   },
   "story.celebration.title": {
     "hash": "680ab2e30b39",
@@ -4681,6 +5295,13 @@
     "model": "gemini-3.5-flash-lite",
     "locked": false,
     "time": "2026-09-28 09:56"
+  },
+  "story.close": {
+    "hash": "c1252a516e9d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
   },
   "story.end": {
     "hash": "810788a01ff3",
@@ -4696,19 +5317,26 @@
     "locked": false,
     "time": "2026-09-28 09:57"
   },
-  "story.vow.lines": {
-    "hash": "520e408ad189",
+  "story.opening.title": {
+    "hash": "617c7a1ef79d",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
+  },
+  "story.prev": {
+    "hash": "43083c0b658a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 20:16"
   },
   "story.vow.title": {
-    "hash": "44ac6dcc6ada",
+    "hash": "5e76d4d02958",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 20:16"
   },
   "tab.cauldron": {
     "hash": "95878d5ded9b",
@@ -4794,26 +5422,47 @@
     "locked": false,
     "time": "2026-09-28 09:56"
   },
-  "toast.achievement": {
-    "hash": "9f8c02495fb2",
+  "title.continue": {
+    "hash": "719949ed5bd2",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 22:21"
+  },
+  "title.settings": {
+    "hash": "b129cd5dc9a0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "title.start": {
+    "hash": "56e8f6854221",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "toast.achievement": {
+    "hash": "1815bde93429",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 14:58"
   },
   "toast.bigWish": {
-    "hash": "8c92409630f1",
+    "hash": "886779556d92",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 14:58"
   },
   "toast.eventDone": {
-    "hash": "38c0d7da0f79",
+    "hash": "24a045319f36",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 14:58"
   },
   "toast.eventLeft": {
     "hash": "4d2087353f5f",
@@ -4823,11 +5472,11 @@
     "time": "2026-09-28 09:57"
   },
   "toast.eventNewPage": {
-    "hash": "7ce83bd9eccc",
+    "hash": "027771029891",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 14:58"
   },
   "toast.exhausted": {
     "hash": "2400d192b662",
@@ -4844,11 +5493,11 @@
     "time": "2026-09-28 09:57"
   },
   "top.book": {
-    "hash": "5f19f35d6fa0",
+    "hash": "ad38db47cba0",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:56"
+    "time": "2026-09-28 14:58"
   },
   "top.buyMax": {
     "hash": "8bb923ab2313",
@@ -4905,6 +5554,97 @@
     "model": "gemini-3.5-flash-lite",
     "locked": false,
     "time": "2026-09-28 09:56"
+  },
+  "tutorial.assign.body": {
+    "hash": "b1f7fded2e7d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.assign.title": {
+    "hash": "e051eb53da95",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.cauldron.body": {
+    "hash": "f5df54a0c2ab",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 22:21"
+  },
+  "tutorial.cauldron.title": {
+    "hash": "c651cb4e8527",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.checkout.body": {
+    "hash": "eaf724a98bc9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.checkout.title": {
+    "hash": "4a4ae734c9b2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.ok": {
+    "hash": "e75039f02bd7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.order.body": {
+    "hash": "60559a4b5a7e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.order.title": {
+    "hash": "1062fd98b4dc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.pot.body": {
+    "hash": "d05ecf508666",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.pot.title": {
+    "hash": "dd8255e17462",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.skip": {
+    "hash": "92a3ab9631f9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
+  },
+  "tutorial.step": {
+    "hash": "2583b8883f6f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 21:18"
   },
   "upgrade.abacus_squirrel.desc": {
     "hash": "defc149c8bd7",
@@ -5304,10 +6044,10 @@
     "time": "2026-09-28 09:56"
   },
   "wish.title": {
-    "hash": "89979c9c188e",
+    "hash": "4a502f580aea",
     "by": "ai",
     "model": "gemini-3.5-flash-lite",
     "locked": false,
-    "time": "2026-09-28 09:57"
+    "time": "2026-09-28 14:58"
   }
 }

@@ -192,6 +192,16 @@ def status_of(key: str, src: Value, target: Dict[str, Value], state: State, lang
     return 'ok', []
 
 
+def is_pending(status: str, locked: bool, include_locked: bool = False) -> bool:
+    """
+    要不要放進待翻譯的佇列：沒翻的、格式錯的（鎖定的不動）；
+    原文改過的一律重新排進來，鎖定的也一樣（鎖定只保護「原文沒變」時的譯文）
+    """
+    if status == 'ok':
+        return False
+    return status == 'stale' or not locked or include_locked
+
+
 def rows(lang: str) -> List[dict]:
     """給網頁介面的總表"""
     src_cat = Catalog(SOURCE_LANG)
@@ -202,10 +212,11 @@ def rows(lang: str) -> List[dict]:
         for key, src in data.items():
             status, issues = status_of(key, src, tgt, state, lang)
             st = state.get(key)
+            locked = bool(st.get('locked'))
             out.append({
                 'key': key, 'file': fname, 'source': src, 'target': tgt.get(key),
-                'status': status, 'issues': issues,
-                'locked': bool(st.get('locked')), 'by': st.get('by', ''), 'time': st.get('time', ''),
+                'status': status, 'issues': issues, 'pending': is_pending(status, locked),
+                'locked': locked, 'by': st.get('by', ''), 'time': st.get('time', ''),
             })
     return out
 
@@ -375,16 +386,9 @@ def parse_reply(text: str) -> dict:
 
 # ---------------------------------------------------------------- 翻譯流程
 
-def pending_keys(lang: str, include_stale_locked: bool = False) -> List[str]:
-    """需要翻譯的 key：沒翻的、原文改過的、格式錯的（鎖定的不動）"""
-    out = []
-    for r in rows(lang):
-        if r['status'] == 'ok':
-            continue
-        if r['locked'] and not include_stale_locked:
-            continue
-        out.append(r['key'])
-    return out
+def pending_keys(lang: str, include_locked: bool = False) -> List[str]:
+    """待翻譯的 key：沒翻的、格式錯的（鎖定的不動），以及原文改過的（鎖定的也算）"""
+    return [r['key'] for r in rows(lang) if is_pending(r['status'], r['locked'], include_locked)]
 
 
 def make_batches(items: List[Tuple[str, Value]], size: int, chars: int) -> List[List[Tuple[str, Value]]]:
@@ -472,8 +476,10 @@ def _save_results(lang: str, good: Dict[str, Value], src: Dict[str, Value], mode
     write_target(lang, target)
     state = State(lang)
     for k in good:
-        prev = state.get(k).get('locked', False)
-        state.mark(k, src[k], 'ai', locked=prev, model=model)
+        st = state.get(k)
+        # 原文改過而重翻的：鎖定保護的是舊譯文，已經被換掉了，解除鎖定讓人重新確認
+        stale = st.get('hash') != source_hash(src[k])
+        state.mark(k, src[k], 'ai', locked=False if stale else st.get('locked', False), model=model)
     state.save()
 
 

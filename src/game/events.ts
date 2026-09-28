@@ -36,7 +36,8 @@ export function tickEvents(s: GameState, dt: number, ctx: SimContext): void {
   // 公主只在她的事件進行中待在店裡（例如事件被中途結束時，把她送走）
   if (s.customers.some((c) => c.princess && c.id !== a?.customer)) dismissPrincess(s, a?.customer);
   if (a) {
-    a.time -= dt;
+    // 主線事件不限時，等玩家來完成
+    if (!EVENT_MAP[a.id].mainline) a.time -= dt;
     // 公主不見了（舊存檔等狀況）：事件跟著結束
     const gone = a.customer !== undefined && !s.customers.some((c) => c.id === a.customer);
     if (a.time <= 0 || gone) endEvent(s, ctx);
@@ -46,6 +47,11 @@ export function tickEvents(s: GameState, dt: number, ctx: SimContext): void {
     const left = (ev.cooldowns[id] ?? 0) - dt;
     if (left > 0) ev.cooldowns[id] = left;
     else delete ev.cooldowns[id];
+  }
+  // 主線的信：條件一達成就寄來，優先於一般事件
+  if (letterReady(s)) {
+    startEvent(s, 'letter', ctx);
+    return;
   }
   ev.timer -= dt;
   if (ev.timer > 0) return;
@@ -65,9 +71,13 @@ const displayed = (s: GameState, gift: string) => displayedGifts(s).includes(gif
 const producing = (s: GameState) =>
   s.cauldrons.filter((c) => cauldronOutputPerSec(s, c) > 0 || s.potionRate[c.recipe] > 0);
 
-/** 下一封師父的來信需要的羈絆等級（收齊之後維持最後一封的條件） */
-function nextLetter(s: GameState) {
-  return LETTERS[Math.min(s.events.letters, LETTERS.length - 1)];
+/**
+ * 下一封遠方的來信可以寄來了：兌換過第一次的慶功宴、還沒收齊、羈絆到了這一封的等級。
+ * 條件達成後不等檢定，事件一空下來就出現（離線期間達成的，回到頁面時就在等著）
+ */
+export function letterReady(s: GameState): boolean {
+  const next = LETTERS[s.events.letters];
+  return !!next && (s.redeemed.celebration ?? 0) > 0 && bondLevel(s) >= next.bond;
 }
 
 /** 這個事件現在能不能出現 */
@@ -86,7 +96,8 @@ export function eventAvailable(s: GameState, id: EventId, ctx: SimContext): bool
     case 'princess': return renownLevel(s) >= 9 && s.cauldrons.some((c) => c.recipe === 'elixir');
     case 'guild_rush': return hasAnyCrate(s);
     case 'dream': return isSleeping(s);
-    case 'letter': return bondLevel(s) >= nextLetter(s).bond;
+    // 主線的信不參加隨機檢定（由 letterReady 直接觸發）
+    case 'letter': return false;
     case 'fortune': return !!s.gifts.crystal_ball || renownLevel(s) >= 8;
     case 'meteor': return isNight(ctx) || displayed(s, 'star_lamp');
     case 'slime': return displayed(s, 'slime_doll');
@@ -162,11 +173,7 @@ export function startEvent(s: GameState, id: EventId, ctx: SimContext): ActiveEv
     }
     case 'merchant': a.options = shuffled(Object.keys(MERCHANT_OFFERS), ctx.rng).slice(0, 3); break;
     case 'fortune': a.options = shuffled(Object.keys(FORTUNE_CARDS), ctx.rng).slice(0, 3); break;
-    case 'letter': {
-      const n = s.events.letters;
-      a.letter = n < LETTERS.length ? n : Math.floor(ctx.rng() * LETTERS.length);
-      break;
-    }
+    case 'letter': a.letter = Math.min(s.events.letters, LETTERS.length - 1); break;
     default: break;
   }
   const ev = s.events;
@@ -321,7 +328,7 @@ function completeEvent(s: GameState, ctx: SimContext): void {
   let letter: number | undefined;
   if (a.id === 'letter') {
     letter = a.letter;
-    if (a.letter === ev.letters && ev.letters < LETTERS.length) ev.letters++;
+    if (ev.letters < LETTERS.length) ev.letters = Math.max(ev.letters, (a.letter ?? 0) + 1);
   }
   ev.active = null;
   ev.cooldowns[a.id] = EVENT.cooldown[def.rarity];

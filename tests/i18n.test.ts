@@ -7,7 +7,8 @@ import {
   EVENTS, EVENT_INFO, FORTUNE_CARDS, KIND_NAMES, LETTERS, MERCHANT_OFFERS, RARITY_NAMES, eventRewardText,
 } from '../src/game/config/events';
 import { GIFTS } from '../src/game/config/gifts';
-import { HAPPINESS_ITEMS, STORIES } from '../src/game/config/happiness';
+import { HAPPINESS_ITEMS } from '../src/game/config/happiness';
+import { LETTERS as STORY_LETTERS, SCENES, speakerName } from '../src/game/config/story';
 import { ASSIGNMENTS, LINES, MUTTER_LINES, OUTFITS } from '../src/game/config/mascot';
 import { PLANTS } from '../src/game/config/plants';
 import { RECIPES } from '../src/game/config/recipes';
@@ -60,10 +61,11 @@ describe('語言檔', () => {
       ...Object.values(KIND_NAMES), ...RARITY_NAMES,
       ...Object.values(MERCHANT_OFFERS).flatMap((o) => [o.name, o.desc]),
       ...Object.values(FORTUNE_CARDS).flatMap((c) => [c.name, c.desc]),
-      ...LETTERS.flatMap((l) => [l.title, ...l.lines]),
+      ...LETTERS.flatMap((l) => [l.title, l.to, ...l.body, ...l.closing]),
       ...GIFTS.flatMap((g) => [g.name, g.desc, g.intro, g.line]),
       ...HAPPINESS_ITEMS.flatMap((i) => [i.name, i.desc]),
-      ...Object.values(STORIES).flatMap((s) => [s.title, ...s.lines]),
+      ...Object.values(SCENES).map((s) => s.title),
+      speakerName('lumia'), speakerName('book'),
       ...GLOBAL_UPGRADES.flatMap((u) => [u.name, u.desc]),
       ...Object.values(TARGET_UPGRADES).flatMap((u) => [u.name, u.desc]),
       ...ACHIEVEMENTS.map((a) => a.name),
@@ -78,6 +80,16 @@ describe('語言檔', () => {
       ...GIFTS.flatMap((g) => MUTTER_LINES.furniture[g.id] ?? []),
     ];
     expect(texts.filter((s) => !s || looksLikeKey(s) || /\{\w+\}/.test(s))).toEqual([]);
+  });
+
+  it('劇本：每一句至少有台詞或動作；說話者、信件都查得到', () => {
+    const empty = Object.values(SCENES).flatMap((s) => s.lines.filter((l) => !l.text && !l.act).map((l) => l.id));
+    expect(empty).toEqual([]);
+    // 語言檔裡的 script.* 都有被劇本用到（沒有打錯編號而沒播出來的句子）
+    const used = new Set(Object.values(SCENES).flatMap((s) => s.lines.flatMap((l) => [`script.${l.id}`, `script.${l.id}.act`])));
+    expect(Object.keys(SOURCE).filter((k) => k.startsWith('script.') && !used.has(k))).toEqual([]);
+    expect(STORY_LETTERS).toBe(LETTERS);
+    for (const l of LETTERS) expect(SCENES[l.scene].lines.length).toBeGreaterThan(0);
   });
 
   it('所有翻譯檔：key 都在原文裡、變數一致、陣列長度一樣', () => {
