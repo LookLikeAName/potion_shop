@@ -1,0 +1,5313 @@
+{
+  "achievement.cauldron_100.name": {
+    "hash": "d07242182665",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.cauldron_25.name": {
+    "hash": "253dc3c60349",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.cauldron_50.name": {
+    "hash": "f996f168c255",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.first_rush.name": {
+    "hash": "d022b1cdf0f8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.first_sale.name": {
+    "hash": "b19a71af6558",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.plant_moon.name": {
+    "hash": "b980b911e564",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.pot_100.name": {
+    "hash": "0161ad26ae55",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.pot_25.name": {
+    "hash": "d797d342e30a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.pot_50.name": {
+    "hash": "ca7a0ec709c3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.sold_100k.name": {
+    "hash": "08db92092192",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.sold_10m.name": {
+    "hash": "a1f2511e55ab",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.sold_1k.name": {
+    "hash": "9a8757365152",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.unlock_elixir.name": {
+    "hash": "3ca472d264bd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "achievement.unlock_focus.name": {
+    "hash": "0c8416205dba",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "app.rotate": {
+    "hash": "e1a3190ea0ef",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "app.title": {
+    "hash": "d83b632eba26",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 12:05"
+  },
+  "assign.cauldron.desc": {
+    "hash": "282171de8b58",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.cauldron.name": {
+    "hash": "61ad81faf91b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.counter.desc": {
+    "hash": "c79af868eb7d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.counter.name": {
+    "hash": "4844d452c335",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.greenhouse.desc": {
+    "hash": "58d659d39c65",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.greenhouse.name": {
+    "hash": "35196fac4918",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.patrol.desc": {
+    "hash": "2f3cbf14e045",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.patrol.name": {
+    "hash": "36e141fb18f3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.rest.desc": {
+    "hash": "2a7d4cbdb50a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "assign.rest.name": {
+    "hash": "83007979527f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "banner.cardN": {
+    "hash": "a3b9315cf0bf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "banner.flip": {
+    "hash": "2a9e319fd3b7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "banner.timing": {
+    "hash": "b091cd44237d",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "bond.bond": {
+    "hash": "51363e275aac",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.bondHow": {
+    "hash": "bb6c2a2c507c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.eventsBtn": {
+    "hash": "c9cf940fff78",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.giftsBtn": {
+    "hash": "ca440ac85c2e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.hint": {
+    "hash": "a4a404351566",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.mult": {
+    "hash": "faf6e491e5fe",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.renown": {
+    "hash": "81a25b1e69be",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.renownHow": {
+    "hash": "c2df8d792110",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "bond.title": {
+    "hash": "d1fe728a142d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "book.bonus": {
+    "hash": "e084b5048424",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "book.decor": {
+    "hash": "837963a67bbc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.decorHint": {
+    "hash": "44590221db3d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.hint": {
+    "hash": "04eb076f10eb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.intro": {
+    "hash": "d70cf85b0ac6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.kind": {
+    "hash": "6dcfc3571c7a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.kindLine": {
+    "hash": "53635ddfb504",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.lumiaSays": {
+    "hash": "b833f3f07167",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.milestone": {
+    "hash": "086e465c12a0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.milestoneAll": {
+    "hash": "311cfd81f69b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.need": {
+    "hash": "8e1c76ecb847",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.newPage": {
+    "hash": "ebed0e1b62cb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.record": {
+    "hash": "d45738baeb07",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.recordLine": {
+    "hash": "4f9bb72b6a4f",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "book.rewards": {
+    "hash": "9b6c968bf9c2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.seenLong": {
+    "hash": "e756dd6c5a66",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.seenShort": {
+    "hash": "200badc49f79",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.title": {
+    "hash": "e9328ab836cf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.unlockHint": {
+    "hash": "c0bfae2753ff",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.unseen": {
+    "hash": "cbb165d86d1e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.zone": {
+    "hash": "e71d04e88d27",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.zone.any": {
+    "hash": "4fccef3d3619",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.zone.cauldron": {
+    "hash": "61ad81faf91b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.zone.counter": {
+    "hash": "4844d452c335",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.zone.greenhouse": {
+    "hash": "35196fac4918",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.zone.rest": {
+    "hash": "83007979527f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "book.zoneHint": {
+    "hash": "e346b842e0d0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "buff.arrival": {
+    "hash": "10f68c6af120",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.brew": {
+    "hash": "31cf4438b11d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.cauldronBrew": {
+    "hash": "032a49e26805",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.crateFull": {
+    "hash": "29785f568652",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.double": {
+    "hash": "dfb6236ee08f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.growth": {
+    "hash": "f199643b0824",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.market": {
+    "hash": "e293e3494689",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.potGrowth": {
+    "hash": "d5357012d3e2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "buff.price": {
+    "hash": "9377c51c0e6f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.batch": {
+    "hash": "0047f15a4cbb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.brewTime": {
+    "hash": "8c538480e04b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.dragHow": {
+    "hash": "09c5eef620af",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.input": {
+    "hash": "00f80f72e469",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.intro": {
+    "hash": "2e3ef137c424",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.leftFirst": {
+    "hash": "f8dd4b4704c1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.nextLevel": {
+    "hash": "26dfd331173e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.order": {
+    "hash": "9eff7bb6d858",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.passive": {
+    "hash": "43e1647297ae",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.perSec": {
+    "hash": "5ec90c100ed2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.price": {
+    "hash": "cc39070a862b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.refine": {
+    "hash": "3ecd394ecce3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.refineDesc": {
+    "hash": "140e161cf529",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.refineLv": {
+    "hash": "dc4154e170e5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.refineMax": {
+    "hash": "38e296bd83e2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.refineOf": {
+    "hash": "517e0a93628c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.salamanderDesc": {
+    "hash": "8eb8f09f06c3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.tools": {
+    "hash": "a16dc715f601",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.unlock": {
+    "hash": "ea85c4a73d53",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.upgrade": {
+    "hash": "74aeda704e75",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "cauldron.upgradeDesc": {
+    "hash": "313c28e0ed53",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "chart.ago": {
+    "hash": "1f7a61158939",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "chart.now": {
+    "hash": "6220b3ad587c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "common.backToLumia": {
+    "hash": "cdc5260fef25",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.cgPending": {
+    "hash": "ff0b83078f2e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.close": {
+    "hash": "06a52a972c97",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.listSep": {
+    "hash": "0e7eac252ff3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.loadFailed": {
+    "hash": "0226a7a23d99",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.lumia": {
+    "hash": "d6ac775a0788",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.maxed": {
+    "hash": "4c0af5c5714f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.next": {
+    "hash": "48ce6f074579",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.owned": {
+    "hash": "1cd296518d84",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.prev": {
+    "hash": "6c9e09051585",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "common.unknown": {
+    "hash": "d82f420d9905",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.arrival": {
+    "hash": "eb822d40dc97",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.checkout": {
+    "hash": "fae65f224457",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.checkoutEach": {
+    "hash": "dfd7f329c28c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.checkoutManual": {
+    "hash": "7dbe8c389043",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.contracts": {
+    "hash": "46bdb13817ae",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.intro": {
+    "hash": "0f371ed9325e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.market": {
+    "hash": "12f780e335cc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.marketTip": {
+    "hash": "674b719175ed",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.potionLine": {
+    "hash": "db7181c3b01a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.queueMax": {
+    "hash": "b0599d98bd71",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.rushBonus": {
+    "hash": "1085bd7ddd27",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.rushPatience": {
+    "hash": "684c90034adf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.status": {
+    "hash": "fb5561fb2c4f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.tapHim": {
+    "hash": "b50615fd4f66",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "counter.upgrades": {
+    "hash": "ddd0be6bee87",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.baseMat": {
+    "hash": "c58b86a003de",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.baseNoSalamander": {
+    "hash": "a877cfab657c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.basePotion": {
+    "hash": "5fbbde8a4cee",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.baseUnused": {
+    "hash": "3c9df7026966",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.intro": {
+    "hash": "914418b2b12f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.introKeep": {
+    "hash": "7a0f5593b6ee",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.introSell": {
+    "hash": "a3c45d468d4a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.keep": {
+    "hash": "50a9bbfcee5c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.keepMat": {
+    "hash": "d6698dd4e79a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.keepPotion": {
+    "hash": "f03bb3f5abf9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.keepTip": {
+    "hash": "7a0f5593b6ee",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.off": {
+    "hash": "906abbf81783",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.on": {
+    "hash": "5d262b03e9da",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.price": {
+    "hash": "9fe44fcc766d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.priceMat": {
+    "hash": "dbee82831376",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.statGold": {
+    "hash": "7275d821f6d5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.statMaterials": {
+    "hash": "dad74cbc3e06",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.statPotions": {
+    "hash": "ae0779d9ec77",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "crate.title": {
+    "hash": "6b19cf548c19",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "decor.bookHint": {
+    "hash": "b89515159bdb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.bookTitle": {
+    "hash": "22ba3ebe5daf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.dragIn": {
+    "hash": "fb3888f16e62",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.given": {
+    "hash": "dfb01c7102e6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.hint": {
+    "hash": "96e9a4cf7221",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.lockedLine1": {
+    "hash": "536e1b53b2cc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.lockedLine2": {
+    "hash": "6201e066deb9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.remove": {
+    "hash": "6562358b0576",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.shown": {
+    "hash": "16974eb3cc6a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.slotNames": {
+    "hash": "f0c7e3e30292",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.slots": {
+    "hash": "f95fd11063a8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "decor.title": {
+    "hash": "6774a4dd90e3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "event.apprentice.dropHint": {
+    "hash": "38a7b76d51fc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.hint": {
+    "hash": "f064a37055ca",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.lumia": {
+    "hash": "528147ccbb16",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.name": {
+    "hash": "768701f0168d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.need": {
+    "hash": "1e95fdfeff15",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.prompt": {
+    "hash": "4aaea688cbf7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.reward": {
+    "hash": "809e0d2a00fd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.story": {
+    "hash": "4367a3794c8a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.apprentice.summary": {
+    "hash": "47d78d5b8e69",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.hint": {
+    "hash": "27bc3c57a691",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.lumia": {
+    "hash": "39ab9d0af582",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.name": {
+    "hash": "8572e7fd10ac",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.need": {
+    "hash": "d2dc890d9faf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.prompt": {
+    "hash": "dc69e5283981",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.reward": {
+    "hash": "916811de48d1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.story": {
+    "hash": "5d0252a4a920",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.bubble.summary": {
+    "hash": "493a6042199e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.hint": {
+    "hash": "dc81bc63dbc8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.lumia": {
+    "hash": "56aa72319c15",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.name": {
+    "hash": "6a86eb3e7163",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.need": {
+    "hash": "235c0b89ed3f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.prompt": {
+    "hash": "5d783aaa95d8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.reward": {
+    "hash": "cc660527d487",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.story": {
+    "hash": "b35feb90cc2b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.butterfly.summary": {
+    "hash": "dac1d8d62325",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.hint": {
+    "hash": "cf5439c3e29a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.lumia": {
+    "hash": "ea39c95a8e8e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.name": {
+    "hash": "640aa4ffbed4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.need": {
+    "hash": "37ddb0699ea1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.prompt": {
+    "hash": "712f84aba41a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.reward": {
+    "hash": "f336ee5821e6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.story": {
+    "hash": "32775955cc17",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dew.summary": {
+    "hash": "2474eb445d17",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.hint": {
+    "hash": "b469a358dd89",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.lumia": {
+    "hash": "ba0570d603bb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.name": {
+    "hash": "5fb348b424d4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.need": {
+    "hash": "ef55486483db",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.prompt": {
+    "hash": "86fdcfb13e08",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.reward": {
+    "hash": "8991604e4ff6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.story": {
+    "hash": "4bb81a681391",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.dream.summary": {
+    "hash": "9f12082082ea",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.hint": {
+    "hash": "92965996c23a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.lumia": {
+    "hash": "19253b51e372",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.name": {
+    "hash": "ac5f625482e8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.need": {
+    "hash": "116770556ea1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.prompt": {
+    "hash": "c98b24af13aa",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.reward": {
+    "hash": "fc7c402c9b6a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.story": {
+    "hash": "2b12b22e0c6f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.fortune.summary": {
+    "hash": "38d6002a2c61",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.hint": {
+    "hash": "cacd0a1ba6b7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.lumia": {
+    "hash": "fff3b92845af",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.name": {
+    "hash": "722913497c93",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.need": {
+    "hash": "56935f9501e6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.prompt": {
+    "hash": "07209fc069e3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.reward": {
+    "hash": "9399cb76845f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.story": {
+    "hash": "99cb614aa45f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.goblin.summary": {
+    "hash": "fdcbf85371e1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.hint": {
+    "hash": "b1bfbb38bc62",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.lumia": {
+    "hash": "caf86ffff1a7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.name": {
+    "hash": "5e44be43ec60",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.need": {
+    "hash": "68b5514c7a9b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.prompt": {
+    "hash": "80eae15e25ca",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.reward": {
+    "hash": "a16c49cac395",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.story": {
+    "hash": "21fe2e8daf14",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.guild_rush.summary": {
+    "hash": "ab6b2349ac4a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.hint": {
+    "hash": "ae2970401d2f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.lumia": {
+    "hash": "70df77f8cbe7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.name": {
+    "hash": "a72417368b5b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.need": {
+    "hash": "ed288881fb52",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.prompt": {
+    "hash": "b3f9a7f6899d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.reward": {
+    "hash": "bacd65e8faf2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.story": {
+    "hash": "dd7c23c01cc2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.hero.summary": {
+    "hash": "e1ccfd12761c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.kind.choice": {
+    "hash": "396ce226bedd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.kind.count": {
+    "hash": "3898ad6a6997",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.kind.drag": {
+    "hash": "66f1ee47bddd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.kind.tap": {
+    "hash": "cc39621742e4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.kind.timing": {
+    "hash": "f75899dd4d2c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.hint": {
+    "hash": "081fbcaa2ac5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.lumia": {
+    "hash": "8cad7f3fcd31",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.name": {
+    "hash": "2549d2250f4e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.need": {
+    "hash": "a06aa9514c51",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.prompt": {
+    "hash": "aaae06e261f4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.reward": {
+    "hash": "faf37314974f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.story": {
+    "hash": "bd51a1468bf4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.letter.summary": {
+    "hash": "433c9731e739",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.lines.start": {
+    "hash": "0073d2d0da57",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.hint": {
+    "hash": "72880a6bd06d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.lumia": {
+    "hash": "dfa529d21e63",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.name": {
+    "hash": "6b2ba5d474d0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.need": {
+    "hash": "6b384e5de3b4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.prompt": {
+    "hash": "30a92a49754d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.reward": {
+    "hash": "cd36d2cb05f2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.story": {
+    "hash": "9113e7fbf9f6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.merchant.summary": {
+    "hash": "880851a394dc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.hint": {
+    "hash": "086e2073c377",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.lumia": {
+    "hash": "2da684bb287a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.name": {
+    "hash": "ab674258835b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.need": {
+    "hash": "8903926f89e3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.prompt": {
+    "hash": "2c7a536365a1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.reward": {
+    "hash": "81c7ec463148",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.story": {
+    "hash": "b0630f44234a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.meteor.summary": {
+    "hash": "95f0caedc8c5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.hint": {
+    "hash": "f01934346371",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.lumia": {
+    "hash": "87b363c3fa18",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.name": {
+    "hash": "d2606d89053a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.need": {
+    "hash": "a194ac9269cd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.prompt": {
+    "hash": "b16530559d20",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.reward": {
+    "hash": "414a6024b1d1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.story": {
+    "hash": "8874471af5d9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.perfect_heat.summary": {
+    "hash": "33d5954c9d87",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.hint": {
+    "hash": "5174542a4387",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.lumia": {
+    "hash": "cbd88eb202f9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.name": {
+    "hash": "fb1bca46afba",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.need": {
+    "hash": "1177498b7b71",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.prompt": {
+    "hash": "df5952af382c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.reward": {
+    "hash": "a178924e9bb5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.story": {
+    "hash": "5698676031db",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.princess.summary": {
+    "hash": "cfef93087ee4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.dropHint": {
+    "hash": "d024cc2aeec4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.hint": {
+    "hash": "a1550d468a29",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.lumia": {
+    "hash": "e3b4690a463c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.name": {
+    "hash": "6d786624c5aa",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.need": {
+    "hash": "3d6a1dcda46e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.prompt": {
+    "hash": "d8483a1a6241",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.reward": {
+    "hash": "42d7b4f60e96",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.story": {
+    "hash": "06741201157e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.raincloud.summary": {
+    "hash": "45c23e4403c1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.rarity.0": {
+    "hash": "5035045882b2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.rarity.1": {
+    "hash": "6330e89f7f13",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.rarity.2": {
+    "hash": "5b4f997facf7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.apprentice": {
+    "hash": "ff2e5afda336",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.bubble": {
+    "hash": "4f8605f72e15",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.butterfly": {
+    "hash": "69ad599e039f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.card": {
+    "hash": "0b267cc3f7b7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.dew": {
+    "hash": "ebb888b96563",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.dream": {
+    "hash": "0ca308b77f77",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.goblin": {
+    "hash": "6311da9f524e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.gold": {
+    "hash": "559a749f433b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.guild_rush": {
+    "hash": "80c3a20645c5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.hero": {
+    "hash": "008ac7191933",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.heroHype": {
+    "hash": "95081901abda",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.item": {
+    "hash": "2686f8589b09",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.meteor": {
+    "hash": "587dc99142de",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.meteorAll": {
+    "hash": "341e1b1d58e0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.named": {
+    "hash": "a95babae849d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.perfect_heat": {
+    "hash": "c214028df4e2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.princess": {
+    "hash": "5f6c424f60ac",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.raincloud": {
+    "hash": "b3a3b28ad416",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.slime": {
+    "hash": "bce3f47478a6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.result.sneeze": {
+    "hash": "de77ba8644b9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.reward.item": {
+    "hash": "bb15d96280e9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.hint": {
+    "hash": "a77417f8d864",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.lumia": {
+    "hash": "7097da0a588e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.name": {
+    "hash": "86bed48a0399",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.need": {
+    "hash": "099e07af9c1d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.prompt": {
+    "hash": "27777c936841",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.reward": {
+    "hash": "b7d6ac3f214d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.story": {
+    "hash": "5cc5ffee4965",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.slime.summary": {
+    "hash": "ccbf277d6eec",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.hint": {
+    "hash": "40966350c0b5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.lumia": {
+    "hash": "851dfcc81d2e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.name": {
+    "hash": "d9aed270ff43",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.need": {
+    "hash": "f2978f7feb94",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.prompt": {
+    "hash": "d6930437bc43",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.reward": {
+    "hash": "da618c77f501",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.story": {
+    "hash": "87d575139df0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "event.sneeze.summary": {
+    "hash": "f870fc1e45ae",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "float.almost": {
+    "hash": "6480734bed03",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.bounty": {
+    "hash": "d87ef86275dc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.crate": {
+    "hash": "8be2f8cae45b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.crateMaterials": {
+    "hash": "0f9434be7f66",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.cratePotions": {
+    "hash": "dad7d6621919",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.crit": {
+    "hash": "086cb0a5e423",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.double": {
+    "hash": "327d2b794825",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.eventDone": {
+    "hash": "687026ee0c83",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.gold": {
+    "hash": "559a749f433b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.partial": {
+    "hash": "77a3bf8cd7f0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.perfect": {
+    "hash": "b3954e3c20e4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.rush": {
+    "hash": "aada43a9d1fe",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.sneeze": {
+    "hash": "284210f8833e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.tip": {
+    "hash": "7823469897d6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.wishDone": {
+    "hash": "5f60aa79106a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "float.wishTried": {
+    "hash": "cd65dee54b1a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "flow.back": {
+    "hash": "8a0a674b15e4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.brewDemand": {
+    "hash": "34bee1c1a28b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.brewed": {
+    "hash": "ab2c4a995d57",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.brewedOut": {
+    "hash": "cb9c248e9ea2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.chart": {
+    "hash": "4641e249a504",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.collecting": {
+    "hash": "36dca90dc2c2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.crate": {
+    "hash": "02b01e65676c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.customerDemand": {
+    "hash": "99781bf8b0e8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.customerShare": {
+    "hash": "bcf348342519",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.demand": {
+    "hash": "d3480c157de1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.goldPerSec": {
+    "hash": "073b8820ba31",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.heat": {
+    "hash": "9173cf74fa58",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.hot": {
+    "hash": "2b468ff71346",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.lowYield": {
+    "hash": "ac53433b9dad",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.matSurplus": {
+    "hash": "7bfcd0aa7bbf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.moveLeft": {
+    "hash": "a4d0397a5cc5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.potionSurplus": {
+    "hash": "688faae91871",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.sellingOut": {
+    "hash": "369524fa2437",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.short": {
+    "hash": "67e8685c095a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.shortCapacity": {
+    "hash": "843b780c6a7a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.shortCrate": {
+    "hash": "4ef8fceb5b3d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.starvedMat": {
+    "hash": "c9d192861312",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.starvedPotion": {
+    "hash": "020b2c5b4a7d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.hint.unused": {
+    "hash": "f11cc49d0407",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.income": {
+    "hash": "67bd11626f44",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.incomePerSec": {
+    "hash": "8c9d3a845c36",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.intro": {
+    "hash": "05dc4c7e9e18",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.made": {
+    "hash": "945ca4877723",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.madeTitleMat": {
+    "hash": "3b6e72747516",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.madeTitlePotion": {
+    "hash": "20d21e28be9b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.market": {
+    "hash": "e380af7fb85c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.marketHint": {
+    "hash": "fe82696dfd94",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.materials": {
+    "hash": "78b885d58c76",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.net": {
+    "hash": "290e8442c845",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.netHint": {
+    "hash": "7f49b6b5f228",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.netPerSec": {
+    "hash": "3921359ad873",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.noCauldrons": {
+    "hash": "4ac1077ebb49",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.noPlants": {
+    "hash": "fe8d81ef5dce",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.normal": {
+    "hash": "51a601911aff",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.ordersFull": {
+    "hash": "4738c61262e6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.ordersLost": {
+    "hash": "c2d050759039",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "flow.ordersPartial": {
+    "hash": "e6b5c423d810",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "flow.people": {
+    "hash": "c4321dc6c188",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.potions": {
+    "hash": "596b0e7c8f0f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.shortCount": {
+    "hash": "e87e52a3e4da",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "flow.shortHint": {
+    "hash": "00c9b0b369a8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.shortTitle": {
+    "hash": "2248c5f05e40",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.sold": {
+    "hash": "906cd96136a8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.source.crateMaterials": {
+    "hash": "a408ac10c6e7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.source.cratePotions": {
+    "hash": "433db988aa98",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.source.customers": {
+    "hash": "ebee9302fe47",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.starvedHint": {
+    "hash": "009145e345fd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.starvedTitleMat": {
+    "hash": "bc84e5a8e1df",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.starvedTitlePotion": {
+    "hash": "71233d3704a4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.stock": {
+    "hash": "69248d77153a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.stockHint": {
+    "hash": "feda27c825c7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.stockTitle": {
+    "hash": "ae21195cc578",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.total": {
+    "hash": "3c6cb81b2de1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "flow.waited": {
+    "hash": "e7afd006db9b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "format.days": {
+    "hash": "7f5c4ea725a1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "format.hours": {
+    "hash": "dd68507e4dce",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "format.minutes": {
+    "hash": "989f77643464",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "format.minutesOnly": {
+    "hash": "252fc652d776",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "format.none": {
+    "hash": "2c2da35a45d2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "format.perSecCycles": {
+    "hash": "87a5ac25691d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "format.seconds": {
+    "hash": "4de56f107004",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.moon.desc": {
+    "hash": "d3e3bc9f6f23",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.moon.name": {
+    "hash": "71957e5eba5a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.star.desc": {
+    "hash": "7eb2c2919c18",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.star.name": {
+    "hash": "1f960a238a0a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.sun.desc": {
+    "hash": "3a3a6136b4d7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.sun.name": {
+    "hash": "b5ff62177a4a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.wheel.desc": {
+    "hash": "b5dc898c2b2f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "fortune.wheel.name": {
+    "hash": "7b20f7706733",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.bouquet.desc": {
+    "hash": "ae1e09d38877",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.bouquet.intro": {
+    "hash": "014a622052fc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.bouquet.line": {
+    "hash": "f815bea07481",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.bouquet.name": {
+    "hash": "ec76f82c76d4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.crystal_ball.desc": {
+    "hash": "9178d697552a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.crystal_ball.intro": {
+    "hash": "8ac9066ad402",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.crystal_ball.line": {
+    "hash": "21b69bc9971b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.crystal_ball.name": {
+    "hash": "267712bfd23e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.dream_catcher.desc": {
+    "hash": "3a655c0702dc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.dream_catcher.intro": {
+    "hash": "16a0e701f0fd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.dream_catcher.line": {
+    "hash": "36c0308f51e0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.dream_catcher.name": {
+    "hash": "45242644ca62",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.gramophone.desc": {
+    "hash": "5d4d7720508c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.gramophone.intro": {
+    "hash": "0e328cca0076",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.gramophone.line": {
+    "hash": "38e82f6307d7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.gramophone.name": {
+    "hash": "bb98d3aea1e2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.hairpin.desc": {
+    "hash": "4f8ecb46eea4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.hairpin.intro": {
+    "hash": "bf503558836a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.hairpin.line": {
+    "hash": "47aca5e0e404",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.hairpin.name": {
+    "hash": "59935f9a7b74",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.music_box.desc": {
+    "hash": "a81c8a7e31a2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.music_box.intro": {
+    "hash": "c371b4716f91",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.music_box.line": {
+    "hash": "f7f990f79e40",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.music_box.name": {
+    "hash": "cdd9202d5b25",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.slime_doll.desc": {
+    "hash": "4ddbf7581ff4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.slime_doll.intro": {
+    "hash": "d73f03979f0b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.slime_doll.line": {
+    "hash": "4388e39dc7b2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.slime_doll.name": {
+    "hash": "fbc46f4f472e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.snack.desc": {
+    "hash": "efac8b66c4df",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.snack.intro": {
+    "hash": "c341d31c6978",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.snack.line": {
+    "hash": "2714b356a951",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.snack.name": {
+    "hash": "d3f2dc9488ea",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.star_lamp.desc": {
+    "hash": "fd83a0518ba4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.star_lamp.intro": {
+    "hash": "a169dd9b8b98",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.star_lamp.line": {
+    "hash": "a1922cb77ca2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.star_lamp.name": {
+    "hash": "85f02cd7ca5d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.tea_set.desc": {
+    "hash": "c4b6ddc41a56",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.tea_set.intro": {
+    "hash": "554bf205ac0e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.tea_set.line": {
+    "hash": "6284163f28f2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "gift.tea_set.name": {
+    "hash": "9c9773bc53f0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.bounty": {
+    "hash": "4f94472d5fb5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.bountyWord": {
+    "hash": "a0461fe44def",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.choose": {
+    "hash": "fff4a4ae72a6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.emptyPot": {
+    "hash": "f7126b32fe6d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.fairyDesc": {
+    "hash": "425f0bfa3d88",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.growTime": {
+    "hash": "5d0baf88c5cb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.growing": {
+    "hash": "c23f282bf34f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.hired": {
+    "hash": "4f37d5ac1164",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.intro": {
+    "hash": "936f77ed869e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.lockedSlot": {
+    "hash": "b73efd146f39",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.manualHarvest": {
+    "hash": "7e95cde3417c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.milestone": {
+    "hash": "8d2ca884a3d7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.never": {
+    "hash": "1b50238368ff",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.nextLevel": {
+    "hash": "06a37c63501d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.openFirst": {
+    "hash": "1cd190e45119",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.perHarvest": {
+    "hash": "feba079ae7c2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.perSec": {
+    "hash": "46bfeed9511d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.rainCount": {
+    "hash": "499cacb98365",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.rainDesc": {
+    "hash": "d62ecc897b50",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.replantHint": {
+    "hash": "8b49a8324905",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.seedInfo": {
+    "hash": "38055820ea00",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.seedYield": {
+    "hash": "bdb6fdfa35cc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.speed": {
+    "hash": "4aa484fd1e8b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.summonPot": {
+    "hash": "bd9fe70674c9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.summonPotDesc": {
+    "hash": "de8351b5a2b3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.swap": {
+    "hash": "ba9c1933e038",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.tipBuy": {
+    "hash": "c9f00883c220",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.tipCurrent": {
+    "hash": "f9f2a2a84c87",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.tipFree": {
+    "hash": "2e560b7326a3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.tools": {
+    "hash": "97201a465e81",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.upgradePot": {
+    "hash": "3b750c132ce3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "green.upgradePotDesc": {
+    "hash": "c2ef93b30197",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "happy.meterTip": {
+    "hash": "548745e6ac1f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "letter.1.lines": {
+    "hash": "94e3c443203d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "letter.1.title": {
+    "hash": "f3f253d9cc95",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "letter.2.lines": {
+    "hash": "637fb16b71d8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "letter.2.title": {
+    "hash": "9edd17de757e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "letter.3.lines": {
+    "hash": "b043a9377d38",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "letter.3.title": {
+    "hash": "2e3c5c292c39",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "letter.keep": {
+    "hash": "1a2e4028467a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "lines.daily": {
+    "hash": "aeb96ec17ea9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lines.exhausted": {
+    "hash": "c10c1964ef02",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lines.headpat": {
+    "hash": "82d28ebf2c10",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lines.idle": {
+    "hash": "a0c4a0ff8e07",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lines.panic": {
+    "hash": "cc086291e691",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lines.poke": {
+    "hash": "53f6c3b2d25b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lines.shy": {
+    "hash": "c67287314061",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lines.woke": {
+    "hash": "986b00af9c7a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lock.blocked": {
+    "hash": "888a0cacac38",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lock.hint": {
+    "hash": "e3cc86afdacd",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lock.lost": {
+    "hash": "ca1b9239db74",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lock.takeover": {
+    "hash": "51954257faf2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.achievements": {
+    "hash": "357502ebe895",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.asleep": {
+    "hash": "4ad522e9c7fa",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.assign": {
+    "hash": "6ee2ac328b9c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.assignHint": {
+    "hash": "f16ea996e7e9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.cheek": {
+    "hash": "de2498867d52",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.daily": {
+    "hash": "860309a9a55c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.energy": {
+    "hash": "5d89dfe12d23",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.head": {
+    "hash": "90b015167cf8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.headpat": {
+    "hash": "b2c13b99e2f2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.now": {
+    "hash": "01b82cf552c8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.outfit": {
+    "hash": "3ad4f41c821a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.poke": {
+    "hash": "3c8c15d2b93e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.stamina": {
+    "hash": "bc644a07473f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.talk": {
+    "hash": "0cbcba474c6a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "lumia.touchHint": {
+    "hash": "cd90928321e6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.arrival.desc": {
+    "hash": "cbec299cd930",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.arrival.name": {
+    "hash": "467739a5517b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.brew.desc": {
+    "hash": "f307154aec4e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.brew.name": {
+    "hash": "25bce030b0ca",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.gold.desc": {
+    "hash": "e5a2fb375f7b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.gold.name": {
+    "hash": "ed73628edbe8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.growth.desc": {
+    "hash": "5788f98b94f7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.growth.name": {
+    "hash": "132346f2a6ab",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.materials.desc": {
+    "hash": "d1356e57ff94",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "merchant.materials.name": {
+    "hash": "a9c9fe711787",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.cauldron": {
+    "hash": "660ae57b64c0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.counter": {
+    "hash": "b12c1334acf1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.crowded": {
+    "hash": "43e9f0bb2be8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.fever": {
+    "hash": "18196befc902",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.bouquet": {
+    "hash": "76b47135d60d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.crystal_ball": {
+    "hash": "531d679e042f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.dream_catcher": {
+    "hash": "973e9bc08259",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.gramophone": {
+    "hash": "d2c790bffe9d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.hairpin": {
+    "hash": "30678feca9e8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.music_box": {
+    "hash": "3d057bc6a9bb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.slime_doll": {
+    "hash": "fe1e4da7fc47",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.snack": {
+    "hash": "e049edae9b9c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.star_lamp": {
+    "hash": "915f6da5db34",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.furniture.tea_set": {
+    "hash": "b5333a43741b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.global": {
+    "hash": "ae1515c4f209",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.greenhouse": {
+    "hash": "120bd2833ca5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.marketCold": {
+    "hash": "6e97ebb33b1e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.marketHot": {
+    "hash": "b5b450e65a87",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.outfit.default": {
+    "hash": "beecffeb5368",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.outfit.gardener": {
+    "hash": "bad30f66cfce",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.outfit.maid": {
+    "hash": "a363beb6c03c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.outfit.pajama": {
+    "hash": "066944ac3a7d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.outfit.robe": {
+    "hash": "c7f98e8b290f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.patrol": {
+    "hash": "4813585adc9e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.relax": {
+    "hash": "3f0c9960b845",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.sleep": {
+    "hash": "f1e3d1e95ae8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.starved": {
+    "hash": "8659e3b0b428",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "mutter.tired": {
+    "hash": "ae65a104b816",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.away": {
+    "hash": "46740a823dc1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.capped": {
+    "hash": "3579bb75b48e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.decay": {
+    "hash": "1e72a85a0131",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.efficiency": {
+    "hash": "885d59acb90c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.efficiencyParts": {
+    "hash": "65515ded1ca3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.gold": {
+    "hash": "b47c0c152f74",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.happy": {
+    "hash": "1573fba69a85",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 12:05"
+  },
+  "offline.happyCapped": {
+    "hash": "39844cd47b37",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.happyDecay": {
+    "hash": "8e62d37d1d19",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.item": {
+    "hash": "4ecc41b8f662",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.ok": {
+    "hash": "a03b4e523903",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "offline.title": {
+    "hash": "8b9a7f4e008c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.default.desc": {
+    "hash": "c053e50c17f0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.default.name": {
+    "hash": "527e5d3596d4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.gardener.desc": {
+    "hash": "38f0f6a15ba0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.gardener.name": {
+    "hash": "3dcb34c0e1f9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.maid.desc": {
+    "hash": "2c01b9e194a0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.maid.name": {
+    "hash": "57c3faa59cdb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.pajama.desc": {
+    "hash": "e5bd7c9f63eb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.pajama.name": {
+    "hash": "58d070b20f3e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.robe.desc": {
+    "hash": "c3ee32b98860",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "outfit.robe.name": {
+    "hash": "6ce613c876d6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "plant.moonshroom.name": {
+    "hash": "d60cbc334b4d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "plant.redheart.name": {
+    "hash": "3d670cada855",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "plant.starvine.name": {
+    "hash": "350e4df6fe04",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "potion.elixir.name": {
+    "hash": "4fcb0de17bb4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "potion.focus.name": {
+    "hash": "445e34ea4597",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "potion.glow.name": {
+    "hash": "5564ec52809e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.attunement.desc": {
+    "hash": "1849d770918b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.attunement.name": {
+    "hash": "d91ba1aeed38",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.celebration.desc": {
+    "hash": "af82cc0e6e36",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.celebration.name": {
+    "hash": "b8a447d05bea",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.cheer.desc": {
+    "hash": "f1d1790594f7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.cheer.name": {
+    "hash": "3339f5de896e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.decor_slot_3.desc": {
+    "hash": "f49dc4e6e75f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.decor_slot_3.name": {
+    "hash": "bdd4614f3fd7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.decor_slot_4.desc": {
+    "hash": "f6f6bf4f7e6a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.decor_slot_4.name": {
+    "hash": "45829dbdc550",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.done": {
+    "hash": "287a44c3ae6c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "redeem.green_thumb.desc": {
+    "hash": "638820ad9ab1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.green_thumb.name": {
+    "hash": "7e7b86a25fe7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.intro": {
+    "hash": "b821b2698303",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_gardener.desc": {
+    "hash": "dcf65d854380",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_gardener.name": {
+    "hash": "3dcb34c0e1f9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_maid.desc": {
+    "hash": "2f117e76b853",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_maid.name": {
+    "hash": "57c3faa59cdb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_pajama.desc": {
+    "hash": "d23110ab8657",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_pajama.name": {
+    "hash": "58d070b20f3e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_robe.desc": {
+    "hash": "41fac76d2c83",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.outfit_robe.name": {
+    "hash": "6ce613c876d6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.replay": {
+    "hash": "b86fbbf4328f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "redeem.telepathy.desc": {
+    "hash": "21f95a19a04f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.telepathy.name": {
+    "hash": "74aa2f29707d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tier1.hint": {
+    "hash": "4137c8cb2409",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tier1.title": {
+    "hash": "7491a52da460",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tier2.hint": {
+    "hash": "97895d80e101",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tier2.title": {
+    "hash": "6f024c4206c8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tier3.hint": {
+    "hash": "45a9faf8f43d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tier3.title": {
+    "hash": "852fee886cfa",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tier4.hint": {
+    "hash": "b3159ca1c278",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "redeem.tier4.title": {
+    "hash": "03df3ba7842b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.tierTitle": {
+    "hash": "d543a0087fd1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.times": {
+    "hash": "3316ca40892b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "redeem.title": {
+    "hash": "536e1b53b2cc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.vow.desc": {
+    "hash": "8aa2d041b4bf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "redeem.vow.name": {
+    "hash": "7f055771e2a9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "scene.assigned": {
+    "hash": "d0f9363a2079",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.bellEmpty": {
+    "hash": "80cecee67b2d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.boiling": {
+    "hash": "55b061dd588c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.brewing": {
+    "hash": "729f4b99f545",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.cauldronMoved": {
+    "hash": "98b42cd502d9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.combo": {
+    "hash": "134d2aeae662",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.cooldown": {
+    "hash": "93e7dbb882cc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.decorTip": {
+    "hash": "9dff37d94384",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.floatingSlot": {
+    "hash": "ac13b63826b5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.lockedRecipe": {
+    "hash": "95c32419c110",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.perSec": {
+    "hash": "f323174c0350",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.plant": {
+    "hash": "700f8e7fc14a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "scene.queueFull": {
+    "hash": "4fe8cb9aed33",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.copied": {
+    "hash": "a968aaad1293",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.copyManual": {
+    "hash": "9dfe9de24fba",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.customersServed": {
+    "hash": "5944472d1622",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.export": {
+    "hash": "e9912cbfe411",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.goldEarned": {
+    "hash": "73e10583d3cb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.import": {
+    "hash": "9952fe79afca",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.importPlaceholder": {
+    "hash": "1295388ea0cb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.imported": {
+    "hash": "c66d9e3da05b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.invalid": {
+    "hash": "1090c0fafbcf",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.language": {
+    "hash": "caadeaa34f66",
+    "by": "human",
+    "locked": true,
+    "time": "2026-09-28 09:58"
+  },
+  "settings.playAway": {
+    "hash": "c58a771e6875",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.playBack": {
+    "hash": "fe6ca9f457f1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.playFront": {
+    "hash": "bd72b7d3336d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.playTotal": {
+    "hash": "3951b441f671",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.potionsSold": {
+    "hash": "09259510d5a4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.reset": {
+    "hash": "698a84ff1172",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.resetConfirm": {
+    "hash": "2d8f2bdd707f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.resetDone": {
+    "hash": "3a11cc5bb1ed",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.rushServed": {
+    "hash": "a06d5c571983",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.save": {
+    "hash": "a34ef56a17d9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.saveHint": {
+    "hash": "3d7419913b07",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.saveNow": {
+    "hash": "3e21351ee36a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.saved": {
+    "hash": "5018594e47bc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.stats": {
+    "hash": "85a7a46e4055",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "settings.wholesaled": {
+    "hash": "98d0d3fd1dc1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "status.exhausted": {
+    "hash": "35779ff5edab",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "status.patrolPrefix": {
+    "hash": "8836fe854b46",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "status.relaxing": {
+    "hash": "63146ff1ad1b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "status.shop": {
+    "hash": "d7e712ab12c8",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "status.sleeping": {
+    "hash": "d8fc172cc492",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "status.tired": {
+    "hash": "5c42b5490eb4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "status.working": {
+    "hash": "2d23c2b65ce7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "story.celebration.lines": {
+    "hash": "f0d14ad3a4d3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "story.celebration.title": {
+    "hash": "680ab2e30b39",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "story.end": {
+    "hash": "810788a01ff3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "story.next": {
+    "hash": "b32601573da2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "story.vow.lines": {
+    "hash": "520e408ad189",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "story.vow.title": {
+    "hash": "44ac6dcc6ada",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "tab.cauldron": {
+    "hash": "95878d5ded9b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "tab.counter": {
+    "hash": "4844d452c335",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "tab.flow": {
+    "hash": "95dbf2860675",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "tab.greenhouse": {
+    "hash": "35196fac4918",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "tab.lumia": {
+    "hash": "d6ac775a0788",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "tab.settings": {
+    "hash": "b129cd5dc9a0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "target.fairy.desc": {
+    "hash": "424952350368",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "target.fairy.name": {
+    "hash": "b4253eb6e15d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "target.raincloud.desc": {
+    "hash": "56da2f41f622",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "target.raincloud.name": {
+    "hash": "0972ac796843",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "target.salamander.desc": {
+    "hash": "2104b6be4b2a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "target.salamander.name": {
+    "hash": "323e2ee3ea14",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "toast.achievement": {
+    "hash": "9f8c02495fb2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "toast.bigWish": {
+    "hash": "8c92409630f1",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "toast.eventDone": {
+    "hash": "38c0d7da0f79",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "toast.eventLeft": {
+    "hash": "4d2087353f5f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "toast.eventNewPage": {
+    "hash": "7ce83bd9eccc",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "toast.exhausted": {
+    "hash": "2400d192b662",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "toast.woke": {
+    "hash": "edfe856542c6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "top.book": {
+    "hash": "5f19f35d6fa0",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.buyMax": {
+    "hash": "8bb923ab2313",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.buyQty": {
+    "hash": "355b30691a28",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.fever": {
+    "hash": "6ee46142b313",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.feverOn": {
+    "hash": "245d234e8a12",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.feverTip": {
+    "hash": "495c2854efb7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.feverUsed": {
+    "hash": "a4228f3e5876",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.flow": {
+    "hash": "12e2d1737c5c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "top.gold": {
+    "hash": "48c5bb80878b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.abacus_squirrel.desc": {
+    "hash": "defc149c8bd7",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.abacus_squirrel.name": {
+    "hash": "ec20e88fb6de",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.bell.desc": {
+    "hash": "14381a309c6d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.bell.name": {
+    "hash": "80294e77e2e4",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.bellLeft": {
+    "hash": "f0749502a268",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "upgrade.bellows.desc": {
+    "hash": "343ffebfc7de",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.bellows.name": {
+    "hash": "1f57d5fb2530",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.clickBonus": {
+    "hash": "84017b94e51c",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "upgrade.condenser.desc": {
+    "hash": "3e51f036bc66",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.condenser.name": {
+    "hash": "806765c4b1af",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.crate.desc": {
+    "hash": "5997c564ef28",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.crate.name": {
+    "hash": "9c6aa225c77a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.crate_materials.desc": {
+    "hash": "24610aff3755",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.crate_materials.name": {
+    "hash": "67543264021d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.diffuser.desc": {
+    "hash": "7f39d4da51f5",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.diffuser.name": {
+    "hash": "7b5242db7560",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.drunks.desc": {
+    "hash": "133cff9f9a30",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.drunks.name": {
+    "hash": "7cc4b8727830",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.fertilizer.desc": {
+    "hash": "26e826afa721",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.fertilizer.name": {
+    "hash": "19be0372b83a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.floating_pot.desc": {
+    "hash": "6dac675e4b8b",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.floating_pot.name": {
+    "hash": "bcea0b91a09c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.fortune_owl.desc": {
+    "hash": "9d8ee59490ca",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.fortune_owl.name": {
+    "hash": "c6577e55ae5c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.garden_gloves.desc": {
+    "hash": "3f69eb992dad",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.garden_gloves.name": {
+    "hash": "9298ff7e96a6",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.guild_contract.desc": {
+    "hash": "3d36e827a902",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.guild_contract.name": {
+    "hash": "f857741956ea",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.poster.desc": {
+    "hash": "40c6cc02008d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.poster.name": {
+    "hash": "e2b305260402",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.refine.desc": {
+    "hash": "51197f10b16d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.refine.name": {
+    "hash": "8088008798ac",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.rune_stirrer.desc": {
+    "hash": "f6532cbf044f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.rune_stirrer.name": {
+    "hash": "22fda6663582",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.servant_ladle.desc": {
+    "hash": "29947d8c63fb",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.servant_ladle.name": {
+    "hash": "c08a26003d9a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.shears.desc": {
+    "hash": "6221981c9a2a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.shears.name": {
+    "hash": "3480b3c27d9a",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.signboard.desc": {
+    "hash": "94eec709c6c3",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.signboard.name": {
+    "hash": "885f87d236d9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.signboardCapped": {
+    "hash": "c26ce03eacc5",
+    "by": "ai",
+    "locked": false,
+    "time": "2026-09-28 10:02"
+  },
+  "upgrade.star_can.desc": {
+    "hash": "d44c4910762e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.star_can.name": {
+    "hash": "dfb407a1a53f",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.warm_circle.desc": {
+    "hash": "8e6a8edf105c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "upgrade.warm_circle.name": {
+    "hash": "52fcee8f3039",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.lines.done": {
+    "hash": "62156b482f04",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.lines.fail": {
+    "hash": "9cfab8a8906e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.lines.new": {
+    "hash": "d7df62a15541",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.rarity.0.name": {
+    "hash": "3786860f23a9",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.rarity.1.name": {
+    "hash": "d91f7385f57c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.rarity.2.name": {
+    "hash": "286527af1d81",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.reward": {
+    "hash": "0db9a1d8bdac",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  },
+  "wish.text.brew": {
+    "hash": "0a4315ececb2",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.text.clickCauldron": {
+    "hash": "925aec694271",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.text.clickPot": {
+    "hash": "6efe3d16759c",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.text.crate": {
+    "hash": "3931fcca5a1d",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.text.harvest": {
+    "hash": "ff1c44383e4e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:56"
+  },
+  "wish.title": {
+    "hash": "89979c9c188e",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-28 09:57"
+  }
+}

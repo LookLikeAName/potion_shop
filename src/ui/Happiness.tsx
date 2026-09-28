@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { WISH } from '../game/config/wishes';
 import { formatFull } from '../game/format';
+import { t } from '../i18n';
 import { wishText } from '../game/wishes';
 import { drawerOpen, openDrawer, useGame } from './store';
 
@@ -40,7 +41,7 @@ export function HeartMeter() {
   }, [h]);
 
   return (
-    <button class="res res-btn heart-meter" title="開心度（點擊打開兌換）" onClick={() => openDrawer('lumia')}>
+    <button class="res res-btn heart-meter" title={t('happy.meterTip')} onClick={() => openDrawer('lumia')}>
       <span class={`heart ${burst ? 'burst' : ''}`} key={burst}>
         <svg viewBox="0 0 32 30" aria-hidden="true">
           <defs>
@@ -68,18 +69,18 @@ export function WishCard() {
   const r = WISH.rarities[w.rarity] ?? WISH.rarities[0];
   const pct = Math.min(100, (w.progress / w.goal) * 100);
   const secs = Math.max(0, Math.ceil(w.time));
-  const time = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : `${secs} 秒`;
+  const time = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : t('format.seconds', { s: secs });
   return (
     <div class={`wish-card rarity-${w.rarity} ${drawerOpen.value ? 'shift' : ''}`}>
       <div class="wish-head">
-        <span class="wish-name">♥ 露米婭的{r.name}</span>
+        <span class="wish-name">{t('wish.title', { name: r.name })}</span>
         <span class={`wish-time ${secs <= 30 ? 'urgent' : ''}`}>⏳ {time}</span>
       </div>
       <div class="wish-text">{wishText(w)}</div>
       <div class="wish-bar"><div class="wish-fill" style={{ width: `${pct}%` }} /></div>
       <div class="wish-foot">
         <span>{formatFull(Math.min(w.progress, w.goal))} / {formatFull(w.goal)}</span>
-        <span class="wish-reward">完成 +{fmtHeart(w.reward)} ♥</span>
+        <span class="wish-reward">{t('wish.reward', { n: fmtHeart(w.reward) })}</span>
       </div>
     </div>
   );

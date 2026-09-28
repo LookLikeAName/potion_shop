@@ -1,10 +1,11 @@
 import { BOUNTY } from '../../game/config/balance';
 import { MATERIAL_IDS, PLANTS } from '../../game/config/plants';
-import { FLOATING_POT } from '../../game/config/upgrades';
+import { FLOATING_POT, TARGET_UPGRADES } from '../../game/config/upgrades';
 import { replantCost } from '../../game/commands';
 import { formatCycle, formatNumber, formatRate } from '../../game/format';
 import type { SlotState } from '../../game/state';
 import { growthSpeed, harvestPerRound, milestoneMult, nextMilestone, potOutputPerSec } from '../../game/stats';
+import { t, tx } from '../../i18n';
 import { BuyButton } from '../BuyButton';
 import { GlobalUpgrades } from '../GlobalUpgrades';
 import { Icon } from '../Icon';
@@ -15,10 +16,10 @@ export function GreenhousePanel() {
   return (
     <div class="cards">
       <p class="hint">
-        點擊盆栽可催熟；成熟後要再點一下採收（雇用花妖精後自動採收）。<br />
-        每次收成有 {Math.round(BOUNTY.chance * 100)}% 機率<b>豐收</b>：產量 +{Math.round(BOUNTY.bonus * 100)}%。
+        {t('green.intro')}<br />
+        {tx('green.bounty', { bounty: <b>{t('green.bountyWord')}</b> }, { pct: Math.round(BOUNTY.chance * 100), bonus: Math.round(BOUNTY.bonus * 100) })}
       </p>
-      <GlobalUpgrades zone="greenhouse" title="溫室工具" />
+      <GlobalUpgrades zone="greenhouse" title={t('green.tools')} />
       {game.state.slots.map((slot, i) => <SlotCard key={i} i={i} slot={slot} />)}
     </div>
   );
@@ -34,14 +35,14 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
     const nextToOpen = s.slots.findIndex((x) => !x.open);
     return (
       <div class="card locked" id={id}>
-        <div class="card-title">🔒 浮空盆栽格 {i + 1}</div>
+        <div class="card-title">{t('green.lockedSlot', { n: i + 1 })}</div>
         {i === nextToOpen ? (
           <BuyButton
-            k={{ kind: 'global', id: FLOATING_POT }} title="召喚浮空魔法盆栽" icon="pot_hidden_slot"
-            desc="讓花盆飄在溫室半空中，多一格可以種植物"
+            k={{ kind: 'global', id: FLOATING_POT }} title={t('green.summonPot')} icon="pot_hidden_slot"
+            desc={t('green.summonPotDesc')}
           />
         ) : (
-          <p class="hint">先開啟第 {nextToOpen + 1} 格，才能召喚這一格。</p>
+          <p class="hint">{t('green.openFirst', { n: nextToOpen + 1 })}</p>
         )}
       </div>
     );
@@ -50,8 +51,8 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
   if (!slot.plant) {
     return (
       <div class="card" id={id}>
-        <div class="card-title">空花盆 {i + 1}</div>
-        <p class="hint">選擇要種下的植物：</p>
+        <div class="card-title">{t('green.emptyPot', { n: i + 1 })}</div>
+        <p class="hint">{t('green.choose')}</p>
         {MATERIAL_IDS.map((m) => {
           const p = PLANTS[m];
           return (
@@ -59,7 +60,8 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
               <div class="buy-text">
                 <div class="buy-title"><Icon id={`item_${m}`} /> {p.name}</div>
                 <div class="buy-desc">
-                  生長 {p.growTime} 秒，點擊 +{p.clickAdvance} 秒{p.yieldMult !== 1 && `，每輪採收 ×${p.yieldMult}`}
+                  {t('green.seedInfo', { grow: p.growTime, click: p.clickAdvance })}
+                  {p.yieldMult !== 1 && t('green.seedYield', { x: p.yieldMult })}
                 </div>
               </div>
               <button class="buy-btn" disabled={s.gold < p.seedCost} onClick={() => game.plantSeed(i, m)}>
@@ -79,29 +81,29 @@ function SlotCard({ i, slot }: { i: number; slot: SlotState }) {
   const perSec = potOutputPerSec(s, i);
   const gainLevel = potOutputPerSec(s, i, { ...slot, level: slot.level + 1 }) - perSec;
   const gainRain = potOutputPerSec(s, i, { ...slot, rain: slot.rain + 1 }) - perSec;
-  const nextText = (gain: number) => (slot.fairy ? `（下一級：每秒 +${formatRate(gain)}）` : '');
+  const nextText = (gain: number) => (slot.fairy ? t('green.nextLevel', { n: formatRate(gain) }) : '');
   return (
     <div class="card" id={id}>
       <div class="card-title">
         <Icon id={`item_${slot.plant}`} /> {p.name} <span class="lv">Lv {slot.level}</span>
       </div>
       <PlantLevels i={i} slot={slot} />
-      <p class="hint plant-levels-hint">點其他植物就能改種：種過的免費換回、恢復當時的等級與升級；目前的等級也會留在這盆裡。</p>
+      <p class="hint plant-levels-hint">{t('green.replantHint')}</p>
       <div class="stats">
-        <span>每次採收 <b>{formatNumber(harvestPerRound(s, i))}</b> 個</span>
-        <span>生長 <b>{formatCycle(p.growTime / speed)}</b></span>
-        <span>速度 ×{formatRate(speed)}</span>
-        <span>{slot.fairy ? <>每秒約 <b>{formatRate(perSec)}</b> 個</> : '要點擊採收（雇用花妖精後自動）'}</span>
-        {next && <span>Lv {next} 時速度 ×{milestoneMult(next) / milestoneMult(slot.level)}</span>}
+        <span>{tx('green.perHarvest', { n: <b>{formatNumber(harvestPerRound(s, i))}</b> })}</span>
+        <span>{tx('green.growTime', { t: <b>{formatCycle(p.growTime / speed)}</b> })}</span>
+        <span>{t('green.speed', { x: formatRate(speed) })}</span>
+        <span>{slot.fairy ? tx('green.perSec', { n: <b>{formatRate(perSec)}</b> }) : t('green.manualHarvest')}</span>
+        {next && <span>{t('green.milestone', { lv: next, x: milestoneMult(next) / milestoneMult(slot.level) })}</span>}
       </div>
-      <BuyButton k={{ kind: 'potLevel', slot: i }} title="升級盆栽" desc={`採收量隨等級加速成長${nextText(gainLevel)}`} />
+      <BuyButton k={{ kind: 'potLevel', slot: i }} title={t('green.upgradePot')} desc={t('green.upgradePotDesc') + nextText(gainLevel)} />
       <BuyButton
-        k={{ kind: 'rain', slot: i }} title="局部微型雨雲" icon="upg_raincloud" status={`Lv ${slot.rain}`}
-        desc={`只在這盆上方下雨的生氣小烏雲。生長速度 +25%/級${nextText(gainRain)}`}
+        k={{ kind: 'rain', slot: i }} title={TARGET_UPGRADES.raincloud.name} icon="upg_raincloud" status={`Lv ${slot.rain}`}
+        desc={t('green.rainDesc') + nextText(gainRain)}
       />
       <BuyButton
-        k={{ kind: 'fairy', slot: i }} title="貪吃花妖精" icon="upg_fairy" doneText="已雇用"
-        desc="植物一成熟就一口吞下，再吐到倉庫。自動採收"
+        k={{ kind: 'fairy', slot: i }} title={TARGET_UPGRADES.fairy.name} icon="upg_fairy" doneText={t('green.hired')}
+        desc={t('green.fairyDesc')}
       />
     </div>
   );
@@ -122,9 +124,10 @@ function PlantLevels({ i, slot }: { i: number; slot: SlotState }) {
         const rec = cur ? { level: slot.level, rain: slot.rain, fairy: slot.fairy } : slot.memory[m];
         const cost = cur ? null : replantCost(s, i, m);
         const affordable = cost !== null && s.gold >= cost;
-        const title = cur ? `${PLANTS[m].name}（種植中）`
-          : cost === 0 ? `點一下改種${PLANTS[m].name}（免費，恢復 Lv ${rec?.level}）`
-          : `點一下改種${PLANTS[m].name}（種子 ${formatNumber(cost ?? 0)} 金，從 Lv 1 開始）`;
+        const name = PLANTS[m].name;
+        const title = cur ? t('green.tipCurrent', { name })
+          : cost === 0 ? t('green.tipFree', { name, lv: rec?.level ?? 1 })
+          : t('green.tipBuy', { name, cost: formatNumber(cost ?? 0) });
         return (
           <button
             key={m} type="button" title={title}
@@ -132,10 +135,10 @@ function PlantLevels({ i, slot }: { i: number; slot: SlotState }) {
             disabled={cur || !affordable} onClick={() => game.replant(i, m)}
           >
             <Icon id={`item_${m}`} size={1} />
-            {rec ? <b>Lv {rec.level}</b> : <b>未種過</b>}
-            {rec && rec.rain > 0 && <small>雨雲 {rec.rain}</small>}
+            {rec ? <b>Lv {rec.level}</b> : <b>{t('green.never')}</b>}
+            {rec && rec.rain > 0 && <small>{t('green.rainCount', { n: rec.rain })}</small>}
             {rec?.fairy && <Icon id="upg_fairy" size={0.9} />}
-            {cur ? <em>種植中</em> : <span class="plant-swap">{cost === 0 ? '改種' : <><Icon id="icon_gold" size={0.9} />{formatNumber(cost ?? 0)}</>}</span>}
+            {cur ? <em>{t('green.growing')}</em> : <span class="plant-swap">{cost === 0 ? t('green.swap') : <><Icon id="icon_gold" size={0.9} />{formatNumber(cost ?? 0)}</>}</span>}
           </button>
         );
       })}

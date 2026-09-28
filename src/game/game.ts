@@ -1,5 +1,5 @@
 // 執行期的遊戲物件：以真實經過時間推進模擬、存檔、轉發玩家指令。
-import { CLICK_CAP_PER_SEC, OFFLINE, TICK } from './config/balance';
+import { CLICK_CAP, OFFLINE, TICK } from './config/balance';
 import { MASCOT, type Assignment, type OutfitId, type TouchPart } from './config/mascot';
 import type { MaterialId } from './config/plants';
 import type { PotionId } from './config/recipes';
@@ -136,11 +136,13 @@ export class Game {
     for (const fn of this.listeners) fn();
   }
 
-  /** 有效點擊上限 15 次/秒 */
+  /** 有效點擊上限：1 秒內最多 CLICK_CAP.perSec 下，且兩下之間至少隔 minGapMs */
   private allowClick(): boolean {
     const now = performance.now();
     this.clickTimes = this.clickTimes.filter((t) => now - t < 1000);
-    if (this.clickTimes.length >= CLICK_CAP_PER_SEC) return false;
+    if (this.clickTimes.length >= CLICK_CAP.perSec) return false;
+    const last = this.clickTimes[this.clickTimes.length - 1];
+    if (last !== undefined && now - last < CLICK_CAP.minGapMs) return false;
     this.clickTimes.push(now);
     return true;
   }

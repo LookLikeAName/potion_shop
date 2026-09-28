@@ -1,11 +1,13 @@
 import { EVENT_MAP, LETTERS, MERCHANT_OFFERS, RARITY_NAMES, type MerchantOffer } from '../game/config/events';
 import { buffLabel } from '../game/events';
+import { t } from '../i18n';
+import { formatSeconds } from '../game/format';
 import { Icon } from './Icon';
 import { drawerOpen, letterOpen, useGame } from './store';
 
 const clock = (sec: number) => {
   const s = Math.max(0, Math.ceil(sec));
-  return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s} 秒`;
+  return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : formatSeconds(s);
 };
 
 /** 畫面上方中央的事件橫幅：名稱、怎麼做、進度與剩餘時間；三選一的事件在這裡選 */
@@ -17,7 +19,7 @@ export function EventBanner() {
   let progress = '';
   if (def.kind === 'tap' && def.goal > 1) progress = `${a.hits} / ${def.goal}`;
   else if (def.kind === 'count') progress = `${a.hits} / ${def.goal}`;
-  else if (def.kind === 'timing') progress = `剩 ${def.goal - a.tries} 次機會・命中 ${a.hits}`;
+  else if (def.kind === 'timing') progress = t('banner.timing', { left: def.goal - a.tries, hits: a.hits });
   return (
     <div class={`event-banner rarity-${def.rarity} ${drawerOpen.value ? 'shift' : ''}`}>
       <div class="event-head">
@@ -46,9 +48,9 @@ export function EventBanner() {
         <div class="event-choices">
           {a.options!.map((o, k) => (
             <button key={o} class="event-choice card-back" onClick={() => game.eventAction({ type: 'choose', index: k })}
-              title="翻開這張牌">
+              title={t('banner.flip')}>
               <span class="card-star">★</span>
-              <small>第 {k + 1} 張</small>
+              <small>{t('banner.cardN', { n: k + 1 })}</small>
             </button>
           ))}
         </div>
@@ -88,7 +90,7 @@ export function LetterModal() {
         <div class="letter-body">
           {l.lines.map((line, k) => <p key={k}>{line}</p>)}
         </div>
-        <button class="btn primary" onClick={() => (letterOpen.value = null)}>收好這封信</button>
+        <button class="btn primary" onClick={() => (letterOpen.value = null)}>{t('letter.keep')}</button>
       </div>
     </div>
   );

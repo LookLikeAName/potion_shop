@@ -1,4 +1,5 @@
-// 開心度節奏模擬：積極玩家（全程在線、照小心願點擊）與純掛機玩家（每小時上線買東西），
+// 開心度節奏模擬：積極玩家（全程在線、照小心願點擊）、純掛機玩家（開著頁面不操作，每小時買東西一次），
+// 以及對照用的關掉頁面玩家（離線，每小時上線買東西；離線的開心度有衰減懲罰）。
 // 記錄每件開心度物品、禮物的取得時間，以及開心度的來源比例。目標：積極約 12 小時、純掛機約 36 小時兌換完（聲援除外）。
 // 用法：npm run happiness -- [--out docs/happiness-report.md] [--active-hours 12] [--idle-hours 36]
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -23,7 +24,8 @@ const args = process.argv.slice(2);
 const argOf = (name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 const OUT = argOf('--out') ?? 'docs/happiness-report.md';
 const ACTIVE_HOURS = Number(argOf('--active-hours')) || 12;
-const IDLE_HOURS = Number(argOf('--idle-hours')) || 36;
+// 關掉頁面的對照組要約 50 小時才兌換完，模擬跑 60 小時才看得到
+const IDLE_HOURS = Number(argOf('--idle-hours')) || 60;
 // 調整用：覆寫設定值比較不同方案
 if (argOf('--rest')) MASCOT.restHappinessPerHour = Number(argOf('--rest'));
 if (argOf('--wish-base')) WISH.baseReward = Number(argOf('--wish-base'));
@@ -38,7 +40,8 @@ const goalCost = GOAL_ITEMS.reduce((n, i) => n + Array.from({ length: i.max }, (
 /** 擺設偏好：積極玩家重視心願與點擊，掛機玩家重視休息與離線 */
 const PREFS = {
   active: ['crystal_ball', 'star_lamp', 'music_box', 'gramophone', 'bouquet', 'slime_doll', 'hairpin', 'tea_set', 'snack', 'dream_catcher'],
-  idle: ['dream_catcher', 'slime_doll', 'gramophone', 'bouquet', 'hairpin', 'tea_set', 'snack', 'crystal_ball', 'star_lamp', 'music_box'],
+  idle: ['slime_doll', 'tea_set', 'gramophone', 'bouquet', 'hairpin', 'snack', 'crystal_ball', 'star_lamp', 'dream_catcher', 'music_box'],
+  away: ['dream_catcher', 'slime_doll', 'gramophone', 'bouquet', 'hairpin', 'tea_set', 'snack', 'crystal_ball', 'star_lamp', 'music_box'],
 };
 
 interface Sources {
@@ -94,7 +97,7 @@ function giftBuys(s: GameState, minutes: number, onGift: (id: string) => void): 
   }];
 }
 
-function simulate(kind: 'active' | 'idle') {
+function simulate(kind: 'active' | 'idle' | 'away') {
   const s = createInitialState();
   const src: Sources = { wish: 0, rest: 0, touch: 0, achievement: 0, gift: 0, event: 0 };
   const wishStats: Partial<Record<WishKind, { done: number; fail: number }>> = {};
@@ -185,8 +188,34 @@ function simulate(kind: 'active' | 'idle') {
       if (doneAt === null && allDone()) doneAt = s.time;
       if (s.time >= nextHour * 3600 - 1e-9) record(nextHour++);
     }
+  } else if (kind === 'idle') {
+    // 開著頁面但幾乎不操作：前 10 分鐘點一點，之後不點、不理小心願和事件，每小時打開魔導書買東西一次（每天摸一次頭拿每日獎勵）
+    const end = IDLE_HOURS * 3600;
+    let clickAcc = 0;
+    let nextHour = 1;
+    touch();
+    while (s.time < end - 1e-9) {
+      if (s.time < 600) {
+        clickAcc += 4 * TICK;
+        while (clickAcc >= 1) {
+          botClick(s, ctx, DEFAULT_BOT);
+          clickAcc -= 1;
+        }
+        if (Math.round(s.time * 10) % 10 === 0) shop(60);
+      }
+      tick(s, TICK, ctx);
+      if (s.time >= nextHour * 3600 - 1e-9) {
+        shop(60);
+        if (nextHour % 24 === 0) {
+          day++;
+          touch();
+        }
+        if (doneAt === null && allDone()) doneAt = s.time;
+        record(nextHour++);
+      }
+    }
   } else {
-    // 前 10 分鐘像一般放置玩家一樣點一點，之後每小時上線一次買東西（每天摸一次頭拿每日獎勵）
+    // 關掉頁面：前 10 分鐘像一般放置玩家一樣點一點，之後離線，每小時上線一次買東西（每天摸一次頭拿每日獎勵）
     let clickAcc = 0;
     while (s.time < 600) {
       clickAcc += 4 * TICK;
@@ -225,15 +254,16 @@ const lines: string[] = [];
 const out = (l = '') => lines.push(l);
 out('# 開心度節奏模擬報告');
 out();
-out('> 由 `npm run happiness` 產生。目標：積極玩家約 12 小時、純掛機約 36 小時兌換完所有開心度物品（少女的聲援除外）。');
+out('> 由 `npm run happiness` 產生。目標：積極玩家約 12 小時、純掛機（開著頁面不操作）約 36 小時兌換完所有開心度物品（少女的聲援除外）。關掉頁面不算在玩，離線的開心度有衰減，只做對照。');
 out(`> 兌換目標合計 ${goalCost} ♥；休息基礎每小時 ${MASCOT.restHappinessPerHour} ♥；心願基礎獎勵 ${WISH.baseReward}；倍率 = (1 + ${BOND.renownPerLevel} × 名聲) × (1 + ${BOND.bondPerLevel} × 羈絆)。`);
 
 const PROFILE_DESC = {
   active: `積極玩家：全程在線 ${ACTIVE_HOURS} 小時，每秒點 4 下並照小心願的題目點，每 3 分鐘摸一次頭`,
-  idle: `純掛機玩家：前 10 分鐘點一點，之後離線，每小時上線買東西一次（${IDLE_HOURS} 小時）`,
+  idle: `純掛機玩家：開著頁面，前 10 分鐘點一點，之後不點也不理小心願和事件，每小時買東西一次（${IDLE_HOURS} 小時）`,
+  away: `對照：關掉頁面的玩家：前 10 分鐘點一點，之後離線，每小時上線買東西一次（${IDLE_HOURS} 小時）`,
 };
 
-for (const kind of ['active', 'idle'] as const) {
+for (const kind of ['active', 'idle', 'away'] as const) {
   const { s, rows, firsts, src, wishStats, spent, doneAt } = simulate(kind);
   const total = s.happiness + spent;
   out();

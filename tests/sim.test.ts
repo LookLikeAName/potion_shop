@@ -46,6 +46,9 @@ describe('市場熱度', () => {
     expect(Math.min(...seen)).toBeGreaterThanOrEqual(MARKET.min - 1e-9);
     expect(Math.max(...seen)).toBeLessThanOrEqual(MARKET.max + 1e-9);
     expect(Math.max(...seen) - Math.min(...seen)).toBeGreaterThan(0.2);
+    // 冷熱都會出現
+    expect(seen.some((v) => v < 0.97)).toBe(true);
+    expect(seen.some((v) => v > 1.03)).toBe(true);
 
     s.potionRate.glow = 100;
     s.market.value = 1;

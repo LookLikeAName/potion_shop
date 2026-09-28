@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { t } from '../i18n';
 import { yRange, type YMode } from './chartScale';
 
 export interface Series {
@@ -90,7 +91,7 @@ export function LineChart({ ago, series, refLine, format, tipFormat = format, yM
           ))}
           {[-30, -20, -10, 0].map((a) => (
             <text key={a} x={x(a)} y={H - 6} class="chart-xtick" text-anchor={a === -30 ? 'start' : a === 0 ? 'end' : 'middle'}>
-              {a === 0 ? '現在' : `${-a} 秒前`}
+              {a === 0 ? t('chart.now') : t('chart.ago', { n: -a })}
             </text>
           ))}
           {refLine && refLine.value > 0 && (
@@ -113,7 +114,7 @@ export function LineChart({ ago, series, refLine, format, tipFormat = format, yM
         </svg>
         {h !== null && (
           <div class={`chart-tip ${x(ago[h]) > W * 0.6 ? 'left' : ''}`} style={{ left: `${(x(ago[h]) / W) * 100}%` }}>
-            <div class="chart-tip-time">{Math.round(-ago[h])} 秒前</div>
+            <div class="chart-tip-time">{t('chart.ago', { n: Math.round(-ago[h]) })}</div>
             {series.map((s) => (
               <div key={s.label} class="chart-tip-row">
                 <i class="chart-key" style={{ background: s.color }} />

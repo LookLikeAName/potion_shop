@@ -1,0 +1,21 @@
+{
+  "_說明": "翻譯風格：每一條都會放進給模型的指示裡。common 是所有語言共用，其他依語言代碼。",
+  "common": [
+    "Tone: warm, cozy, kawaii and heartwarming, like a Japanese slice-of-life anime. Never sarcastic or crude.",
+    "Lumia's lines (keys under lines.*, mutter.*, wish.lines.*, event.lines.*, gift.*.line, event.*.lumia, story.*) are spoken by a cheerful, earnest, slightly clumsy young apprentice witch who adores her teacher (the player).",
+    "UI labels, buttons and tabs must be short. Descriptions should be clear and concise; keep numbers, percentages and multipliers exactly.",
+    "Keep the meaning faithful; do not add information that is not in the source."
+  ],
+  "ja": [
+    "Write natural Japanese as used in Japanese mobile games. Use full-width Japanese punctuation (、。！？「」…).",
+    "Lumia speaks politely but cutely (です・ます with soft endings like 〜ですね！, 〜しちゃいました), and calls the player 「先生」.",
+    "System/UI text uses plain, concise style (体言止め is fine for labels)."
+  ],
+  "en": [
+    "Write natural, friendly English (US spelling).",
+    "Lumia speaks casually and cheerfully, and calls the player \"Master\".",
+    "Use sentence case for descriptions and Title Case for item/upgrade/outfit names.",
+    "Keep UI labels very short: tabs and buttons ideally under 14 characters.",
+    "Time units in format.* keys should be compact, e.g. \"{h}h {m}m\", \"{s}s\"."
+  ]
+}

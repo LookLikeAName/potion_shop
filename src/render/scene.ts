@@ -20,7 +20,9 @@ import {
   decorSlots,
   refineLevel, workZone,
 } from '../game/stats';
-import { letterOpen, lumiaOpen, openDrawer, showToast } from '../ui/store';
+import { letterOpen, lumiaOpen, openDrawer, showNewEventPage, showToast } from '../ui/store';
+import { t } from '../i18n';
+import { cursorStyle, startGrabbing } from '../ui/cursors';
 import { EVENT_LINES, EVENT_MAP } from '../game/config/events';
 import { EventLayer } from './eventLayer';
 import {
@@ -29,7 +31,7 @@ import {
   QUEUE_X, QUEUE_Y, REST_POS, SHELF_Y, SLOT_POS, W, ZONES,
 } from './layout';
 import { PaperDoll } from './paperDoll';
-import { FONT, Pic, TextureBank } from './textures';
+import { Pic, TextureBank, uiFont } from './textures';
 
 /** 頂部資源列的高度（舞台座標；小螢幕時 UI 會放大）：場景上方這段被它蓋住 */
 function topBarHeight(): number {
@@ -39,7 +41,7 @@ function topBarHeight(): number {
 const text = (s: string, size: number, fill = 0xffffff, weight: '400' | '700' = '700') =>
   new Text({
     text: s,
-    style: { fontFamily: FONT, fontSize: size, fill, fontWeight: weight, align: 'center', stroke: { color: 0x2b1d14, width: Math.max(3, size / 6) } },
+    style: { fontFamily: uiFont(), fontSize: size, fill, fontWeight: weight, align: 'center', stroke: { color: 0x2b1d14, width: Math.max(3, size / 6) } },
   });
 
 const lighten = (c: number, k = 0.45) => lerpColor(c, 0xffffff, k);
@@ -181,6 +183,84 @@ class ParticleLayer extends Container {
   }
 }
 
+/** 點擊回饋用的四角小星星與細光環 */
+const SPARK = new GraphicsContext()
+  .poly([0, -1, 0.22, -0.22, 1, 0, 0.22, 0.22, 0, 1, -0.22, 0.22, -1, 0, -0.22, -0.22])
+  .fill({ color: 0xffffff });
+const TAP_RING = new GraphicsContext().circle(0, 0, 30).stroke({ width: 4, color: 0xffffff });
+const TAP_RING_SHADOW = new GraphicsContext().circle(0, 0, 30).stroke({ width: 8, color: 0x2b1d14, alpha: 0.35 });
+
+interface Spark { g: Graphics; vx: number; vy: number; life: number; max: number; size: number; spin: number }
+interface TapRing { g: Container; life: number; max: number; size: number; alpha: number }
+
+/**
+ * 點擊回饋：點下去的位置冒出光環與小星星，顏色依點到的東西（盆栽綠、大釜橘、客人金、露米婭粉…），
+ * 讓玩家看得出剛剛點到了什麼；點到空處只有一個淡淡的小圈
+ */
+class TapFx extends Container {
+  private sparks: Spark[] = [];
+  private rings: TapRing[] = [];
+  private sparkPool = new Pool(this, () => new Graphics(SPARK));
+  private ringPool = new Pool(this, () => {
+    const c = new Container();
+    c.addChild(new Graphics(TAP_RING_SHADOW), new Graphics(TAP_RING));
+    return c;
+  });
+  private static readonly MAX_SPARKS = 120;
+
+  constructor() {
+    super();
+    this.eventMode = 'none';
+  }
+
+  /** color = null：沒點到可以互動的東西 */
+  spawn(x: number, y: number, color: number | null): void {
+    const hit = color !== null;
+    const c = color ?? 0xffffff;
+    const ring = this.ringPool.get();
+    (ring.children[1] as Graphics).tint = lighten(c, 0.25);
+    ring.position.set(x, y);
+    this.rings.push({ g: ring, life: 0.32, max: 0.32, size: hit ? 1.25 : 0.8, alpha: hit ? 1 : 0.5 });
+    if (!hit) return;
+    const n = 6;
+    const start = Math.random() * Math.PI * 2;
+    for (let k = 0; k < n; k++) {
+      if (this.sparks.length >= TapFx.MAX_SPARKS) this.sparkPool.put(this.sparks.shift()!.g);
+      const g = this.sparkPool.get();
+      g.tint = lerpColor(c, 0xffffff, 0.2 + Math.random() * 0.4);
+      g.position.set(x, y);
+      const a = start + (k / n) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const sp = 150 + Math.random() * 110;
+      const life = 0.38 + Math.random() * 0.17;
+      this.sparks.push({ g, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life, max: life, size: 8 + Math.random() * 5, spin: (Math.random() - 0.5) * 10 });
+    }
+  }
+
+  update(dt: number): void {
+    for (const p of this.sparks) {
+      p.life -= dt;
+      // 往外飛、慢慢減速，稍微往下飄
+      const drag = Math.max(0, 1 - 5 * dt);
+      p.vx *= drag;
+      p.vy = p.vy * drag + 120 * dt;
+      p.g.x += p.vx * dt;
+      p.g.y += p.vy * dt;
+      p.g.rotation += p.spin * dt;
+      const k = Math.max(0, p.life / p.max);
+      p.g.alpha = Math.min(1, k * 1.6);
+      // 先長大再縮小，像閃一下
+      p.g.scale.set(p.size * Math.sin(Math.PI * Math.min(1, (1 - k) * 1.4 + 0.15)));
+    }
+    sweep(this.sparks, (p) => this.sparkPool.put(p.g));
+    for (const r of this.rings) {
+      r.life -= dt;
+      const k = 1 - Math.max(0, r.life / r.max);
+      r.g.scale.set(r.size * (0.35 + 0.9 * (1 - (1 - k) ** 3)));
+      r.g.alpha = r.alpha * Math.max(0, r.life / r.max);
+    }
+    sweep(this.rings, (r) => this.ringPool.put(r.g));
+  }
+}
 
 /** 高速模式的速率字（實際每秒產量）：級數越高字越大，3 級變彩虹色並跟著節奏跳動 */
 function setRateText(label: Text, tier: FastTier, rate: number, time: number): void {
@@ -193,7 +273,7 @@ function setRateText(label: Text, tier: FastTier, rate: number, time: number): v
   const last = rateTextAt.get(label) ?? -1;
   if (time - last >= 0.25 || time < last || label.text === '') {
     rateTextAt.set(label, time);
-    label.text = `${formatNumber(rate)}/秒`;
+    label.text = t('scene.perSec', { n: formatNumber(rate) });
   }
   label.tint = tier === 3 ? rainbow(time * 0.8) : 0xffe066;
   const beat = tier >= 2 ? 1 + 0.07 * Math.abs(Math.sin(time * 9)) : 1;
@@ -388,14 +468,14 @@ class PotView extends Container {
     if (!slot.open) {
       this.pot.setId('pot_locked');
       this.pot.alpha = this.floating ? 0.85 : 0.55;
-      this.hint.text = '浮空格';
+      this.hint.text = t('scene.floatingSlot');
       this.hint.y = -110;
       return;
     }
     if (!slot.plant) {
       this.pot.setId('pot_t1');
       this.pot.alpha = 0.6;
-      this.hint.text = '＋ 種植';
+      this.hint.text = t('scene.plant');
       this.hint.y = -60;
       return;
     }
@@ -668,7 +748,7 @@ class CauldronView extends Container {
       this.title.text = '';
       // 未解鎖的大釜彼此很近，字小一點才不會疊在一起
       if (this.info.style.fontSize !== 16) this.info.style.fontSize = 16;
-      this.info.text = `🔒 ${r.name}\n${formatNumber(r.unlockCost)} 金幣`;
+      this.info.text = t('scene.lockedRecipe', { name: r.name, cost: formatNumber(r.unlockCost) });
       // 相鄰兩個未解鎖的大釜上下錯開
       this.info.y = -60 - ((this.i - s.cauldrons.length) % 2) * 46;
       return;
@@ -777,9 +857,9 @@ class CauldronView extends Container {
     if (has(s, 'bellows')) {
       this.combo.y = -bh * 0.5;
       const n = activeCombo(s, c);
-      if (boiling) this.combo.text = `🔥 極速沸騰 ${c.boil.toFixed(1)}s`;
-      else if (c.boilCooldown > 0) this.combo.text = `冷卻 ${Math.ceil(c.boilCooldown)}s`;
-      else if (n > 0) this.combo.text = `連擊 ${n}/${UPGRADE_FX.comboClicks}`;
+      if (boiling) this.combo.text = t('scene.boiling', { n: c.boil.toFixed(1) });
+      else if (c.boilCooldown > 0) this.combo.text = t('scene.cooldown', { n: Math.ceil(c.boilCooldown) });
+      else if (n > 0) this.combo.text = t('scene.combo', { n, max: UPGRADE_FX.comboClicks });
       const fill = boiling ? 0xff8a3c : c.boilCooldown > 0 ? 0xbbbbbb : 0xffb347;
       if (fill !== this.comboFill) this.combo.style.fill = this.comboFill = fill;
     }
@@ -789,7 +869,7 @@ class CauldronView extends Container {
       this.info.text = '';
       this.setNeeds('', null, []);
     } else if (brewing) {
-      this.info.text = `熬煮中 ×${c.batch}`;
+      this.info.text = t('scene.brewing', { n: c.batch });
       this.setNeeds('', null, []);
     } else {
       this.info.text = '';
@@ -892,7 +972,7 @@ class CustomerView extends Container {
     this.y = QUEUE_Y;
     this.bubble.addChild(this.bubbleBg);
     if (c.princess) {
-      const dots = new Text({ text: '……', style: { fontFamily: FONT, fontSize: 24, fontWeight: '700', fill: 0x4a3426 } });
+      const dots = new Text({ text: '……', style: { fontFamily: uiFont(), fontSize: 24, fontWeight: '700', fill: 0x4a3426 } });
       dots.anchor.set(0.5);
       this.bubbleBg.roundRect(-45, -ROW_H / 2 - 6, 90, ROW_H + 12, 16).fill({ color: 0xfff6e0 }).stroke({ width: 3, color: 0x2b1d14 });
       this.bubble.addChild(dots);
@@ -904,7 +984,7 @@ class CustomerView extends Container {
       const icon = new Pic(tex, `potion_${l.potion}`, 38, 38);
       icon.anchor.set(0.5);
       icon.y = y;
-      const qty = new Text({ text: '', style: { fontFamily: FONT, fontSize: 24, fontWeight: '700', fill: 0x4a3426 } });
+      const qty = new Text({ text: '', style: { fontFamily: uiFont(), fontSize: 24, fontWeight: '700', fill: 0x4a3426 } });
       qty.anchor.set(0, 0.5);
       qty.y = y;
       this.rows.push(qty);
@@ -1105,7 +1185,7 @@ class SpeechBubble extends Container {
   private words = new Text({
     text: '',
     style: {
-      fontFamily: FONT, fontSize: 22, fill: 0x4a3426, fontWeight: '700', align: 'center',
+      fontFamily: uiFont(), fontSize: 22, fill: 0x4a3426, fontWeight: '700', align: 'center',
       wordWrap: true, breakWords: true, wordWrapWidth: 300, lineHeight: 30,
     },
   });
@@ -1637,7 +1717,7 @@ class LumiaDrag {
     this.lumia.drop(x, floorY);
     this.onDragChange(false);
     this.game.assignLumia(zone);
-    showToast(`露米婭：交給我吧！（${ASSIGNMENTS[zone].name}：${ASSIGNMENTS[zone].desc}）`);
+    showToast(t('scene.assigned', { zone: ASSIGNMENTS[zone].name, desc: ASSIGNMENTS[zone].desc }));
   }
 }
 
@@ -1667,11 +1747,11 @@ const DECOR_TIP_DELAY = 0.5;
 /** 休息室擺設的說明框：名稱 + 擺出來的效果 */
 class DecorTip extends Container {
   private bg = new Graphics();
-  private title = new Text({ text: '', style: { fontFamily: FONT, fontSize: 22, fontWeight: '700', fill: 0x4a3426 } });
+  private title = new Text({ text: '', style: { fontFamily: uiFont(), fontSize: 22, fontWeight: '700', fill: 0x4a3426 } });
   private body = new Text({
     text: '',
     style: {
-      fontFamily: FONT, fontSize: 18, fontWeight: '700', fill: 0x2f6f6a,
+      fontFamily: uiFont(), fontSize: 18, fontWeight: '700', fill: 0x2f6f6a,
       wordWrap: true, breakWords: true, wordWrapWidth: 300, lineHeight: 26,
     },
   });
@@ -1840,8 +1920,8 @@ class PropsLayer extends Container {
   private ring(): void {
     const r = this.game.ringBell();
     if (r === 'ok') this.bellPunch = 1;
-    else if (r === 'empty') showToast('鈴鐺還在充能中…');
-    else if (r === 'full') showToast('櫃台已經排滿客人了');
+    else if (r === 'empty') showToast(t('scene.bellEmpty'));
+    else if (r === 'full') showToast(t('scene.queueFull'));
   }
 
   update(s: GameState, dt: number): void {
@@ -1871,7 +1951,7 @@ class PropsLayer extends Container {
         this.tipFor = k;
         if (this.hover.touch) this.suppressTap = true;
         const h = pic.texture.height * pic.baseScale;
-        this.tip.show(gift.name, `擺出來：${gift.desc}`, pic.x, pic.y - h, pic.y);
+        this.tip.show(gift.name, t('scene.decorTip', { desc: gift.desc }), pic.x, pic.y - h, pic.y);
       }
     }
     // 算盤松鼠的結帳動作：先往上拉長，再壓扁回彈（體積大致不變），同時左右搖擺，越來越小
@@ -1967,6 +2047,7 @@ class CauldronDrag {
       }
       if (performance.now() - this.downAt < 300) return;
       this.dragging = true;
+      startGrabbing();
       this.lift(v);
     }
     const n = this.game.state.cauldrons.length;
@@ -1985,7 +2066,7 @@ class CauldronDrag {
     }
     v.dragX = null;
     this.drop();
-    if (this.game.moveCauldron(v.i, to)) showToast('已調整大釜順序：左邊的大釜優先取得原料');
+    if (this.game.moveCauldron(v.i, to)) showToast(t('scene.cauldronMoved'));
   }
 
   /** 拿起來：大釜本體與資訊層都移到最上層 */
@@ -2048,7 +2129,7 @@ const FLOAT_STYLE = { fontFamily: FLOAT_FONT, fontSize: 40 };
 function installFloatFont(): void {
   BitmapFont.install({
     name: FLOAT_FONT,
-    style: { fontFamily: FONT, fontSize: 40, fill: 0xffffff, fontWeight: '700', stroke: { color: 0x2b1d14, width: 7 } },
+    style: { fontFamily: uiFont(), fontSize: 40, fill: 0xffffff, fontWeight: '700', stroke: { color: 0x2b1d14, width: 7 } },
     chars: [['0', '9'], ['a', 'z'], ['A', 'Z'], ' +-.,/%×！？：（）金'],
   });
 }
@@ -2228,7 +2309,7 @@ function buildBackground(tex: TextureBank): Container {
     t.position.set(z.x + 18, z.y + 12);
     root.addChild(t);
   }
-  const note = text('（佔位背景 — 正式圖：bg_dollhouse_main）', 18, 0xf6e3b4, '400');
+  const note = text('(placeholder: bg_dollhouse_main)', 18, 0xf6e3b4, '400');
   note.alpha = 0.4;
   note.position.set(ZONES.loft.x + 18, ZONES.loft.y + 60);
   root.addChild(note);
@@ -2242,12 +2323,16 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   await app.init({ width: W, height: H, background: 0x1c130e, antialias: true, resolution, autoDensity: true });
   host.appendChild(app.canvas);
   if (import.meta.env.DEV) Object.assign(window, { __app: app });
+  // 遊戲游標：場景物件設的 cursor（pointer／grab）換成遊戲的圖；一般狀態沿用頁面的游標
+  const cursors = app.renderer.events.cursorStyles;
+  for (const k of ['pointer', 'grab', 'grabbing'] as const) cursors[k] = cursorStyle(k);
 
   const tex = new TextureBank(app);
   await tex.init();
 
   const drag = new CauldronDrag(app, game);
   const particles = new ParticleLayer();
+  const tapFx = new TapFx();
   const pots = SLOT_POS.map((_, i) => new PotView(i, tex, game, particles));
   const cauldrons = CAULDRON_X.map((_, i) => new CauldronView(i, tex, game, particles, (v, e) => drag.press(v, e)));
   const props = new PropsLayer(tex, game);
@@ -2264,8 +2349,10 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
   const dragLayer = new Container();
   drag.topLayer = dragLayer;
   lumiaLayer.addChild(lumia);
-  const lumiaDrag = new LumiaDrag(app, game, lumia, highlight, (dragging) =>
-    (dragging ? dragLayer : lumiaLayer).addChild(lumia));
+  const lumiaDrag = new LumiaDrag(app, game, lumia, highlight, (dragging) => {
+    (dragging ? dragLayer : lumiaLayer).addChild(lumia);
+    if (dragging) startGrabbing();
+  });
   // 突發事件：畫在飄字、粒子、對話泡泡上面，要點的東西不會被擋住
   const events = new EventLayer(app, tex, game, {
     potPos: (i) => ({ x: pots[i].x, y: pots[i].y }),
@@ -2290,7 +2377,26 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     buildBackground(tex), props, ...potsByDepth, ...cauldrons, particles,
     ...potsByDepth.map((p) => p.hud), ...cauldrons.map((c) => c.hud),
     lumiaLayer, lumiaDrag.hit, customers, floats, ...cauldrons.map((c) => c.top), speechLayer, events, props.tip, fever, highlight, dragLayer,
+    tapFx,
   );
+
+  // 點擊回饋：在「捕獲」階段先看到每一次點擊（有些物件會擋住往上傳），依點到的東西決定顏色
+  const tapColors: [Container, number][] = [
+    ...pots.map((p): [Container, number] => [p, 0x8fe07a]),
+    ...cauldrons.map((c): [Container, number] => [c, 0xffa94d]),
+    [customers, 0xffd34d],
+    [lumiaDrag.hit, 0xff8fb8],
+    [lumia, 0xff8fb8],
+    [events, 0xfff08a],
+    [props, 0x9ee8ff],
+  ];
+  app.stage.addEventListener('pointerdown', (e: FederatedPointerEvent) => {
+    let color: number | null = null;
+    for (let o = e.target as Container | null; o && o !== app.stage && color === null; o = o.parent) {
+      color = tapColors.find(([c]) => c === o)?.[1] ?? null;
+    }
+    tapFx.spawn(e.global.x, e.global.y, color);
+  }, { capture: true });
 
   const onEvent = (e: GameEvent, s: GameState) => {
     switch (e.type) {
@@ -2302,8 +2408,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         const color = lighten(PLANTS[e.material].color);
         const label = `+${formatNumber(e.amount)} ${name}`;
         const key = `pot:${e.slot}`;
-        if (e.crit) floats.spawn(`暴擊生長！${label}`, p.x, p.y - 20, 0xffe066, { big: true, key });
-        else if (e.bounty) floats.spawn(`豐收！${label}`, p.x, p.y - 10, 0x9dff8a, { key });
+        if (e.crit) floats.spawn(t('float.crit', { label }), p.x, p.y - 20, 0xffe066, { big: true, key });
+        else if (e.bounty) floats.spawn(t('float.bounty', { label }), p.x, p.y - 10, 0x9dff8a, { key });
         else floats.spawn(label, p.x, p.y, color, { key });
         break;
       }
@@ -2317,7 +2423,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         const color = lighten(RECIPES[e.recipe].color);
         const label = `+${formatNumber(e.amount)} ${name}`;
         // 雙倍的大字彈得高；一般產出彈得低、散得開，填滿大釜上方的區域（兩者分開計算，大字不會擠掉一般的字）
-        if (e.double) floats.spawn(`雙倍！${label}`, p.x, p.y - 20, 0x9ee8ff, { big: true, key: `cauldron:${e.recipe}:double` });
+        if (e.double) floats.spawn(t('float.double', { label }), p.x, p.y - 20, 0x9ee8ff, { big: true, key: `cauldron:${e.recipe}:double` });
         else floats.spawn(label, p.x, p.y, color, { key: `cauldron:${e.recipe}`, launch: CAULDRON_FLOAT_LAUNCH, spread: CAULDRON_FLOAT_SPREAD });
         break;
       }
@@ -2325,21 +2431,21 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       case 'sale': {
         props.bumpSquirrel();
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
-        const note = e.tip ? '（土豪小費！）' : e.rush ? '（急單！）' : e.partial ? '（部分購買）' : '';
-        floats.spawn(`+${formatFull(e.gold)} 金${note}`, p.x, p.y, 0xffd34d, { big: e.rush || e.tip, always: true, key: 'sale' });
+        const note = e.tip ? t('float.tip') : e.rush ? t('float.rush') : e.partial ? t('float.partial') : '';
+        floats.spawn(t('float.gold', { n: formatFull(e.gold) }) + note, p.x, p.y, 0xffd34d, { big: e.rush || e.tip, always: true, key: 'sale' });
         break;
       }
       case 'wholesale': {
         // 從對應的收購箱跳出來
         const p = props.bumpCrate(e.crate);
         if (!p) break;
-        const what = e.crate === 'materials' ? `${formatNumber(e.amount)} 份原料` : `${formatNumber(e.amount)} 瓶`;
-        floats.spawn(`+${formatFull(e.gold)} 金（收購 ${what}）`, p.x, p.y, 0xe8c56a, { always: true, key: `crate:${e.crate}` });
+        const what = t(e.crate === 'materials' ? 'float.crateMaterials' : 'float.cratePotions', { n: formatNumber(e.amount) });
+        floats.spawn(t('float.crate', { n: formatFull(e.gold), what }), p.x, p.y, 0xe8c56a, { always: true, key: `crate:${e.crate}` });
         break;
       }
       case 'achievement': {
         const a = ACHIEVEMENTS.find((x) => x.id === e.id);
-        if (a) showToast(`🏆 成就達成：${a.name}（+${a.reward} ♥）`);
+        if (a) showToast(t('toast.achievement', { name: a.name, n: a.reward }));
         break;
       }
       case 'wish': {
@@ -2348,13 +2454,13 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         if (e.result === 'new') {
           say(WISH_LINES.new);
           const r = WISH.rarities[s.wish?.rarity ?? 0];
-          if (s.wish && s.wish.rarity > 0) showToast(`✨ 露米婭許了一個「${r.name}」！`);
+          if (s.wish && s.wish.rarity > 0) showToast(t('toast.bigWish', { name: r.name }));
         } else if (e.result === 'done') {
           say(WISH_LINES.done);
-          floats.spawn(`心願達成！${heart}`, lumia.x + 120, lumia.y - 140, 0xff8fb8, { big: true });
+          floats.spawn(t('float.wishDone', { heart }), lumia.x + 120, lumia.y - 140, 0xff8fb8, { big: true });
         } else {
           say(WISH_LINES.fail);
-          if (e.reward > 0) floats.spawn(`努力獎 ${heart}`, lumia.x + 120, lumia.y - 140, 0xffc0d8, { always: true });
+          if (e.reward > 0) floats.spawn(t('float.wishTried', { heart }), lumia.x + 120, lumia.y - 140, 0xffc0d8, { always: true });
         }
         break;
       }
@@ -2364,16 +2470,17 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         if (e.result === 'start') {
           lumia.say(EVENT_LINES.start[Math.floor(Math.random() * EVENT_LINES.start.length)]);
         } else if (e.result === 'done') {
-          const book = e.first ? '　📖 事件簿新增一頁！' : '';
-          showToast(`🎉 ${def.name}：${e.text ?? ''}${book}`, 5000);
+          const book = e.first ? t('toast.eventNewPage') : '';
+          showToast(t('toast.eventDone', { name: def.name, text: e.text ?? '' }) + book, 5000);
           if (e.letter !== undefined) letterOpen.value = e.letter;
+          if (e.first) showNewEventPage(e.id);
         } else {
-          showToast(`${def.name}離開了…下次再來吧`);
+          showToast(t('toast.eventLeft', { name: def.name }));
         }
         break;
       }
       case 'mascot': {
-        showToast(e.kind === 'exhausted' ? '露米婭累壞了，去休息室睡一下…' : '露米婭睡飽了，回去工作囉！');
+        showToast(t(e.kind === 'exhausted' ? 'toast.exhausted' : 'toast.woke'));
         const lines = LINES[e.kind];
         lumia.say(lines[Math.floor(Math.random() * lines.length)]);
         break;
@@ -2399,6 +2506,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     events.update(s, dt);
     for (const e of game.drainEvents()) onEvent(e, s);
     particles.update(dt);
+    tapFx.update(dt);
     floats.update(dt);
   });
 

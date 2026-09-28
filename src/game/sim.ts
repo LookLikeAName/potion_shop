@@ -268,12 +268,14 @@ export function missingInputs(s: GameState, c: CauldronState): MaterialId[] {
 
 // ---------- 市場熱度 ----------
 
-/** 每隔一段時間隨機換一個熱度目標，慢慢靠過去（離線取平均 1） */
+/** 每隔一段時間隨機換一個熱度目標（一半冷、一半熱），慢慢靠過去（離線取 1） */
 function tickMarket(s: GameState, dt: number, ctx: SimContext): void {
   const m = s.market;
   m.timer -= dt;
   if (m.timer <= 0) {
-    m.target = ctx.offline ? 1 : MARKET.min + ctx.rng() * (MARKET.max - MARKET.min);
+    const hot = ctx.rng() < MARKET.hotChance;
+    const r = ctx.rng();
+    m.target = ctx.offline ? 1 : hot ? 1 + r * (MARKET.max - 1) : MARKET.min + r * (1 - MARKET.min);
     m.timer = MARKET.holdMin + ctx.rng() * (MARKET.holdMax - MARKET.holdMin);
   }
   // 事件（土豪勇者到處宣傳）：熱度往指定的值靠過去
@@ -561,12 +563,13 @@ function tickMascot(s: GameState, dt: number, ctx: SimContext): void {
 }
 
 /**
- * 離線時開心度產出的平均倍率（這一步 elapsed ~ elapsed+dt 秒）：剛離開 100%，線性降到 MASCOT.offlineHappyHours 時 0
+ * 離線時開心度產出相對於在線休息的平均倍率（這一步 elapsed ~ elapsed+dt 秒）：
+ * 剛離開是 offlineRestPerHour ÷ restHappinessPerHour，線性降到 MASCOT.offlineHappyHours 時 0
  */
 export function offlineHappyFactor(elapsed: number, dt: number): number {
   const limit = MASCOT.offlineHappyHours * 3600;
   const mid = elapsed + dt / 2;
-  return Math.max(0, 1 - mid / limit);
+  return (MASCOT.offlineRestPerHour / MASCOT.restHappinessPerHour) * Math.max(0, 1 - mid / limit);
 }
 
 /** 自由活動：每隔一段時間自己換一個有事可做的區域工作 */

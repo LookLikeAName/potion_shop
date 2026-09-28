@@ -1,3 +1,5 @@
+import { localized } from '../../i18n';
+
 export type MaterialId = 'redheart' | 'moonshroom' | 'starvine';
 
 export interface PlantDef {
@@ -26,19 +28,24 @@ export interface PlantDef {
   color: number;
 }
 
-export const PLANTS: Record<MaterialId, PlantDef> = {
+const RAW: Record<MaterialId, Omit<PlantDef, 'name'>> = {
   redheart: {
-    id: 'redheart', name: '紅心草', tier: 1,
+    id: 'redheart', tier: 1,
     growTime: 3, clickAdvance: 0.5, seedCost: 50, levelBaseCost: 10, yieldMult: 1, sellValue: 0.5, color: 0xe0485f,
   },
   moonshroom: {
-    id: 'moonshroom', name: '月光菇', tier: 2,
+    id: 'moonshroom', tier: 2,
     growTime: 8, clickAdvance: 1.0, seedCost: 300, levelBaseCost: 200, yieldMult: 1.3, sellValue: 2, color: 0x4d8dff,
   },
   starvine: {
-    id: 'starvine', name: '星光藤蔓', tier: 3,
+    id: 'starvine', tier: 3,
     growTime: 20, clickAdvance: 2.0, seedCost: 20000, levelBaseCost: 4000, yieldMult: 1.6, sellValue: 8, color: 0x9a5cd6,
   },
 };
+
+/** 名稱在語言檔 plant.<id>.name */
+export const PLANTS = Object.fromEntries(
+  Object.values(RAW).map((p) => [p.id, localized(p, `plant.${p.id}`, ['name'])]),
+) as Record<MaterialId, PlantDef>;
 
 export const MATERIAL_IDS: MaterialId[] = ['redheart', 'moonshroom', 'starvine'];

@@ -2,6 +2,8 @@
 // 用金幣買禮物送露米婭：每種只能送一次，價格固定。送的時候給一次開心度，
 // 之後變成休息室的擺設，擺出來才有效果。
 
+import { localized } from '../../i18n';
+
 /** 擺出來時的效果種類 */
 export type GiftFx =
   | 'restRegen' | 'restHappy' | 'speed' | 'drain' | 'orderQty'
@@ -24,59 +26,45 @@ export interface GiftDef {
   line: string;
 }
 
+const GIFT_TEXT = ['name', 'desc', 'intro', 'line'] as const;
+type GiftText = (typeof GIFT_TEXT)[number];
+
 /** 依價格排序：從開店沒多久到後期要存好幾個小時的收入 */
-export const GIFTS: GiftDef[] = [
+const RAW_GIFTS: Omit<GiftDef, GiftText>[] = [
   {
-    id: 'snack', name: '手工點心', icon: 'gift_snack', price: 1e3, happiness: 1, fx: 'restRegen',
-    desc: '休息時體力回復 +50%。', intro: '親手烤的愛心餅乾配上草莓馬卡龍，用粉紅緞帶綁得漂漂亮亮。露米婭說要留到打烊後再吃，結果當天就吃完了。',
-    line: '哇！是點心！老師最好了～',
+    id: 'snack', icon: 'gift_snack', price: 1e3, happiness: 1, fx: 'restRegen',
   },
   {
-    id: 'music_box', name: '精靈音樂盒', icon: 'gift_music_box', price: 2e4, happiness: 2, fx: 'click',
-    desc: '老師親手點擊的效果 +50%（盆栽與大釜）。', intro: '打開蓋子，小精靈人偶就會在上面轉圈跳舞。聽著它的曲子工作，手上的動作也變得輕快起來。',
-    line: '小精靈在裡面跳舞耶！轉一圈、再轉一圈～',
+    id: 'music_box', icon: 'gift_music_box', price: 2e4, happiness: 2, fx: 'click',
   },
   {
-    id: 'slime_doll', name: 'Q版史萊姆娃娃', icon: 'gift_slime_doll', price: 1e6, happiness: 2, fx: 'restHappy',
-    desc: '休息時的開心度產出 +50%。', intro: '照著溫室裡那隻愛睡覺的史萊姆做的布偶，捏起來軟綿綿、還會發出噗啾聲。午睡時的最佳夥伴。',
-    line: '軟綿綿的！我可以抱著它睡覺嗎？',
+    id: 'slime_doll', icon: 'gift_slime_doll', price: 1e6, happiness: 2, fx: 'restHappy',
   },
   {
-    id: 'gramophone', name: '復古留聲機', icon: 'gift_gramophone', price: 5e7, happiness: 3, fx: 'speed',
-    desc: '輕快的音樂讓精靈們更有幹勁：植物生長與大釜熬煮速度 +15%。', intro: '從舊貨市集淘來的古董留聲機，喇叭像一朵盛開的花。放起輕快的曲子，連精靈們都跟著打拍子。',
-    line: '有音樂的話，工作起來也會特別開心呢♪',
+    id: 'gramophone', icon: 'gift_gramophone', price: 5e7, happiness: 3, fx: 'speed',
   },
   {
-    id: 'tea_set', name: '高級魔法紅茶組', icon: 'gift_tea_set', price: 2e9, happiness: 4, fx: 'drain',
-    desc: '提神醒腦：露米婭工作時體力消耗 -50%。', intro: '繪著紫色花紋的高級瓷器茶組，泡出來的魔法紅茶會冒出愛心形狀的蒸氣。喝一口就精神百倍。',
-    line: '好香的紅茶…老師要一起喝一杯嗎？',
+    id: 'tea_set', icon: 'gift_tea_set', price: 2e9, happiness: 4, fx: 'drain',
   },
   {
-    id: 'bouquet', name: '魔法花束', icon: 'gift_bouquet', price: 5e10, happiness: 5, fx: 'orderQty',
-    desc: '花香讓客人心情變好：顧客每次購買的數量 +20%。', intro: '會微微發光的粉彩花束，花瓣間飄著小小的光點。插在店裡，整間店都香香的。',
-    line: '好、好漂亮的花…我會好好插在店裡的！',
+    id: 'bouquet', icon: 'gift_bouquet', price: 5e10, happiness: 5, fx: 'orderQty',
   },
   {
-    id: 'hairpin', name: '星光髮飾', icon: 'gift_hairpin', price: 1.5e11, happiness: 6, fx: 'assist',
-    desc: '露米婭戴著它工作特別有自信：指派到工作區的加成 ×1.5。', intro: '新月與星星造型的金色髮飾，鑲著一顆小小的紫水晶。露米婭戴上之後，照鏡子照了好久。',
-    line: '這是…給我的嗎？我、我會一直戴著的！',
+    id: 'hairpin', icon: 'gift_hairpin', price: 1.5e11, happiness: 6, fx: 'assist',
   },
   {
-    id: 'star_lamp', name: '許願星燈', icon: 'gift_star_lamp', price: 4e11, happiness: 7, fx: 'wishTime',
-    desc: '小心願的時限 +30%。', intro: '星星形狀的小桌燈，綁著好幾條許願緞帶。據說對著它說出心願，星星就會幫忙實現。',
-    line: '把願望說給星星聽，就會實現喔！',
+    id: 'star_lamp', icon: 'gift_star_lamp', price: 4e11, happiness: 7, fx: 'wishTime',
   },
   {
-    id: 'dream_catcher', name: '月光捕夢網', icon: 'gift_dream_catcher', price: 1e12, happiness: 7, fx: 'offline',
-    desc: '離線效率 +20%（基礎 50%，最多 90%）。', intro: '新月形框架的捕夢網，垂著羽毛與星星珠子。掛在床邊，壞夢都會被網子抓走。',
-    line: '有了它，晚上一定會做好夢的…呼啊～',
+    id: 'dream_catcher', icon: 'gift_dream_catcher', price: 1e12, happiness: 7, fx: 'offline',
   },
   {
-    id: 'crystal_ball', name: '占星水晶球', icon: 'gift_crystal_ball', price: 3e12, happiness: 8, fx: 'wishReward',
-    desc: '小心願的開心度獎勵 +25%。', intro: '黃銅底座上的占星水晶球，裡面飄著粉紫色的星霧。露米婭說她在裡面看見了很美好的未來。',
-    line: '我看到了…老師和我，一直一直在這間店裡！',
+    id: 'crystal_ball', icon: 'gift_crystal_ball', price: 3e12, happiness: 8, fx: 'wishReward',
   },
 ];
+
+/** 文字在語言檔 gift.<id>.name／desc／intro／line */
+export const GIFTS: GiftDef[] = RAW_GIFTS.map((g) => localized(g, `gift.${g.id}`, GIFT_TEXT));
 
 export const GIFT_MAP: Record<string, GiftDef> = Object.fromEntries(GIFTS.map((g) => [g.id, g]));
 

@@ -1,4 +1,5 @@
 // 升級定義。效果一律描述為「修正值 (Mod)」，由 stats.ts 依企劃書第 5 章的疊加規則計算。
+import { localized } from '../../i18n';
 import type { GameState } from '../state';
 import { CUSTOMER } from './balance';
 import { RECIPES, type PotionId } from './recipes';
@@ -35,6 +36,9 @@ export interface GlobalUpgradeDef {
   requires?: (s: GameState) => boolean;
 }
 
+type RawUpgrade = Omit<GlobalUpgradeDef, 'name' | 'desc'>;
+const TEXT = ['name', 'desc'] as const;
+
 const none = () => [];
 
 /** 每種藥水的收購箱 ID */
@@ -69,127 +73,120 @@ const CRATE_COSTS: Record<PotionId, number[]> = {
   elixir: [20000, 300000, 1200000, 5000000],
 };
 
-export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = [
+const RAW_UPGRADES: RawUpgrade[] = [
   // ---- 溫室 ----
   {
-    id: FLOATING_POT, icon: 'pot_hidden_slot', name: '浮空魔法盆栽', zone: 'inline',
-    desc: '讓花盆飄在溫室半空中，多一格可以種植物。第 1 次開啟第 4 格，第 2 次開啟第 5 格。',
+    id: FLOATING_POT, icon: 'pot_hidden_slot', zone: 'inline',
     cost: { base: FLOATING_POT_COSTS[0], growth: 1 }, costTable: FLOATING_POT_COSTS, mods: none,
   },
   {
-    id: 'star_can', icon: 'upg_starsilver_can', name: '星銀澆水壺', zone: 'greenhouse',
-    desc: '二手市集掏來的魔法水壺，水滴會亂彈。點擊盆栽時，相鄰盆栽也獲得 50% 推進。',
+    id: 'star_can', icon: 'upg_starsilver_can', zone: 'greenhouse',
     cost: { base: 1500, growth: 1 }, maxLevel: 1, mods: none,
   },
   {
-    id: 'shears', icon: 'upg_shears', name: '附魔園藝剪', zone: 'greenhouse',
-    desc: '刻著魔導書符文的剪刀。手動點擊植物時 5% 機率「暴擊生長」：立即收成，產量 ×3。',
+    id: 'shears', icon: 'upg_shears', zone: 'greenhouse',
     cost: { base: 6000, growth: 1 }, maxLevel: 1, mods: none,
   },
   {
-    id: 'fertilizer', icon: 'upg_fertilizer', name: '魔法肥料', zone: 'greenhouse',
-    desc: '露米婭自己調配的發光肥料。所有植物每次收成量 +10%/級（可無限升級）。',
+    id: 'fertilizer', icon: 'upg_fertilizer', zone: 'greenhouse',
     cost: { base: 1000, growth: 1.6 },
     mods: (l) => [{ stat: 'harvestYield', pool: 'G', value: 0.1 * l }],
   },
   {
-    id: 'garden_gloves', icon: 'upg_garden_gloves', name: '魔力園藝手套', zone: 'greenhouse',
-    desc: '戴上就能把魔力注入植物。親手點擊盆栽時，額外推進「0.01 秒 × 等級」的自動生長量（跟著所有生長速度加成變強，可無限升級）。',
+    id: 'garden_gloves', icon: 'upg_garden_gloves', zone: 'greenhouse',
     cost: { base: 800, growth: 2 }, mods: none,
   },
   // ---- 大釜 ----
   {
-    id: 'warm_circle', icon: 'upg_warm_circle', name: '保溫魔法陣', zone: 'cauldron',
-    desc: '畫在爐台下的保溫符文。所有大釜被動熬煮速度 +15%/級（可無限升級）。',
+    id: 'warm_circle', icon: 'upg_warm_circle', zone: 'cauldron',
     cost: { base: 1500, growth: 1.6 },
     mods: (l) => [{ stat: 'brewSpeed', pool: 'G', value: 0.15 * l }],
   },
   {
-    id: 'servant_ladle', icon: 'upg_servant_ladle', name: '隱形僕役湯勺', zone: 'cauldron',
-    desc: '自己瘋狂攪拌的漂浮湯勺。所有大釜被動熬煮速度 ×1.5（最多 3 級）。',
+    id: 'servant_ladle', icon: 'upg_servant_ladle', zone: 'cauldron',
     cost: { base: 20000, growth: 10 }, maxLevel: 3,
     mods: (l) => [{ stat: 'brewSpeed', pool: 'S', value: 1.5 ** l }],
   },
   {
-    id: 'bellows', icon: 'upg_bellows', name: '龍息風箱', zone: 'cauldron',
-    desc: '對同一口大釜連點 10 下（每下間隔 1 秒內），進入 5 秒「極速沸騰」：速度 ×6。之後冷卻 15 秒。',
+    id: 'bellows', icon: 'upg_bellows', zone: 'cauldron',
     cost: { base: 8000, growth: 1 }, maxLevel: 1, mods: none,
   },
   {
-    id: 'condenser', icon: 'upg_condenser', name: '雙口冷凝管', zone: 'cauldron',
-    desc: '硬接在一起的危險發明。每輪熬煮完成時 15% 機率產出 ×2（原料只扣一份）。',
+    id: 'condenser', icon: 'upg_condenser', zone: 'cauldron',
     cost: { base: 50000, growth: 1 }, maxLevel: 1, mods: none,
   },
   {
-    id: 'rune_stirrer', icon: 'upg_rune_stirrer', name: '符文攪拌棒', zone: 'cauldron',
-    desc: '刻滿加速符文的攪拌棒。親手攪拌大釜時，額外推進「0.01 秒 × 等級」的被動熬煮量（跟著所有熬煮速度加成變強，沒有火蜥蜴也有效，可無限升級）。',
+    id: 'rune_stirrer', icon: 'upg_rune_stirrer', zone: 'cauldron',
     cost: { base: 1200, growth: 2 }, mods: none,
   },
   // ---- 櫃台 ----
   {
-    id: SQUIRREL, icon: 'upg_abacus_squirrel', name: '算盤松鼠', zone: 'counter',
-    desc: '抱著小算盤的松鼠店員。Lv1 開始自動幫走到櫃台的客人結帳（一次一位，約 2.1 秒）；之後每級縮短結帳時間，滿級（Lv9）時客人走到櫃台的同時就完成訂單。',
+    id: SQUIRREL, icon: 'upg_abacus_squirrel', zone: 'counter',
     cost: { base: 150, growth: 3 }, maxLevel: 9, mods: none,
   },
   {
-    id: 'fortune_owl', icon: 'upg_owl', name: '招財貓頭鷹', zone: 'counter',
-    desc: '站在收銀機上的木雕貓頭鷹。藥水售價 +10%/級。',
+    id: 'fortune_owl', icon: 'upg_owl', zone: 'counter',
     cost: { base: 200, growth: 1.6 },
     mods: (l) => [{ stat: 'sellPrice', pool: 'G', value: 0.1 * l }],
   },
   {
-    id: 'signboard', icon: 'upg_signboard', name: '魔法招牌', zone: 'counter',
-    desc: `會對路人拋媚眼的招牌。來客速度 +15%/級（最高 Lv ${SIGNBOARD_MAX}：來客速度等於櫃台最快的結帳速度）。`,
+    id: 'signboard', icon: 'upg_signboard', zone: 'counter',
     cost: { base: 150, growth: 1.3 }, maxLevel: SIGNBOARD_MAX,
     mods: (l) => [{ stat: 'arrivalRate', pool: 'G', value: SIGNBOARD_PER_LEVEL * l }],
   },
   {
-    id: 'diffuser', icon: 'upg_diffuser', name: '迷幻擴香儀', zone: 'counter',
-    desc: '薄荷與薰衣草香氣讓顧客忘記時間。顧客耐心 +30%。',
+    id: 'diffuser', icon: 'upg_diffuser', zone: 'counter',
     cost: { base: 1000, growth: 1 }, maxLevel: 1,
     mods: () => [{ stat: 'patience', pool: 'G', value: 0.3 }],
   },
   {
-    id: 'poster', icon: 'upg_poster', name: '宣傳海報', zone: 'counter',
-    desc: '貼滿全鎮的藥水廣告。顧客買走的產量比例 +3%/級（最多 10 級），讓更多產量賣給全價顧客。',
+    id: 'poster', icon: 'upg_poster', zone: 'counter',
     cost: { base: 3000, growth: 2 }, maxLevel: 10, mods: none,
   },
   {
-    id: 'bell', icon: 'upg_bell', name: '叫賣鈴鐺', zone: 'counter',
-    desc: '點擊櫃台上的鈴鐺，立刻招來一位顧客。最多存 3 次，每 30 秒回復 1 次。',
+    id: 'bell', icon: 'upg_bell', zone: 'counter',
     cost: { base: 2000, growth: 1 }, maxLevel: 1, mods: none,
   },
   {
-    id: 'drunks', icon: 'upg_drunk', name: '慷慨的酒鬼體質', zone: 'counter',
-    desc: '喝醉的冒險者連找零都不要。每筆交易 5% 機率「土豪小費」：金幣 ×2。',
+    id: 'drunks', icon: 'upg_drunk', zone: 'counter',
     cost: { base: 40000, growth: 1 }, maxLevel: 1, mods: none,
   },
   // 商會收購箱：每種藥水各一個（各自設定保留量），原料一個（只有開關）
-  ...(Object.keys(CRATE_FOR) as PotionId[]).map((p): GlobalUpgradeDef => ({
-    id: CRATE_FOR[p], icon: `potion_${p}`, name: `收購箱：${RECIPES[p].name}`, zone: 'counter',
-    desc: `${RECIPES[p].name}超過保留量的部分自動收購。Lv1 收購價 30%，每級 +10%（最高 60%）。`,
+  ...(Object.keys(CRATE_FOR) as PotionId[]).map((p): RawUpgrade => ({
+    id: CRATE_FOR[p], icon: `potion_${p}`, zone: 'counter',
     cost: { base: CRATE_COSTS[p][0], growth: 1 }, costTable: CRATE_COSTS[p], mods: none,
     requires: (s) => s.cauldrons.some((c) => c.recipe === p),
   })),
   {
-    id: CRATE_MATERIALS, icon: 'item_redheart', name: '收購箱：原料', zone: 'counter',
-    desc: '多餘的原料自動收購（每種原料可各自開關、設定保留百分比，預設保留大釜熬 3 輪的量）。Lv1 收購價 30%，每級 +10%（最高 60%）。',
+    id: CRATE_MATERIALS, icon: 'item_redheart', zone: 'counter',
     cost: { base: 300, growth: 1 }, costTable: [300, 4000, 16000, 64000], mods: none,
   },
   // ---- 配方精煉（顯示在各配方卡片裡）：每級原料需求 +50%、售價 +60%，故意製造原料短缺 ----
-  ...(Object.keys(REFINE_FOR) as PotionId[]).map((p): GlobalUpgradeDef => ({
-    id: REFINE_FOR[p], icon: `potion_${p}`, name: `精煉：${RECIPES[p].name}`, zone: 'inline',
-    desc: '改良配方做出更高級的藥水：每級每份原料需求 +50%、售價 +60%（永久套用，原料不夠時大釜會等原料）。',
+  ...(Object.keys(REFINE_FOR) as PotionId[]).map((p): RawUpgrade => ({
+    id: REFINE_FOR[p], icon: `potion_${p}`, zone: 'inline',
     cost: { base: REFINE_BASE[p], growth: 4 }, maxLevel: 5, mods: none,
     requires: (s) => s.cauldrons.some((c) => c.recipe === p),
   })),
   // ---- 系統 ----
   {
-    id: 'guild_contract', icon: 'upg_guild_contract', name: '過勞精靈工會合約', zone: 'system',
-    desc: '離線期間，精靈們模擬「每秒點擊 5 次」幫你催熟植物與攪拌大釜。',
+    id: 'guild_contract', icon: 'upg_guild_contract', zone: 'system',
     cost: { base: 5000000, growth: 1 }, maxLevel: 1, mods: none,
   },
 ];
+
+/**
+ * 名稱與說明在語言檔 upgrade.<id>.name／desc；
+ * 各藥水的收購箱與精煉共用一段文字（upgrade.crate／upgrade.refine），帶入藥水名稱
+ */
+export const GLOBAL_UPGRADES: GlobalUpgradeDef[] = RAW_UPGRADES.map((u) => {
+  const potions = Object.keys(CRATE_FOR) as PotionId[];
+  const crate = potions.find((p) => CRATE_FOR[p] === u.id);
+  if (crate) return localized(u, 'upgrade.crate', TEXT, () => ({ potion: RECIPES[crate].name }));
+  const refine = potions.find((p) => REFINE_FOR[p] === u.id);
+  if (refine) return localized(u, 'upgrade.refine', TEXT, () => ({ potion: RECIPES[refine].name }));
+  if (u.id === 'signboard') return localized(u, 'upgrade.signboard', TEXT, () => ({ max: SIGNBOARD_MAX }));
+  return localized(u, `upgrade.${u.id}`, TEXT);
+});
 
 export function maxLevelOf(def: GlobalUpgradeDef): number {
   return def.costTable?.length ?? def.maxLevel ?? Infinity;
@@ -198,12 +195,9 @@ export function maxLevelOf(def: GlobalUpgradeDef): number {
 export const GLOBAL_UPGRADE_MAP: Record<string, GlobalUpgradeDef> =
   Object.fromEntries(GLOBAL_UPGRADES.map((u) => [u.id, u]));
 
-/** 針對單一盆栽/大釜購買的升級（價格會乘上階級倍率 TM） */
+/** 針對單一盆栽/大釜購買的升級（價格會乘上階級倍率 TM）；文字在語言檔 target.<id>.name／desc */
 export const TARGET_UPGRADES = {
-  raincloud: { name: '局部微型雨雲', desc: '生長速度 +25%/級', base: 25, growth: 1.25, perLevel: 0.25 },
-  fairy: { name: '貪吃花妖精', desc: '植物成熟時自動採收', base: 50 },
-  salamander: {
-    name: '鍋底火蜥蜴', desc: 'Lv1 賦予被動熬煮（基礎速度 50%），之後每級 +25%',
-    base: 30, growth: 1.25,
-  },
+  raincloud: localized({ base: 25, growth: 1.25, perLevel: 0.25 }, 'target.raincloud', TEXT),
+  fairy: localized({ base: 50 }, 'target.fairy', TEXT),
+  salamander: localized({ base: 30, growth: 1.25 }, 'target.salamander', TEXT),
 };

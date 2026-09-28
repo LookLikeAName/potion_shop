@@ -1,4 +1,5 @@
 // 成就里程碑（企劃書 7.3）：一次性開心度獎勵
+import { localized } from '../../i18n';
 import type { GameState } from '../state';
 
 export interface AchievementDef {
@@ -16,19 +17,22 @@ const maxCauldronLevel = (s: GameState) => Math.max(0, ...s.cauldrons.map((c) =>
 const everPlanted = (s: GameState, m: string) => s.slots.some((sl) => sl.plant === m || m in sl.memory);
 const hasRecipe = (s: GameState, p: string) => s.cauldrons.some((c) => c.recipe === p);
 
-export const ACHIEVEMENTS: AchievementDef[] = [
-  { id: 'first_sale', name: '第一次賣出藥水', reward: 0.3, check: (s) => s.stats.customersServed >= 1 },
-  { id: 'first_rush', name: '第一次完成急單', reward: 0.3, check: (s) => s.stats.rushServed >= 1 },
-  { id: 'plant_moon', name: '種下月光菇', reward: 0.5, check: (s) => everPlanted(s, 'moonshroom') },
-  { id: 'unlock_focus', name: '解鎖專注糖漿', reward: 1.0, check: (s) => hasRecipe(s, 'focus') },
-  { id: 'unlock_elixir', name: '解鎖精靈羽化靈藥', reward: 1.5, check: (s) => hasRecipe(s, 'elixir') },
-  { id: 'pot_25', name: '盆栽達到 Lv 25', reward: 0.5, check: (s) => maxPotLevel(s) >= 25 },
-  { id: 'pot_50', name: '盆栽達到 Lv 50', reward: 1.0, check: (s) => maxPotLevel(s) >= 50 },
-  { id: 'pot_100', name: '盆栽達到 Lv 100', reward: 2.0, check: (s) => maxPotLevel(s) >= 100 },
-  { id: 'cauldron_25', name: '大釜達到 Lv 25', reward: 0.5, check: (s) => maxCauldronLevel(s) >= 25 },
-  { id: 'cauldron_50', name: '大釜達到 Lv 50', reward: 1.0, check: (s) => maxCauldronLevel(s) >= 50 },
-  { id: 'cauldron_100', name: '大釜達到 Lv 100', reward: 2.0, check: (s) => maxCauldronLevel(s) >= 100 },
-  { id: 'sold_1k', name: '累計賣出 1,000 瓶藥水', reward: 0.5, check: (s) => s.stats.potionsSold >= 1e3 },
-  { id: 'sold_100k', name: '累計賣出 10 萬瓶藥水', reward: 1.5, check: (s) => s.stats.potionsSold >= 1e5 },
-  { id: 'sold_10m', name: '累計賣出 1,000 萬瓶藥水', reward: 3.0, check: (s) => s.stats.potionsSold >= 1e7 },
+const RAW: Omit<AchievementDef, 'name'>[] = [
+  { id: 'first_sale', reward: 0.3, check: (s) => s.stats.customersServed >= 1 },
+  { id: 'first_rush', reward: 0.3, check: (s) => s.stats.rushServed >= 1 },
+  { id: 'plant_moon', reward: 0.5, check: (s) => everPlanted(s, 'moonshroom') },
+  { id: 'unlock_focus', reward: 1.0, check: (s) => hasRecipe(s, 'focus') },
+  { id: 'unlock_elixir', reward: 1.5, check: (s) => hasRecipe(s, 'elixir') },
+  { id: 'pot_25', reward: 0.5, check: (s) => maxPotLevel(s) >= 25 },
+  { id: 'pot_50', reward: 1.0, check: (s) => maxPotLevel(s) >= 50 },
+  { id: 'pot_100', reward: 2.0, check: (s) => maxPotLevel(s) >= 100 },
+  { id: 'cauldron_25', reward: 0.5, check: (s) => maxCauldronLevel(s) >= 25 },
+  { id: 'cauldron_50', reward: 1.0, check: (s) => maxCauldronLevel(s) >= 50 },
+  { id: 'cauldron_100', reward: 2.0, check: (s) => maxCauldronLevel(s) >= 100 },
+  { id: 'sold_1k', reward: 0.5, check: (s) => s.stats.potionsSold >= 1e3 },
+  { id: 'sold_100k', reward: 1.5, check: (s) => s.stats.potionsSold >= 1e5 },
+  { id: 'sold_10m', reward: 3.0, check: (s) => s.stats.potionsSold >= 1e7 },
 ];
+
+/** 名稱在語言檔 achievement.<id>.name */
+export const ACHIEVEMENTS: AchievementDef[] = RAW.map((a) => localized(a, `achievement.${a.id}`, ['name']));

@@ -1,6 +1,7 @@
 import { CUSTOMER, UPGRADE_FX } from '../game/config/balance';
 import { GLOBAL_UPGRADES, maxLevelOf, type GlobalUpgradeDef, type Zone } from '../game/config/upgrades';
 import { formatRate } from '../game/format';
+import { t } from '../i18n';
 import type { GameState } from '../game/state';
 import { arrivalRate, checkoutTime, cratePct, hasAutoCheckout } from '../game/stats';
 import { BuyButton } from './BuyButton';
@@ -9,14 +10,14 @@ import { useGame } from './store';
 function statusOf(def: GlobalUpgradeDef, s: GameState): string | undefined {
   const lvl = s.upgrades[def.id] ?? 0;
   const max = maxLevelOf(def);
-  if (def.id.startsWith('crate_')) return lvl > 0 ? `收購價 ${Math.round(cratePct(s, def.id) * 100)}%` : undefined;
-  if (def.id === 'bell') return lvl > 0 ? `剩 ${s.bellCharges} 次` : undefined;
+  if (def.id.startsWith('crate_')) return lvl > 0 ? t('crate.price', { pct: Math.round(cratePct(s, def.id) * 100) }) : undefined;
+  if (def.id === 'bell') return lvl > 0 ? t('upgrade.bellLeft', { n: s.bellCharges }) : undefined;
   if (def.id === 'signboard' && hasAutoCheckout(s) && arrivalRate(s) / CUSTOMER.interval > 1 / checkoutTime(s)) {
     // 客人來得比櫃台結帳快：再升招牌只會讓客人卡在門外
-    return `Lv ${lvl}/${max}・客人來得比結帳快，先升級算盤松鼠`;
+    return t('upgrade.signboardCapped', { lvl, max });
   }
   if (def.id === 'garden_gloves' || def.id === 'rune_stirrer') {
-    return lvl > 0 ? `Lv ${lvl}・每次點擊 +${formatRate(lvl * UPGRADE_FX.clickBonusSecPerLevel)} 秒產量` : undefined;
+    return lvl > 0 ? t('upgrade.clickBonus', { lvl, n: formatRate(lvl * UPGRADE_FX.clickBonusSecPerLevel) }) : undefined;
   }
   if (max === 1) return undefined;
   return Number.isFinite(max) ? `Lv ${lvl}/${max}` : `Lv ${lvl}`;
@@ -35,7 +36,7 @@ export function GlobalUpgrades({ zone, title }: { zone: Zone; title: string }) {
       {defs.map((u) => (
         <BuyButton
           key={u.id} k={{ kind: 'global', id: u.id }} title={u.name} desc={u.desc} icon={u.icon}
-          status={statusOf(u, s)} doneText={maxLevelOf(u) === 1 ? '已擁有' : '已滿級'}
+          status={statusOf(u, s)} doneText={t(maxLevelOf(u) === 1 ? 'common.owned' : 'common.maxed')}
         />
       ))}
     </div>

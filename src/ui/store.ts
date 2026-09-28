@@ -29,6 +29,16 @@ export const storyId = signal<string | null>(null);
 export const letterOpen = signal<number | null>(null);
 /** 事件簿：正在看哪一個事件的詳細視窗 */
 export const eventDetail = signal<EventId | null>(null);
+/** 第一次完成、剛加進事件簿的那一頁（詳細視窗上顯示「新的一頁」） */
+export const eventNewPage = signal<EventId | null>(null);
+
+/** 第一次完成事件：等完成特效播一下，再自動打開事件簿的那一頁 */
+export function showNewEventPage(id: EventId): void {
+  setTimeout(() => {
+    eventNewPage.value = id;
+    eventDetail.value = id;
+  }, 1000);
+}
 
 let game: Game | null = null;
 let takeoverFn: (() => Promise<void>) | null = null;

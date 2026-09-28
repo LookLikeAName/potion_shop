@@ -1,5 +1,6 @@
 import type { PurchaseKey } from '../game/commands';
 import { formatNumber } from '../game/format';
+import { t } from '../i18n';
 import { buyMode, useGame } from './store';
 import { Icon } from './Icon';
 
@@ -15,7 +16,7 @@ interface Props {
   icon?: string;
 }
 
-export function BuyButton({ k, title, desc, status, doneText = '已擁有', icon }: Props) {
+export function BuyButton({ k, title, desc, status, doneText = t('common.owned'), icon }: Props) {
   const game = useGame();
   const q = game.quote(k, buyMode.value);
   if (!q) return null;

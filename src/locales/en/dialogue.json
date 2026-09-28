@@ -1,0 +1,226 @@
+{
+  "lines.idle": [
+    "Master, let's do our best today too!",
+    "The heartleaf is looking extra lively today~",
+    "Hehe, watch me play a tune with my ladle!"
+  ],
+  "lines.headpat": [
+    "Hehe, whenever Master pets me like this, I almost forget about messing up the recipe earlier!",
+    "Ugh... feels so good... just a little longer...",
+    "Master's hands have a warm, magical touch."
+  ],
+  "lines.poke": [
+    "Ugh... I'm calculating profits right now, Master, don't distract me!",
+    "M-My cheek isn't for poking!",
+    "Hmph! ...I-I wasn't smiling secretly at all."
+  ],
+  "lines.panic": [
+    "Wait! Waaah! Too fast, too fast! I'll get dumber!",
+    "M-Master, calm down!"
+  ],
+  "lines.shy": [
+    "I've been petted plenty today... Master should get back to work too!",
+    "If you keep petting me, I won't get anything done today..."
+  ],
+  "lines.daily": [
+    "Good morning, Master! I'm counting on your guidance today!",
+    "Ah, Master is here! I'll do my best today too!"
+  ],
+  "lines.exhausted": [
+    "Hah... so sleepy... I'll just go lie down on the cushion for a bit..."
+  ],
+  "lines.woke": [
+    "All rested up! Back to work for me!"
+  ],
+  "mutter.global": [
+    "Such lovely weather for brewing potions~",
+    "Mm~ Such a sweet fragrance drifting through the shop.",
+    "La la la~♪",
+    "Is Master watching? I'm working super hard!",
+    "Bookkeeping, bookkeeping... Ah, we're in the black today too!",
+    "I'll brew some black tea once we close.",
+    "Someday I'm gonna be a great, powerful witch!",
+    "This shop is my absolute favorite place."
+  ],
+  "mutter.greenhouse": [
+    "Grow nice and plump today, heartleaf~",
+    "Watering, watering~ Gotta be careful not to drown them.",
+    "I heard talking to plants makes them grow faster!",
+    "Heave-ho, this pot looks ready for harvest!",
+    "There's a little bug on the leaf... Shoo, shoo~",
+    "The moonshrooms are glowing... So pretty."
+  ],
+  "mutter.cauldron": [
+    "Stir three times, then one time in reverse...",
+    "Bubble, bubble~ Smells just right!",
+    "Heat... temperature control is super important!",
+    "I singed my bangs here last time... Not happening today!",
+    "Mister Ladle, I'm counting on you today too.",
+    "The color turned a pretty pink, success!"
+  ],
+  "mutter.counter": [
+    "Welcome~ What kind of potion do you need today?",
+    "Making change, making change... Yup, math checks out!",
+    "A friendly smile is part of the service!",
+    "This bottle is the prettiest one today~",
+    "So many customers, gotta stay sharp!"
+  ],
+  "mutter.patrol": [
+    "Where should I go help out next~",
+    "Just doing a quick patrol of the shop!",
+    "Hustling and bustling everywhere~"
+  ],
+  "mutter.outfit.default": [
+    "Master gave me this hat, you know.",
+    "An apprentice witch is a witch too!"
+  ],
+  "mutter.outfit.maid": [
+    "Welcome back, Master... Ah, I mean welcome!",
+    "Maid skirts flutter around so easily...",
+    "Gotta pour tea with the most graceful posture..."
+  ],
+  "mutter.outfit.pajama": [
+    "Working in my pajamas... I'm getting kind of sleepy...",
+    "Aren't the little star patterns cute? Hehe.",
+    "All fluffy and warm~"
+  ],
+  "mutter.outfit.robe": [
+    "Wearing this robe makes me feel so cool!",
+    "Master Alchemist Lumia, reporting for duty!",
+    "My sleeves are so long... Almost fell right into the cauldron."
+  ],
+  "mutter.outfit.gardener": [
+    "I wove this flower crown from the greenhouse flowers!",
+    "My apron pockets are stuffed with seeds~",
+    "Grow big and strong today, little plants!"
+  ],
+  "mutter.tired": [
+    "Hah... getting kind of sleepy...",
+    "My legs... my legs ache...",
+    "Just... just a little longer...",
+    "My eyelids feel so heavy..."
+  ],
+  "mutter.relax": [
+    "Time to kick back and relax today~",
+    "The cushion soaked up the sun, it's so fluffy...",
+    "The stars outside are so pretty.",
+    "Master won't mind if I slack off just a little bit, right?"
+  ],
+  "mutter.furniture.snack": [
+    "Stealing a bite of a snack... Just one bite!",
+    "Master's homemade treats are the best~"
+  ],
+  "mutter.furniture.slime_doll": [
+    "The slime doll is so squishy~ Squish squish!",
+    "Hehe, wanna take a nap together today?"
+  ],
+  "mutter.furniture.gramophone": [
+    "Let's put on a cheerful little tune♪",
+    "This record is Master's favorite..."
+  ],
+  "mutter.furniture.tea_set": [
+    "Brewing some magical black tea for a break~",
+    "Smells so good, I'm energized again after drinking!"
+  ],
+  "mutter.furniture.bouquet": [
+    "The flowers are still blooming nicely, gotta remember to change the water.",
+    "Smells so lovely~"
+  ],
+  "mutter.furniture.hairpin": [
+    "Is my hairpin on straight? Hehe.",
+    "All sparkly and shiny, I love it!"
+  ],
+  "mutter.furniture.star_lamp": [
+    "The star lamp is lit, what should I wish for?",
+    "I hope I can run the shop with Master tomorrow too~"
+  ],
+  "mutter.furniture.music_box": [
+    "Wind up the music box... The little sprite is dancing again!",
+    "This melody is so gentle."
+  ],
+  "mutter.furniture.dream_catcher": [
+    "The dream catcher caught all the bad dreams!",
+    "I'm gonna have sweet dreams tonight..."
+  ],
+  "mutter.furniture.crystal_ball": [
+    "In the crystal ball... I see so many customers!",
+    "Fortune reading: super lucky today!"
+  ],
+  "mutter.sleep": [
+    "Mmm... potions... sold out... hehe...",
+    "Master... you can't eat that...",
+    "Hah... hoo... heartleaf... so many...",
+    "Becoming... a great witch...",
+    "Pudding... want another one...",
+    "Zzz... hoh..."
+  ],
+  "mutter.starved": [
+    "We're running low on ingredients... Gotta grow more.",
+    "The cauldron is waiting for materials... Greenhouse, do your best!"
+  ],
+  "mutter.crowded": [
+    "There's a huge line at the counter...",
+    "Customers are waiting, gotta move fast!"
+  ],
+  "mutter.fever": [
+    "Fever Time! Let's go everyone~!",
+    "Amazing, everything is moving so fast!"
+  ],
+  "mutter.marketHot": [
+    "So many customers today, I'm glad I stocked up early!",
+    "Potions are flying off the shelves~ Gotta keep up with demand!"
+  ],
+  "mutter.marketCold": [
+    "Fewer customers today... Let's stash away some potions for now.",
+    "Business is a bit quiet, I'll send the extra stuff to the buyback crate."
+  ],
+  "wish.lines.new": [
+    "Master, Master, I have a little wish...",
+    "Ehehe, could I ask Master for a favor?",
+    "Suddenly I really want to see that thing~"
+  ],
+  "wish.lines.done": [
+    "Wow! It really came true! Thank you, Master!",
+    "Master is the best! I'm so happy~",
+    "Hehe, wishes coming true feels so nice!"
+  ],
+  "wish.lines.fail": [
+    "It's okay~ We'll try our best together next time!",
+    "So close... But good job, Master!"
+  ],
+  "event.lines.start": [
+    "Master, Master! Look over there!",
+    "Huh? Is that something...",
+    "Whoa, what's happening?",
+    "There's a customer... No wait, a visitor!"
+  ],
+  "story.celebration.title": "First Celebration Party",
+  "story.celebration.lines": [
+    "Lumia: Master, Master! Can you stay for a moment after we close today?",
+    "Lumia: Ta-da~! I made a cake with the leftover ingredients! Even though... it's a little bit lopsided.",
+    "Lumia: We couldn't have kept the potion shop open this long without all your help, Master.",
+    "Lumia: Cheers! To our potion shop, and... to Master!",
+    "(From today on, Lumia's confident smile makes customers willing to pay triple the price.)"
+  ],
+  "story.vow.title": "Oath Under the Stars",
+  "story.vow.lines": [
+    "Lumia: Master, there are so many stars out tonight.",
+    "Lumia: When I found you in the attic that day, I thought you were just a very, very old book.",
+    "Lumia: But you've taught me so much... not just recipes, but how to believe in myself.",
+    "Lumia: So I want to make a promise with you—let's keep running this shop together, always and forever.",
+    "Lumia: ......Thank you, Master.",
+    "(The Grimoire's pages emit a warm glow. \"Fever Time\" unlocked!)"
+  ],
+  "letter.1.title": "First Letter",
+  "letter.1.lines": [
+    "(Content for the 1st letter to be determined: will match the backstory later)"
+  ],
+  "letter.2.title": "Second Letter",
+  "letter.2.lines": [
+    "(Content for the 2nd letter to be determined: will match the backstory later)"
+  ],
+  "letter.3.title": "Third Letter",
+  "letter.3.lines": [
+    "(Content for the 3rd letter to be determined: will match the backstory later)"
+  ]
+}

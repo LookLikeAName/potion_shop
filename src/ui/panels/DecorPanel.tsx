@@ -3,11 +3,13 @@ import { ART_URLS, ASSET_MAP } from '../../assets/manifest';
 import { DECOR, GIFTS, GIFT_MAP, type GiftDef } from '../../game/config/gifts';
 import { formatNumber } from '../../game/format';
 import { decorSlots } from '../../game/stats';
+import { t, tl, tx } from '../../i18n';
+import { startGrabbing } from '../cursors';
 import { Icon } from '../Icon';
 import { dragGhost, openDrawer, showToast, useGame } from '../store';
 
-/** 擺設位的名稱（依 DECOR_POS 的順序） */
-const SLOT_NAMES = ['層架左', '層架右', '坐墊旁', '樓梯邊'];
+/** 擺設位的名稱（依 DECOR_POS 的順序；語言檔 decor.slotNames） */
+const slotName = (k: number) => tl('decor.slotNames')[k];
 
 /** 拖曳中指標下方的擺設位（高亮用） */
 const hoverSlot = signal<number | null>(null);
@@ -53,6 +55,7 @@ export function DecorPanel() {
     let dragging = false;
     const move = (ev: PointerEvent) => {
       if (!dragging && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+      if (!dragging) startGrabbing();
       dragging = true;
       picked.value = null;
       dragGhost.value = { icon: GIFT_MAP[id].icon, ...toLocal(ev.clientX, ev.clientY) };
@@ -92,14 +95,14 @@ export function DecorPanel() {
   };
 
   const buy = (g: GiftDef) => {
-    if (game.giveGift(g.id)) showToast(`露米婭：${g.line}（+${g.happiness} ♥）`);
+    if (game.giveGift(g.id)) showToast(t('decor.given', { line: g.line, n: g.happiness }));
   };
 
   return (
     <div class="cards">
-      <button class="btn back-btn" onClick={() => openDrawer('lumia', 'lumia-bond')}>◀ 回到露米婭</button>
+      <button class="btn back-btn" onClick={() => openDrawer('lumia', 'lumia-bond')}>{t('common.backToLumia')}</button>
       <div class="card" id="decor-slots">
-        <div class="card-title"><Icon id="gift_slime_doll" /> 休息室擺設 <span class="lv">{open}/{DECOR.maxSlots} 格</span></div>
+        <div class="card-title"><Icon id="gift_slime_doll" /> {t('decor.title')} <span class="lv">{t('decor.slots', { n: open, max: DECOR.maxSlots })}</span></div>
         <div class="decor-slots">
           {Array.from({ length: DECOR.maxSlots }, (_, k) => {
             const id = k < open ? s.decor[k] : null;
@@ -111,45 +114,44 @@ export function DecorPanel() {
             return (
               <div class={cls} data-slot={k} key={k} onClick={() => tapSlot(k)}>
                 {k >= open ? (
-                  <span class="slot-lock">🔒<small>開心度兌換<br />「休息室擴建」</small></span>
+                  <span class="slot-lock">🔒<small>{t('decor.lockedLine1')}<br />{t('decor.lockedLine2')}</small></span>
                 ) : g ? (
                   <>
                     <div class="slot-art" onPointerDown={(e) => startDrag(e as PointerEvent, g.id, k)}>
                       <GiftArt gift={g} />
                     </div>
-                    <button class="slot-remove" aria-label="收起來" onClick={(e) => { e.stopPropagation(); game.setDecor(k, null); }}>✕</button>
+                    <button class="slot-remove" aria-label={t('decor.remove')} onClick={(e) => { e.stopPropagation(); game.setDecor(k, null); }}>✕</button>
                   </>
                 ) : (
                   <span class="slot-empty">＋</span>
                 )}
-                <span class="slot-name">{SLOT_NAMES[k]}</span>
+                <span class="slot-name">{slotName(k)}</span>
               </div>
             );
           })}
         </div>
         <p class="hint">
-          把下面圖鑑裡的禮物<b>拖到格子裡</b>擺出來，擺出來才有效果（也可以先點禮物、再點格子）。
-          拖到別的格子會互換，拖出格子或按 ✕ 就收起來。
+          {tx('decor.hint', { drag: <b>{t('decor.dragIn')}</b> })}
         </p>
       </div>
 
       <div class="card" id="decor-book">
-        <div class="card-title">🎁 禮物圖鑑 <span class="lv">{count}/{GIFTS.length}</span></div>
-        <p class="hint">用金幣買禮物送露米婭，每種只能送一次、價格不會漲。送出時開心度增加，之後可以擺在休息室。</p>
+        <div class="card-title">{t('decor.bookTitle')} <span class="lv">{count}/{GIFTS.length}</span></div>
+        <p class="hint">{t('decor.bookHint')}</p>
         <div class="gift-book">
           {GIFTS.map((g, i) => {
             const owned = !!s.gifts[g.id];
             const shown = owned && s.decor.slice(0, open).includes(g.id);
             return (
               <div class={`gift-entry ${owned ? 'owned' : 'unknown'} ${picked.value === g.id ? 'picked' : ''}`} key={g.id}>
-                <div class="gift-no">No.{String(i + 1).padStart(2, '0')}{shown && <span class="gift-shown">擺出中</span>}</div>
+                <div class="gift-no">No.{String(i + 1).padStart(2, '0')}{shown && <span class="gift-shown">{t('decor.shown')}</span>}</div>
                 <div
                   class="gift-frame"
                   onPointerDown={owned ? (e) => startDrag(e as PointerEvent, g.id, null) : undefined}
                 >
                   <GiftArt gift={g} silhouette={!owned} />
                 </div>
-                <div class="gift-name">{owned ? g.name : '？？？'}</div>
+                <div class="gift-name">{owned ? g.name : t('common.unknown')}</div>
                 {owned ? (
                   <>
                     <div class="gift-fx">{g.desc}</div>

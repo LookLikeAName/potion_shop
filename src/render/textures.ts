@@ -1,7 +1,15 @@
 import { Application, Assets, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { ASSETS, ASSET_MAP, ART_URLS, type AssetDef } from '../assets/manifest';
+import { currentLang } from '../i18n';
 
-export const FONT = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif';
+const FONT_TC = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif';
+/** 日文要用日文字型，漢字的字形才對（中文字型的「骨」「直」等寫法不同） */
+const FONT_JA = '"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", ' + FONT_TC;
+
+/** 場景文字的字型（依目前語言；和 styles.css 的 :lang(ja) 一致） */
+export function uiFont(): string {
+  return currentLang() === 'ja' ? FONT_JA : FONT_TC;
+}
 
 /** 有正式圖就載入，沒有就產生「色塊 + 名稱」的佔位圖 */
 export class TextureBank {
@@ -44,7 +52,7 @@ export class TextureBank {
     const label = new Text({
       text: def.label,
       style: {
-        fontFamily: FONT, fontSize: Math.max(12, Math.min(w, h) / (def.label.length > 3 ? 5 : 3)),
+        fontFamily: uiFont(), fontSize: Math.max(12, Math.min(w, h) / (def.label.length > 3 ? 5 : 3)),
         fill: 0xffffff, fontWeight: '700', align: 'center',
         stroke: { color: 0x2b1d14, width: 4 },
       },

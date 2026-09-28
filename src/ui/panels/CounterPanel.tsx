@@ -9,6 +9,7 @@ import {
   materialPerRound, customerDemand, materialDemand,
   fullShopDemand, materialReserve, maxCustomerQty, orderScale, potionReserve, sellPrice,
 } from '../../game/stats';
+import { t, tx } from '../../i18n';
 import { GlobalUpgrades } from '../GlobalUpgrades';
 import { Icon } from '../Icon';
 import { useGame } from '../store';
@@ -19,36 +20,40 @@ export function CounterPanel() {
   return (
     <div class="cards">
       <div class="card">
-        <div class="card-title">營業狀況</div>
+        <div class="card-title">{t('counter.status')}</div>
         <div class="stats">
-          <span>來客間隔 <b>{formatSeconds(CUSTOMER.interval / arrivalRate(s))}</b></span>
+          <span>{tx('counter.arrival', { v: <b>{formatSeconds(CUSTOMER.interval / arrivalRate(s))}</b> })}</span>
           <span>
-            結帳 <b>{hasAutoCheckout(s) ? `${formatSeconds(checkoutTime(s))}／位` : '要親手點客人'}</b>
+            {tx('counter.checkout', {
+              v: <b>{hasAutoCheckout(s) ? t('counter.checkoutEach', { t: formatSeconds(checkoutTime(s)) }) : t('counter.checkoutManual')}</b>,
+            })}
           </span>
-          <span>店裡最多 {CUSTOMER.queueMax} 位</span>
+          <span>{t('counter.queueMax', { n: CUSTOMER.queueMax })}</span>
           <MarketHeat />
-          <span>急單耐心 {formatSeconds(customerPatience(s))}</span>
-          <span>急單獎勵 ×{CUSTOMER.rushBonus}</span>
+          <span>{t('counter.rushPatience', { t: formatSeconds(customerPatience(s)) })}</span>
+          <span>{t('counter.rushBonus', { x: CUSTOMER.rushBonus })}</span>
         </div>
         <p class="hint">
-          客人一次一位走到櫃台結帳（走路時間固定）。備好貨的客人頭上會出現金幣，<b>點他</b>就會在走到櫃台的同時完成訂單；
-          買了算盤松鼠後會自動結帳，升級縮短結帳時間，滿級時走到櫃台就完成。
-          客人會買走每種藥水產量的 <b>{Math.round(customerShare(s) * 100)}%</b>（櫃台越快、海報越多比例越高，最高
-          {Math.round(CUSTOMER.shareMax * 100)}%），訂單量跟著實際產量走，其餘交給收購箱。整張湊齊才全價成交；
-          耐心用完還湊不齊，會買走現有的部分，價格 ×{CUSTOMER.partialPriceMult * 100}%。
+          {tx(
+            'counter.intro',
+            { tap: <b>{t('counter.tapHim')}</b>, share: <b>{Math.round(customerShare(s) * 100)}%</b> },
+            { max: Math.round(CUSTOMER.shareMax * 100), partial: CUSTOMER.partialPriceMult * 100 },
+          )}
         </p>
         <div class="stats">
           {s.cauldrons.map((c) => (
             <span key={c.recipe}>
-              <Icon id={`potion_${c.recipe}`} size={1} /> {RECIPES[c.recipe].name} {formatNumber(sellPrice(s, c.recipe))} 金，
-              每人 {formatNumber(CUSTOMER.qtyMin * orderScale(s, c.recipe))}–{formatNumber(maxCustomerQty(s) * orderScale(s, c.recipe))} 瓶
+              <Icon id={`potion_${c.recipe}`} size={1} /> {t('counter.potionLine', {
+                name: RECIPES[c.recipe].name, price: formatNumber(sellPrice(s, c.recipe)),
+                min: formatNumber(CUSTOMER.qtyMin * orderScale(s, c.recipe)), max: formatNumber(maxCustomerQty(s) * orderScale(s, c.recipe)),
+              })}
             </span>
           ))}
         </div>
       </div>
       {hasAnyCrate(s) && <CrateCard />}
-      <GlobalUpgrades zone="counter" title="櫃台升級" />
-      <GlobalUpgrades zone="system" title="特殊合約" />
+      <GlobalUpgrades zone="counter" title={t('counter.upgrades')} />
+      <GlobalUpgrades zone="system" title={t('counter.contracts')} />
     </div>
   );
 }
@@ -60,8 +65,8 @@ export function MarketHeat() {
   const arrow = m.target > m.value + 0.02 ? '▲' : m.target < m.value - 0.02 ? '▼' : '';
   const tone = m.value >= 1.15 ? 'hot' : m.value <= 0.85 ? 'cold' : '';
   return (
-    <span class={`market ${tone}`} title="市場熱度：客人訂單量的倍率，每隔一陣子會變。熱的時候需求超過產量，有囤貨才賣得完；冷的時候產量有剩。">
-      市場熱度 <b>×{m.value.toFixed(2)}</b>{arrow}
+    <span class={`market ${tone}`} title={t('counter.marketTip')}>
+      {tx('counter.market', { v: <b>×{m.value.toFixed(2)}</b> })}{arrow}
     </span>
   );
 }
@@ -77,20 +82,17 @@ function CrateCard() {
   const matPct = cratePct(s, CRATE_MATERIALS);
   return (
     <div class="card" id="crate-reserve">
-      <div class="card-title"><Icon id="upg_crate" /> 收購箱設定</div>
+      <div class="card-title"><Icon id="upg_crate" /> {t('crate.title')}</div>
       <p class="hint">
-        每種藥水和原料都可以決定<b>要不要賣給收購箱</b>，以及<b>保留幾秒份</b>（超過的才收購；0 秒 = 全部收購）。
-        藥水保留「顧客幾秒的需求量」：先留給付全價的客人，市場熱度高時需求會超過產量，有囤貨才湊得齊；
-        原料保留「所有大釜全速熬煮幾秒的用量」：極速沸騰、升級大釜時用量會突然變大，留一點才不會斷料。
-        收購價很低，能賣給客人、能熬成藥水都比較划算。
+        {tx('crate.intro', { sell: <b>{t('crate.introSell')}</b>, keep: <b>{t('crate.introKeep')}</b> })}
       </p>
 
       {potionCrates.map((p) => (
         <CrateRow
           key={p} item={p} icon={`potion_${p}`} name={RECIPES[p].name}
-          price={`收購價 ${Math.round(cratePct(s, CRATE_FOR[p]) * 100)}%`}
-          keep={`保留 ${formatNumber(potionReserve(s, p))} 瓶`}
-          base={`顧客需求約 ${formatNumber(customerDemand(s, p))}/秒（至少留店裡站滿時的 ${formatNumber(fullShopDemand(s, p))} 瓶）`}
+          price={t('crate.price', { pct: Math.round(cratePct(s, CRATE_FOR[p]) * 100) })}
+          keep={t('crate.keepPotion', { n: formatNumber(potionReserve(s, p)) })}
+          base={t('crate.basePotion', { n: formatNumber(customerDemand(s, p)), full: formatNumber(fullShopDemand(s, p)) })}
         />
       ))}
 
@@ -99,19 +101,19 @@ function CrateCard() {
         return (
           <CrateRow
             key={m} item={m} icon={`item_${m}`} name={PLANTS[m].name}
-            price={`每份 ${formatNumber2(PLANTS[m].sellValue * matPct)} 金`}
-            keep={`保留 ${formatNumber(materialReserve(s, m))} 份`}
+            price={t('crate.priceMat', { n: formatNumber2(PLANTS[m].sellValue * matPct) })}
+            keep={t('crate.keepMat', { n: formatNumber(materialReserve(s, m)) })}
             base={use > 0
-              ? `大釜全速用 ${formatNumber(use)}/秒（至少留 1 輪的量）`
-              : materialPerRound(s, m) > 0 ? '大釜還沒有火蜥蜴：至少留 1 輪的量' : '目前沒有大釜用到它'}
+              ? t('crate.baseMat', { n: formatNumber(use) })
+              : t(materialPerRound(s, m) > 0 ? 'crate.baseNoSalamander' : 'crate.baseUnused')}
           />
         );
       })}
 
       <div class="stats">
-        <span>已收購 {formatNumber(s.stats.potionsWholesaled)} 瓶</span>
-        <span>原料 {formatNumber(s.stats.materialsWholesaled)} 份</span>
-        <span>收購所得 {formatNumber(s.stats.wholesaleGold)} 金</span>
+        <span>{t('crate.statPotions', { n: formatNumber(s.stats.potionsWholesaled) })}</span>
+        <span>{t('crate.statMaterials', { n: formatNumber(s.stats.materialsWholesaled) })}</span>
+        <span>{t('crate.statGold', { n: formatNumber(s.stats.wholesaleGold) })}</span>
       </div>
     </div>
   );
@@ -127,10 +129,10 @@ const SEC_STEPS = [-BIG, -SMALL, SMALL, BIG];
 
 /** 保留秒數：30 秒、2 分、1 分 30 秒 */
 function fmtKeep(sec: number): string {
-  if (sec < 60) return `${sec} 秒`;
+  if (sec < 60) return t('format.seconds', { s: sec });
   const m = Math.floor(sec / 60);
   const r = sec % 60;
-  return r ? `${m} 分 ${r} 秒` : `${m} 分`;
+  return r ? t('format.minutes', { m, s: r }) : t('format.minutesOnly', { m });
 }
 
 /** 開關按鈕（賣／不賣） */
@@ -157,16 +159,16 @@ function CrateRow(props: {
       <div class="crate-head">
         <Icon id={props.icon} /> <b>{props.name}</b>
         <span class="crate-price">{props.price}</span>
-        <Switch on={set.sell} onChange={(on) => game.setCrateSell(props.item, on)} label={['收購中', '不賣']} />
+        <Switch on={set.sell} onChange={(on) => game.setCrateSell(props.item, on)} label={[t('crate.on'), t('crate.off')]} />
       </div>
       <div class="row stepper">
-        <span class="stepper-label">保留</span>
+        <span class="stepper-label">{t('crate.keep')}</span>
         {SEC_STEPS.slice(0, 2).map((d) => (
           <button key={d} class="btn" disabled={set.keepSec <= 0} onClick={() => game.setCrateKeep(props.item, set.keepSec + d)}>
             {d}s
           </button>
         ))}
-        <span class="stepper-value" title="保留幾秒份">{fmtKeep(set.keepSec)}</span>
+        <span class="stepper-value" title={t('crate.keepTip')}>{fmtKeep(set.keepSec)}</span>
         {SEC_STEPS.slice(2).map((d) => (
           <button
             key={d} class="btn" disabled={set.keepSec >= UPGRADE_FX.keepMaxSec}

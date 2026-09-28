@@ -1,4 +1,5 @@
 // 露米婭的小心願：出題、累積進度、時限與冷卻（純邏輯）
+import { t } from '../i18n';
 import { GIFT_FX } from './config/gifts';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
@@ -145,10 +146,8 @@ export function rollWish(s: GameState, rng: () => number): WishState | null {
 export function wishText(w: WishState): string {
   const n = w.goal.toLocaleString('en-US');
   switch (w.kind) {
-    case 'harvest': return `想要收成 ${n} 個${PLANTS[w.item as MaterialId].name}`;
-    case 'brew': return `想看 ${n} 瓶${RECIPES[w.item as PotionId].name}出爐`;
-    case 'crate': return `想讓收購箱收購 ${n} 金`;
-    case 'clickPot': return `想請老師幫忙照顧盆栽 ${n} 下`;
-    case 'clickCauldron': return `想請老師幫忙攪拌大釜 ${n} 下`;
+    case 'harvest': return t('wish.text.harvest', { n, item: PLANTS[w.item as MaterialId].name });
+    case 'brew': return t('wish.text.brew', { n, item: RECIPES[w.item as PotionId].name });
+    default: return t(`wish.text.${w.kind}`, { n });
   }
 }

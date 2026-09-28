@@ -1,5 +1,8 @@
 import { render } from 'preact';
 import { TabLock } from './engine/tabLock';
+import { t } from './i18n';
+import { initI18n } from './i18n/load';
+import { installCursors } from './ui/cursors';
 import { Game } from './game/game';
 import { createScene } from './render/scene';
 import { H, W } from './render/layout';
@@ -19,6 +22,9 @@ function fitStage(stage: HTMLElement): number {
 }
 
 async function main() {
+  // 先決定語言、載入語言檔，之後所有文字才查得到
+  await initI18n();
+  installCursors();
   const stage = document.getElementById('stage')!;
   const scale = fitStage(stage);
   window.addEventListener('resize', () => fitStage(stage));
@@ -72,5 +78,5 @@ async function main() {
 
 main().catch((err) => {
   console.error(err);
-  showToast('遊戲載入失敗，請重新整理頁面');
+  showToast(t('common.loadFailed'));
 });

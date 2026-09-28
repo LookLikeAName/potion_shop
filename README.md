@@ -31,13 +31,26 @@ src/
     save.ts      存檔、遷移、匯出匯入
     game.ts      執行期：真實時間推進、背景補算、點擊上限
   engine/        分頁鎖
+  i18n/          多語言：t()／tl()／tx() 取文字、語言偵測與切換
+  locales/       所有給玩家看的文字：zh-TW 是原文，ja／en 由翻譯工具產生
   render/        PixiJS 場景（layout.ts 是所有座標）
   ui/            Preact 介面（魔導書面板、資源列、視窗）
   assets/
     manifest.ts  美術資源清單與佔位圖設定
     art/         ← 正式美術放這裡：art/<分類>/<資源ID>.png
 tests/           Vitest 單元測試
+tools/translate/ 翻譯工具（呼叫 LLM 翻譯語言檔，有網頁介面），用法見 tools/translate/README.md
 ```
+
+## 文字與多語言
+
+給玩家看的文字不寫在程式裡，一律放在 `src/locales/zh-TW/*.json`，程式用 key 取：
+
+- 介面：`t('flow.income')`；帶變數的用 `t('crate.price', { pct })`，原文寫成 `"收購價 {pct}%"`。
+- 文字中間夾粗體等元件：用 `tx('key', { v: <b>…</b> })`。
+- 設定資料（事件、禮物、升級…）只留 ID 和數值，名稱、說明在讀取時查語言檔（`localized()`）。
+
+新增文字時，把 key 加進 zh-TW 的語言檔。`tests/i18n.test.ts` 會檢查程式裡寫的 key 是否都存在，以及各語言的變數、陣列長度是否一致。之後用翻譯工具補上日文、英文。
 
 ## 換上正式美術
 
@@ -48,6 +61,8 @@ tests/           Vitest 單元測試
    ```
 3. 頁面會自動重新整理並取代佔位圖。
 
+- 滑鼠游標（`cursor_*`）另外輸出成 32／64px 的 PNG 與點擊位置 `src/assets/art/cursors/hotspots.json`，由 `src/ui/cursors.ts` 套用（只在有滑鼠的裝置）。
+- 立繪（`portrait_*`）不裁邊，同一套服裝的表情差分要維持一樣的構圖。個別原圖構圖不一致時，在 `import_art.py` 的 `ADJUST` 設定縮放與位置（原圖不動）。
 - 新角色/顧客圖要在 `src/assets/manifest.ts` 標明原圖面向（`facing`：1 朝右、-1 朝左）。
 - 換了大釜圖要重新量鍋口位置（`src/render/scene.ts` 的 `RIM`）。
 - 換了背景要調整 `src/render/layout.ts` 的座標。

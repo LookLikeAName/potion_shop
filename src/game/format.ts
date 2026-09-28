@@ -1,4 +1,6 @@
-const SUFFIXES = ['', 'K', 'M', 'B', 'T'];
+import { t } from '../i18n';
+
+const SUFFIXES =['', 'K', 'M', 'B', 'T'];
 
 /** 1,234 → 1.23K → 1.23M → B → T → aa, ab… */
 export function formatNumber(n: number): string {
@@ -21,9 +23,9 @@ export function formatNumber(n: number): string {
 
 /** 一輪的時間：1 秒以上顯示秒數；更快時改顯示「每秒幾輪」（小數點後兩位已經看不出差異） */
 export function formatCycle(sec: number): string {
-  if (!Number.isFinite(sec)) return '無';
+  if (!Number.isFinite(sec)) return t('format.none');
   if (sec >= 1) return formatSeconds(sec);
-  return `每秒 ${formatRate(1 / sec)} 輪`;
+  return t('format.perSecCycles', { n: formatRate(1 / sec) });
 }
 
 /** 每秒速率：小數字保留小數（0.35、4.2），大數字同 formatNumber */
@@ -61,13 +63,12 @@ export function formatDuration(sec: number): string {
   const s = Math.floor(sec);
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
-  if (h >= 24) return `${Math.floor(h / 24)} 天 ${h % 24} 小時 ${m} 分`;
-  if (h > 0) return `${h} 小時 ${m} 分`;
-  if (m > 0) return `${m} 分 ${s % 60} 秒`;
-  return `${s} 秒`;
+  if (h >= 24) return t('format.days', { d: Math.floor(h / 24), h: h % 24, m });
+  if (h > 0) return t('format.hours', { h, m });
+  if (m > 0) return t('format.minutes', { m, s: s % 60 });
+  return t('format.seconds', { s });
 }
 
 export function formatSeconds(sec: number): string {
-  if (sec >= 100) return `${Math.round(sec)} 秒`;
-  return `${sec.toFixed(sec >= 10 ? 1 : 2)} 秒`;
+  return t('format.seconds', { s: sec >= 100 ? Math.round(sec) : sec.toFixed(sec >= 10 ? 1 : 2) });
 }

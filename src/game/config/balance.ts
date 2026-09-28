@@ -34,6 +34,8 @@ export const CUSTOMER = {
   payTime: 2.1,
   /**
    * 顧客會買走產量的幾成（其餘給收購箱）：基礎 shareBase，每秒服務人數比 shareRefThroughput 每翻倍 +sharePerDoubling，最高 shareMax。
+   * shareMax 略小於 1：熱度 ≤ 1 時需求一定比產量少一點（庫存有機會累積、收購箱有得收），
+   * 再配合熱度的平均（約 1.16），平均需求約是產量的 110%，缺貨讓玩家有升級的動力。
    * 每張訂單的大小由這個比例與實際產量反推，所以需求永遠跟著產量走、原料分配不均也不會一直湊不齊。
    * 平衡模擬比較過：訂單固定或只乘大釜等級時，產量遠超過顧客，收入 96–99% 來自收購箱；
    * 訂單乘上「幾秒的產量」時，前期客人太少只買走一成多、後期結帳太快又需求過量常常湊不齊。
@@ -41,7 +43,7 @@ export const CUSTOMER = {
   shareBase: 0.4,
   sharePerDoubling: 0.1,
   shareRefThroughput: 0.125,
-  shareMax: 1.1,
+  shareMax: 0.95,
   /** 每秒產量的平滑時間（秒） */
   rateSmoothing: 20,
   /** 客人只點有在產的藥水：產量至少是最多那種的這個比例（庫存有的也可以點）；最多那種低於 minOrderRate 時全部都可以點 */
@@ -60,13 +62,15 @@ export const CUSTOMER = {
 };
 
 /**
- * 市場熱度：顧客訂單量再乘上這個倍率。每 holdMin～holdMax 秒隨機換一個 min～max 的目標，花約 smoothing 秒慢慢靠過去。
- * 熱度高時需求超過產量（有囤貨才能全價賣掉），低時產量有剩（囤起來或給收購箱），讓保留量與收購箱有取捨。
- * 離線時取平均 1。
+ * 市場熱度：顧客訂單量再乘上這個倍率。每 holdMin～holdMax 秒換一個目標，花約 smoothing 秒慢慢靠過去。
+ * 一半機率冷（min～1：需求比產量少，庫存累積、收購箱有得收），一半機率熱（1～max：需求超過產量，有囤貨才賣得完）。
+ * 平均約 1.16，乘上顧客比例上限 0.95 ≈ 產量的 110%（玩具模型模擬：保留 30 秒時約 9% 的需求等不到貨）。
+ * 離線時取 1。
  */
 export const MARKET = {
-  min: 0.7,
-  max: 1.4,
+  min: 0.85,
+  max: 1.75,
+  hotChance: 0.5,
   holdMin: 30,
   holdMax: 90,
   smoothing: 12,
@@ -87,7 +91,14 @@ export const OFFLINE = {
   reportThreshold: 60,
 };
 
-export const CLICK_CAP_PER_SEC = 15;
+/**
+ * 有效點擊上限（防連點程式）：每秒最多 50 下，真人（含多指連點）碰不到；
+ * 兩下之間也要有最短間隔，擋掉一瞬間送出一大串點擊的巨集（間隔要小於 1000 / perSec）
+ */
+export const CLICK_CAP = {
+  perSec: 50,
+  minGapMs: 15,
+};
 
 /** 機率類效果相加後的上限 */
 export const CHANCE_CAP = 0.75;

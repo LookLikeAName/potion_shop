@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { OFFLINE } from '../game/config/balance';
-import { MASCOT } from '../game/config/mascot';
+import { GIFT_MAP } from '../game/config/gifts';
+import { MASCOT, OUTFITS } from '../game/config/mascot';
 import { MATERIAL_IDS, PLANTS } from '../game/config/plants';
 import { POTION_IDS, RECIPES } from '../game/config/recipes';
 import type { BuyMode } from '../game/costs';
 import { formatDuration, formatNumber } from '../game/format';
 import { canStartFever } from '../game/commands';
+import { t, tx } from '../i18n';
 import { Icon } from './Icon';
 import { HeartMeter, WishCard, fmtHeart } from './Happiness';
 import { LumiaModal } from './LumiaModal';
@@ -55,14 +57,14 @@ function TopBar() {
   const unlocked = new Set(s.cauldrons.map((c) => c.recipe));
   return (
     <div class="topbar">
-      <div class="res gold" title="金幣"><Icon id="icon_gold" /> {formatNumber(s.gold)}</div>
+      <div class="res gold" title={t('top.gold')}><Icon id="icon_gold" /> {formatNumber(s.gold)}</div>
       {/* 點原料或藥水打開產銷統計 */}
-      <button class="res-group res-btn" title="產銷統計" onClick={() => openDrawer('flow')}>
+      <button class="res-group res-btn" title={t('top.flow')} onClick={() => openDrawer('flow')}>
         {MATERIAL_IDS.filter((m) => planted.has(m) || s.materials[m] >= 1).map((m) => (
           <div class="res" key={m} title={PLANTS[m].name}><Icon id={`item_${m}`} /> {formatNumber(s.materials[m])}</div>
         ))}
       </button>
-      <button class="res-group res-btn" title="產銷統計" onClick={() => openDrawer('flow')}>
+      <button class="res-group res-btn" title={t('top.flow')} onClick={() => openDrawer('flow')}>
         {POTION_IDS.filter((p) => unlocked.has(p) || s.potions[p] >= 1).map((p) => (
           <div class="res" key={p} title={RECIPES[p].name}><Icon id={`potion_${p}`} /> {formatNumber(s.potions[p])}</div>
         ))}
@@ -71,7 +73,7 @@ function TopBar() {
 
       <FeverButton />
       <button class="book-btn" onClick={() => (drawerOpen.value = !drawerOpen.value)}>
-        📖 魔導書
+        {t('top.book')}
       </button>
     </div>
   );
@@ -82,23 +84,27 @@ function FeverButton() {
   const game = useGame();
   const s = game.state;
   if (!s.redeemed.vow) return null;
-  if (s.feverLeft > 0) return <div class="fever-btn active"><Icon id="icon_fever" /> 狂熱中 {Math.ceil(s.feverLeft)}s</div>;
+  if (s.feverLeft > 0) return <div class="fever-btn active"><Icon id="icon_fever" /> {t('top.feverOn', { n: Math.ceil(s.feverLeft) })}</div>;
   const ready = canStartFever(s, game.today);
   return (
-    <button class="fever-btn" disabled={!ready} onClick={() => game.startFever()} title="60 秒內所有生產速度 ×10，每天一次">
-      <Icon id="icon_fever" /> {ready ? '狂熱時刻' : '今天已使用'}
+    <button class="fever-btn" disabled={!ready} onClick={() => game.startFever()} title={t('top.feverTip')}>
+      <Icon id="icon_fever" /> {t(ready ? 'top.fever' : 'top.feverUsed')}
     </button>
   );
 }
 
-const TABS: { id: DrawerTab; label: string }[] = [
-  { id: 'greenhouse', label: '溫室' },
-  { id: 'cauldron', label: '大釜' },
-  { id: 'counter', label: '櫃台' },
-  { id: 'flow', label: '產銷' },
-  { id: 'lumia', label: '露米婭' },
-  { id: 'settings', label: '設定' },
+/** 魔導書的分頁：左側的書籤，只顯示圖示（名稱在語言檔 tab.<id>，滑過時顯示）；沒有圖的用文字符號 */
+const TABS: { id: DrawerTab; icon?: string; glyph?: string }[] = [
+  { id: 'greenhouse', icon: 'pot_t2' },
+  { id: 'cauldron', icon: 'cauldron_t1' },
+  { id: 'counter', icon: 'upg_abacus_squirrel' },
+  { id: 'flow', icon: 'icon_gold' },
+  { id: 'lumia', icon: 'lumia_chibi_idle' },
+  { id: 'settings', glyph: '⚙' },
 ];
+
+/** 禮物圖鑑、事件簿是露米婭分頁底下的頁面 */
+const bookmarkOf = (tab: DrawerTab): DrawerTab => (tab === 'decor' || tab === 'events' ? 'lumia' : tab);
 
 const MODES: BuyMode[] = [1, 10, 'max'];
 
@@ -128,26 +134,31 @@ function Drawer() {
 
   return (
     <aside class={`drawer ${open ? 'open' : ''}`}>
-      <div class="drawer-head">
-        <div class="tabs">
-          {TABS.map((t) => (
-            <button key={t.id} class={`tab ${tab === t.id || (t.id === 'lumia' && (tab === 'decor' || tab === 'events')) ? 'active' : ''}`} onClick={() => (drawerTab.value = t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <button class="close" onClick={() => (drawerOpen.value = false)} aria-label="關閉">✕</button>
+      <nav class="bookmarks">
+        <button class="close" onClick={() => (drawerOpen.value = false)} aria-label={t('common.close')}>✕</button>
+        {TABS.map((x) => (
+          <button
+            key={x.id} class={`bookmark ${bookmarkOf(tab) === x.id ? 'active' : ''}`}
+            data-label={t(`tab.${x.id}`)} aria-label={t(`tab.${x.id}`)} onClick={() => (drawerTab.value = x.id)}
+          >
+            {x.icon ? <Icon id={x.icon} size={1.8} /> : <span class="bookmark-glyph">{x.glyph}</span>}
+          </button>
+        ))}
+      </nav>
+      <div class="drawer-main">
+      <div class="drawer-title">
+        <b>{t(`tab.${bookmarkOf(tab)}`)}</b>
+        {(tab === 'greenhouse' || tab === 'cauldron' || tab === 'counter') && (
+          <div class="modes">
+            {t('top.buyQty')}
+            {MODES.map((m) => (
+              <button key={m} class={`mode ${buyMode.value === m ? 'active' : ''}`} onClick={() => (buyMode.value = m)}>
+                {m === 'max' ? t('top.buyMax') : `×${m}`}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      {tab !== 'settings' && tab !== 'lumia' && tab !== 'flow' && tab !== 'decor' && tab !== 'events' && (
-        <div class="modes">
-          購買數量
-          {MODES.map((m) => (
-            <button key={m} class={`mode ${buyMode.value === m ? 'active' : ''}`} onClick={() => (buyMode.value = m)}>
-              {m === 'max' ? '最大' : `×${m}`}
-            </button>
-          ))}
-        </div>
-      )}
       <div class="drawer-body" ref={bodyRef}>
         {tab === 'greenhouse' && <GreenhousePanel />}
         {tab === 'cauldron' && <CauldronPanel />}
@@ -157,6 +168,7 @@ function Drawer() {
         {tab === 'decor' && <DecorPanel />}
         {tab === 'events' && <EventBookPanel />}
         {tab === 'settings' && <SettingsPanel />}
+      </div>
       </div>
     </aside>
   );
@@ -171,31 +183,33 @@ function OfflineModal() {
   return (
     <div class="modal-back">
       <div class="modal">
-        <h2>歡迎回來，老師！</h2>
-        <p>你離開了 {formatDuration(r.seconds)}。</p>
-        <p class="big">精靈們努力工作，獲得 <Icon id="icon_gold" /> <b>{formatNumber(r.gold)}</b> 金幣！</p>
+        <h2>{t('offline.title')}</h2>
+        <p>{t('offline.away', { t: formatDuration(r.seconds) })}</p>
+        <p class="big">{tx('offline.gold', { icon: <Icon id="icon_gold" />, n: <b>{formatNumber(r.gold)}</b> })}</p>
         <p class="hint">
-          離線效率 {Math.round(r.efficiency * 100)}%
-          {(r.pajama || r.dream) && `（基礎 ${Math.round(OFFLINE.baseEfficiency * 100)}%${r.pajama ? '＋星空絨毛睡衣' : ''}${r.dream ? '＋月光捕夢網' : ''}）`}
-          ，離開越久越少（{formatDuration(r.halfLife)}減半）：這次平均 {Math.round(r.avgEfficiency * 100)}%。常回來看看比較划算喔！
+          {t('offline.efficiency', { pct: Math.round(r.efficiency * 100) })}
+          {(r.pajama || r.dream) && t('offline.efficiencyParts', {
+            base: Math.round(OFFLINE.baseEfficiency * 100),
+            parts: [r.pajama && OUTFITS.pajama.name, r.dream && GIFT_MAP.dream_catcher.name].filter(Boolean).map((n) => `＋${n}`).join(''),
+          })}
+          {t('offline.decay', { t: formatDuration(r.halfLife), pct: Math.round(r.avgEfficiency * 100) })}
         </p>
         {r.happiness >= 0.005 && (
-          <p>看板娘充分休息，開心度增加 <Icon id="icon_happiness" /> <b>+{fmtHeart(r.happiness)}</b>！</p>
+          <p>{tx('offline.happy', { icon: <Icon id="icon_happiness" />, n: <b>+{fmtHeart(r.happiness)}</b> })}</p>
         )}
         {r.simulated >= 3 * 3600 && (
           <p class="hint">
-            離線時休息帶來的開心度會越來越少，離開 {MASCOT.offlineHappyHours} 小時後就不再增加
-            {r.happyCapped ? '（這次已經到上限了）' : ''}。常回來看看露米婭吧！
+            {t('offline.happyDecay', { hours: MASCOT.offlineHappyHours, capped: r.happyCapped ? t('offline.happyCapped') : '' })}
           </p>
         )}
         {(mats.length > 0 || pots.length > 0) && (
           <div class="report-list">
-            {mats.map((m) => <span key={m}><Icon id={`item_${m}`} /> {PLANTS[m].name} {sign(r.materials[m])}</span>)}
-            {pots.map((p) => <span key={p}><Icon id={`potion_${p}`} /> {RECIPES[p].name} {sign(r.potions[p])}</span>)}
+            {mats.map((m) => <span key={m}><Icon id={`item_${m}`} /> {t('offline.item', { name: PLANTS[m].name, n: sign(r.materials[m]) })}</span>)}
+            {pots.map((p) => <span key={p}><Icon id={`potion_${p}`} /> {t('offline.item', { name: RECIPES[p].name, n: sign(r.potions[p]) })}</span>)}
           </div>
         )}
-        {r.capped && <p class="hint">離線收益最多計算 {formatDuration(r.simulated)}。</p>}
-        <button class="btn primary" onClick={() => (offlineReport.value = null)}>太好了！</button>
+        {r.capped && <p class="hint">{t('offline.capped', { t: formatDuration(r.simulated) })}</p>}
+        <button class="btn primary" onClick={() => (offlineReport.value = null)}>{t('offline.ok')}</button>
       </div>
     </div>
   );
@@ -207,9 +221,9 @@ function LockOverlay() {
   return (
     <div class="modal-back">
       <div class="modal">
-        <h2>{st === 'blocked' ? '遊戲已在其他分頁開啟' : '遊戲已在其他分頁繼續'}</h2>
-        <p>同一份存檔一次只能在一個分頁執行，避免進度互相覆蓋。</p>
-        <button class="btn primary" onClick={() => requestTakeover()}>在這裡繼續</button>
+        <h2>{t(st === 'blocked' ? 'lock.blocked' : 'lock.lost')}</h2>
+        <p>{t('lock.hint')}</p>
+        <button class="btn primary" onClick={() => requestTakeover()}>{t('lock.takeover')}</button>
       </div>
     </div>
   );

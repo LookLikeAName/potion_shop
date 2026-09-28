@@ -5,6 +5,7 @@ import { outfitOwned } from '../game/commands';
 import { formatHappiness } from '../game/format';
 import { isRelaxing, isResting, isSleeping, isTired, workZone } from '../game/stats';
 import type { GameState } from '../game/state';
+import { t, tx } from '../i18n';
 import { lumiaOpen, useGame } from './store';
 
 const pick = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
@@ -30,13 +31,13 @@ function portraitUrl(outfit: OutfitId, reaction: Reaction): { url?: string; chib
 /** 目前狀態的一句話說明 */
 export function mascotStatus(s: GameState): string {
   const m = s.mascot;
-  if (m.autoRest) return '累壞了，正在休息室睡覺（體力回滿後會回去工作）';
-  if (isRelaxing(s)) return '體力滿滿，在休息室悠閒地晃來晃去';
-  if (m.assignment === 'rest') return '在休息室的坐墊上睡得很香';
+  if (m.autoRest) return t('status.exhausted');
+  if (isRelaxing(s)) return t('status.relaxing');
+  if (m.assignment === 'rest') return t('status.sleeping');
   const here = workZone(s);
-  const zone = here ? ASSIGNMENTS[here].name : '店裡';
-  const prefix = m.assignment === 'patrol' ? '自由活動中，' : '';
-  return isTired(s) ? `${prefix}在${zone}工作，但已經很累了（效果減半）` : `${prefix}正在${zone}努力工作`;
+  const zone = here ? ASSIGNMENTS[here].name : t('status.shop');
+  const prefix = m.assignment === 'patrol' ? t('status.patrolPrefix') : '';
+  return t(isTired(s) ? 'status.tired' : 'status.working', { prefix, zone });
 }
 
 export function StaminaBar({ s }: { s: GameState }) {
@@ -44,7 +45,7 @@ export function StaminaBar({ s }: { s: GameState }) {
   const color = pct < MASCOT.tiredBelow ? '#e0485f' : pct < 50 ? '#e8b93a' : '#6cc36a';
   return (
     <div class="meter">
-      <span class="meter-label">體力</span>
+      <span class="meter-label">{t('lumia.stamina')}</span>
       <div class="meter-track"><div class="meter-fill" style={{ width: `${pct}%`, background: color }} /></div>
       <span class="meter-value">{Math.floor(s.mascot.stamina)}</span>
     </div>
@@ -58,7 +59,7 @@ export function MascotControls() {
   const active = isResting(s) && s.mascot.autoRest ? null : s.mascot.assignment;
   return (
     <>
-      <div class="chip-label">指派到</div>
+      <div class="chip-label">{t('lumia.assign')}</div>
       <div class="chips">
         {(Object.keys(ASSIGNMENTS) as Assignment[]).map((a) => (
           <button
@@ -70,8 +71,8 @@ export function MascotControls() {
         ))}
       </div>
       {/* 說明固定留好行數：換指派、換服裝時說明變長，整個欄位才不會跟著變高 */}
-      <p class="hint fixed-lines l3">{ASSIGNMENTS[s.mascot.assignment].desc}。也可以在場景中長按露米婭，把她拖到想要的區域。</p>
-      <div class="chip-label">服裝</div>
+      <p class="hint fixed-lines l3">{t('lumia.assignHint', { desc: ASSIGNMENTS[s.mascot.assignment].desc })}</p>
+      <div class="chip-label">{t('lumia.outfit')}</div>
       <div class="chips">
         {(Object.keys(OUTFITS) as OutfitId[]).filter((o) => outfitOwned(s, o)).map((o) => (
           <button
@@ -111,7 +112,7 @@ export function LumiaModal() {
     setLine((r.daily ? pick(LINES.daily) + '\n' : '') + pick(LINES[r.reaction]));
     setAnim((n) => n + 1);
     const rect = (e.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
-    const text = r.gain > 0 ? `+${formatHappiness(r.gain).replace(/0+$/, '')} ♥${r.daily ? '（每日）' : ''}` : r.reaction === 'panic' ? '！？' : '…';
+    const text = r.gain > 0 ? `+${formatHappiness(r.gain).replace(/0+$/, '')} ♥${r.daily ? t('lumia.daily') : ''}` : r.reaction === 'panic' ? '！？' : '…';
     const id = ++popId.current;
     // 以視窗內的百分比定位，避免舞台縮放造成偏移
     const pop = { id, text, x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 };
@@ -125,30 +126,29 @@ export function LumiaModal() {
   return (
     <div class="modal-back" onClick={(e) => e.target === e.currentTarget && (lumiaOpen.value = false)}>
       <div class="modal lumia-modal">
-        <button class="close modal-close" onClick={() => (lumiaOpen.value = false)} aria-label="關閉">✕</button>
+        <button class="close modal-close" onClick={() => (lumiaOpen.value = false)} aria-label={t('common.close')}>✕</button>
         <div class={`portrait ${portrait.chibi ? 'chibi' : ''} react-${reaction}`} key={anim}>
           {/* 觸碰區跟著圖片本身（圖片縮放、靠底對齊時，頭的判定才會在頭上）：上方是頭，下方是臉頰／身體 */}
           <div class="portrait-figure">
-            {portrait.url && <img src={portrait.url} alt="露米婭" draggable={false} />}
-            <button class="touch-zone head" aria-label="摸頭" onClick={(e) => touch('head', e)} />
-            <button class="touch-zone cheek" aria-label="戳臉頰" onClick={(e) => touch('cheek', e)} />
+            {portrait.url && <img src={portrait.url} alt={t('common.lumia')} draggable={false} />}
+            <button class="touch-zone head" aria-label={t('lumia.headpat')} onClick={(e) => touch('head', e)} />
+            <button class="touch-zone cheek" aria-label={t('lumia.poke')} onClick={(e) => touch('cheek', e)} />
             {pops.map((p) => <span key={p.id} class="pop" style={{ left: `${p.x}%`, top: `${p.y}%` }}>{p.text}</span>)}
           </div>
         </div>
         <div class="lumia-side">
-          <h2>露米婭</h2>
-          <div class="speech">{resting && reaction === 'idle' ? '（呼…呼…睡得好熟）' : line}</div>
+          <h2>{t('common.lumia')}</h2>
+          <div class="speech">{resting && reaction === 'idle' ? t('lumia.asleep') : line}</div>
           <div class="meter">
-            <span class="meter-label">互動</span>
+            <span class="meter-label">{t('lumia.energy')}</span>
             <div class="meter-track"><div class="meter-fill" style={{ width: `${energyPct}%`, background: '#ff8fb8' }} /></div>
             <span class="meter-value">{Math.floor(s.mascot.energy)}</span>
           </div>
           <StaminaBar s={s} />
           <p class="hint">
-            點她的<b>頭</b>摸頭、點<b>臉頰</b>戳一戳，每次 +{MASCOT.touchReward} 開心度（每天第一次另外 +{MASCOT.dailyBonus}）。
-            狂戳她會慌張，就沒有開心度了。
+            {tx('lumia.touchHint', { head: <b>{t('lumia.head')}</b>, cheek: <b>{t('lumia.cheek')}</b> }, { n: MASCOT.touchReward, daily: MASCOT.dailyBonus })}
           </p>
-          <p class="hint fixed-lines l2">目前：{mascotStatus(s)}</p>
+          <p class="hint fixed-lines l2">{t('lumia.now', { status: mascotStatus(s) })}</p>
           <MascotControls />
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { MARKET } from '../../game/config/balance';
 import { MATERIAL_IDS, PLANTS, type MaterialId } from '../../game/config/plants';
 import { RECIPES, type PotionId } from '../../game/config/recipes';
 import type { FlowReport, ItemFlow, ItemId } from '../../game/flow';
@@ -5,6 +6,7 @@ import { formatExact, formatNumber, formatRate } from '../../game/format';
 import { customerDemand } from '../../game/sim';
 import type { GameState } from '../../game/state';
 import { customerShare, materialDemand, sellPrice } from '../../game/stats';
+import { localized, t, tx } from '../../i18n';
 import { Icon } from '../Icon';
 import { LineChart } from '../LineChart';
 import { MarketHeat } from './CounterPanel';
@@ -19,13 +21,13 @@ function materialHint(s: GameState, m: MaterialId, f: ItemFlow, r: FlowReport): 
   const demand = brewDemand(s, m);
   const users = s.cauldrons.filter((c) => RECIPES[c.recipe].inputs[m]);
   const starved = Math.max(0, ...users.map((c) => r.starved[c.recipe]));
-  if (users.length === 0) return f.made > 0 ? ['info', '目前沒有大釜用到它，只能靠收購箱換錢'] : null;
+  if (users.length === 0) return f.made > 0 ? ['info', t('flow.hint.unused')] : null;
   if (demand > 0 && f.made < demand * 0.95) {
-    return ['warn', `產量只有大釜全速需求的 ${Math.round((f.made / demand) * 100)}%：升級種這個的盆栽`];
+    return ['warn', t('flow.hint.lowYield', { pct: Math.round((f.made / demand) * 100) })];
   }
-  if (starved > 0.15) return ['warn', `大釜有 ${Math.round(starved * 100)}% 的時間在等原料：升級種這個的盆栽`];
+  if (starved > 0.15) return ['warn', t('flow.hint.starvedMat', { pct: Math.round(starved * 100) })];
   if (f.crate > 0 || (demand > 0 && f.made > demand * 1.2)) {
-    return ['ok', '有剩：可以升級大釜，把多的原料熬成藥水（比收購划算）'];
+    return ['ok', t('flow.hint.matSurplus')];
   }
   return null;
 }
@@ -36,26 +38,26 @@ function potionHint(s: GameState, p: PotionId, f: ItemFlow, r: FlowReport): [Ton
     // 左邊的大釜先拿原料：這口大釜比左邊的更值錢時，建議把它拖到更左邊
     const idx = s.cauldrons.findIndex((c) => c.recipe === p);
     const cheaperLeft = s.cauldrons.slice(0, idx).some((c) => sellPrice(s, c.recipe) < sellPrice(s, p));
-    const tip = cheaperLeft ? '，或在場景中把這口大釜拖到更左邊（左邊的先拿原料）' : '';
-    return ['warn', `大釜有 ${Math.round(starved * 100)}% 的時間在等原料：先補原料產量${tip}`];
+    const tip = cheaperLeft ? t('flow.hint.moveLeft') : '';
+    return ['warn', t('flow.hint.starvedPotion', { pct: Math.round(starved * 100), tip })];
   }
-  if (s.potions[p] < 1 && f.made < customerDemand(s, p) * 0.9) return ['warn', '賣得比熬得快：升級大釜'];
+  if (s.potions[p] < 1 && f.made < customerDemand(s, p) * 0.9) return ['warn', t('flow.hint.sellingOut')];
   // 顧客需求會跟著產量調整，平常很少缺貨；進門時不夠的客人一多，就是產能還差一點
   if (f.short > 0) {
     const ratio = f.short / Math.max(1, r.orders.arrived);
-    const hot = s.market.value > 1.1 ? '（市場正熱，需求比平常多）' : '';
+    const hot = s.market.value > 1.1 ? t('flow.hint.hot') : '';
     const tip = f.crate > 0
-      ? '收購箱還在收它，可以在櫃台調高這種藥水的保留量，先留給客人'
-      : '產能可能稍微不足，可以升級這口大釜，或補上它的原料產量';
-    return [ratio >= SHORT_WARN ? 'warn' : 'info', `${WINDOW_TEXT}有 ${f.short} 位客人進門時它不夠，要等熬好才能結帳${hot}：${tip}`];
+      ? t('flow.hint.shortCrate')
+      : t('flow.hint.shortCapacity');
+    return [ratio >= SHORT_WARN ? 'warn' : 'info', t('flow.hint.short', { sec: WINDOW_SEC, n: f.short, hot, tip })];
   }
-  if (f.crate > 0) return ['ok', '有剩：多的由收購箱收購。可以提升來客、升級售價'];
+  if (f.crate > 0) return ['ok', t('flow.hint.potionSurplus')];
   return null;
 }
 
 /** 進門時缺貨的客人超過這個比例，提示變成警告 */
 const SHORT_WARN = 0.2;
-const WINDOW_TEXT = '最近 30 秒';
+const WINDOW_SEC = 30;
 
 /** 帶正負號的速率；接近 0 就只顯示 0 */
 function Signed({ v }: { v: number }) {
@@ -80,19 +82,19 @@ function FlowRow(props: {
       <div class="flow-head">
         <Icon id={props.icon} />
         <b>{props.name}</b>
-        <span class="flow-stock">庫存 {props.fullStock ? fullCount(props.stock) : formatNumber(props.stock)}</span>
-        {props.onOpen && <span class="flow-more">圖表 ›</span>}
+        <span class="flow-stock">{t('flow.stock', { n: props.fullStock ? fullCount(props.stock) : formatNumber(props.stock) })}</span>
+        {props.onOpen && <span class="flow-more">{t('flow.chart')}</span>}
       </div>
       <div class="flow-grid">
-        <span>產量<Signed v={f.made} /></span>
+        <span>{t('flow.made')}<Signed v={f.made} /></span>
         <span>{props.usedLabel}<Signed v={-f.used} /></span>
-        <span>收購<Signed v={-f.crate} /></span>
-        <span>淨變化<Signed v={f.net} /></span>
+        <span>{t('flow.crate')}<Signed v={-f.crate} /></span>
+        <span>{t('flow.net')}<Signed v={f.net} /></span>
       </div>
       {props.demand && props.demand.value > 0 && (
         <div class="flow-demand">
-          {props.demand.label} ≈ {formatRate(props.demand.value)}/秒
-          {props.potion && <>・{WINDOW_TEXT}進門時不夠 <b class={f.short > 0 ? 'minus' : ''}>{f.short}</b> 位</>}
+          {t('flow.demand', { label: props.demand.label, n: formatRate(props.demand.value) })}
+          {props.potion && tx('flow.shortCount', { n: <b class={f.short > 0 ? 'minus' : ''}>{f.short}</b> }, { sec: WINDOW_SEC })}
         </div>
       )}
       {props.hint && <div class={`flow-hint ${props.hint[0]}`}>{props.hint[1]}</div>}
@@ -114,9 +116,9 @@ function IncomeCard({ r, onOpen }: { r: FlowReport; onOpen?: () => void }) {
   return (
     <div class={`card ${onOpen ? 'clickable' : ''}`} onClick={onOpen}>
       <div class="card-title">
-        <Icon id="icon_gold" /> 平均收入
-        <span class="flow-stock"><b class="income-total">{formatRate(income.total)}</b> 金／秒</span>
-        {onOpen && <span class="flow-more">圖表 ›</span>}
+        <Icon id="icon_gold" /> {t('flow.income')}
+        <span class="flow-stock">{tx('flow.goldPerSec', { n: <b class="income-total">{formatRate(income.total)}</b> })}</span>
+        {onOpen && <span class="flow-more">{t('flow.chart')}</span>}
       </div>
       <div class="income-bar">
         {sources.map(([label, , v], k) => income.total > 0 && v > 0 && (
@@ -133,19 +135,20 @@ function IncomeCard({ r, onOpen }: { r: FlowReport; onOpen?: () => void }) {
         ))}
       </div>
       <div class="stats">
-        <span>顧客買走產量的 <b>{Math.round(customerShare(s) * 100)}%</b>（其餘給收購箱）</span>
+        <span>{tx('flow.customerShare', { pct: <b>{Math.round(customerShare(s) * 100)}%</b> })}</span>
         <MarketHeat />
         {served > 0 && (
           <span>
-            訂單湊齊 <b>{Math.round((orders.full / served) * 100)}%</b>
-            {orders.partial > 0 && `・部分購買 ${orders.partial} 人`}
-            {orders.lost > 0 && `・空手離開 ${orders.lost} 人`}
+            {tx('flow.ordersFull', { pct: <b>{Math.round((orders.full / served) * 100)}%</b> })}
+            {orders.partial > 0 && t('flow.ordersPartial', { n: orders.partial })}
+            {orders.lost > 0 && t('flow.ordersLost', { n: orders.lost })}
           </span>
         )}
         {orders.arrived > 0 && (
           <span>
-            {WINDOW_TEXT}進門 <b>{orders.arrived}</b> 人，其中 <b class={orders.waited > 0 ? 'minus' : ''}>{orders.waited}</b> 人
-            進門時貨不夠、要等（{Math.round((orders.waited / orders.arrived) * 100)}%）
+            {tx('flow.waited', {
+              arrived: <b>{orders.arrived}</b>, waited: <b class={orders.waited > 0 ? 'minus' : ''}>{orders.waited}</b>,
+            }, { sec: WINDOW_SEC, pct: Math.round((orders.waited / orders.arrived) * 100) })}
           </span>
         )}
       </div>
@@ -160,7 +163,7 @@ export function FlowPanel() {
   const r = game.flow.report(s);
   if (r && flowDetail.value) return <FlowDetail id={flowDetail.value} r={r} />;
   if (!r) {
-    return <div class="cards"><div class="card"><p class="hint">統計中…（需要幾秒鐘的資料）</p></div></div>;
+    return <div class="cards"><div class="card"><p class="hint">{t('flow.collecting')}</p></div></div>;
   }
   const used = new Set(s.cauldrons.flatMap((c) => Object.keys(RECIPES[c.recipe].inputs)));
   const planted = new Set(s.slots.map((x) => x.plant).filter(Boolean));
@@ -168,28 +171,27 @@ export function FlowPanel() {
   return (
     <div class="cards">
       <p class="hint">
-        最近 {Math.round(r.seconds)} 秒的平均（每秒）。「產量」少於「使用＋收購」時庫存會下降；
-        原料被收購代表產量有剩，大釜常在等原料則代表原料不夠。點各項目可以看最近 30 秒的折線圖。
+        {t('flow.intro', { sec: Math.round(r.seconds), window: WINDOW_SEC })}
       </p>
       <IncomeCard r={r} onOpen={() => openDetail('income')} />
       <div class="card">
-        <div class="card-title">原料</div>
-        {mats.length === 0 && <p class="hint">還沒有種任何植物。</p>}
+        <div class="card-title">{t('flow.materials')}</div>
+        {mats.length === 0 && <p class="hint">{t('flow.noPlants')}</p>}
         {mats.map((m) => (
           <FlowRow
             key={m} icon={`item_${m}`} name={PLANTS[m].name} stock={s.materials[m]} f={r.items[m]}
-            usedLabel="熬煮" demand={{ label: '大釜全速需要', value: brewDemand(s, m) }}
+            usedLabel={t('flow.brewed')} demand={{ label: t('flow.brewDemand'), value: brewDemand(s, m) }}
             hint={materialHint(s, m, r.items[m], r)} onOpen={() => openDetail(m)}
           />
         ))}
       </div>
       <div class="card">
-        <div class="card-title">藥水</div>
-        {s.cauldrons.length === 0 && <p class="hint">還沒有大釜。</p>}
+        <div class="card-title">{t('flow.potions')}</div>
+        {s.cauldrons.length === 0 && <p class="hint">{t('flow.noCauldrons')}</p>}
         {s.cauldrons.map(({ recipe: p }) => (
           <FlowRow
             key={p} icon={`potion_${p}`} name={RECIPES[p].name} stock={s.potions[p]} f={r.items[p]}
-            usedLabel="售出" demand={{ label: '顧客需求約', value: customerDemand(s, p) }} potion
+            usedLabel={t('flow.sold')} demand={{ label: t('flow.customerDemand'), value: customerDemand(s, p) }} potion
             hint={potionHint(s, p, r.items[p], r)} onOpen={() => openDetail(p)}
           />
         ))}
@@ -202,7 +204,7 @@ export function FlowPanel() {
 const FLOW_COLORS = { made: '#1f9e6a', used: '#e0662e', crate: '#2a78d6' };
 /** 收入來源的顏色：顧客、藥水收購箱、原料收購箱；合計用墨色 */
 const INCOME_COLORS = { customers: '#b87d0a', cratePotions: '#2a78d6', crateMaterials: '#c94f86', total: '#4a3426' };
-const INCOME_LABELS = { customers: '顧客', cratePotions: '藥水收購箱', crateMaterials: '原料收購箱' };
+const INCOME_LABELS = localized({}, 'flow.source', ['customers', 'cratePotions', 'crateMaterials']);
 const STOCK_COLOR = '#2f6f6a';
 const NET_COLOR = '#c94f86';
 /** 每種配方固定一個顏色（顏色跟著配方走，不跟著順序） */
@@ -230,9 +232,9 @@ function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
   const game = useGame();
   const s = game.state;
   const ser = game.flow.series(s);
-  const back = <button class="btn back-btn" onClick={closeDetail}>◀ 回到產銷總覽</button>;
+  const back = <button class="btn back-btn" onClick={closeDetail}>{t('flow.back')}</button>;
   if (!ser) {
-    return <div class="cards">{back}<div class="card"><p class="hint">統計中…（需要幾秒鐘的資料）</p></div></div>;
+    return <div class="cards">{back}<div class="card"><p class="hint">{t('flow.collecting')}</p></div></div>;
   }
   if (id === 'income') {
     return (
@@ -240,24 +242,24 @@ function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
         {back}
         <IncomeCard r={r} />
         <div class="card">
-          <div class="card-title">每秒收入</div>
+          <div class="card-title">{t('flow.incomePerSec')}</div>
           <LineChart
             ago={ser.ago} format={formatRate} tipFormat={formatExact}
             series={[
-              { label: '合計', color: INCOME_COLORS.total, values: ser.income.total },
+              { label: t('flow.total'), color: INCOME_COLORS.total, values: ser.income.total },
               ...(['customers', 'cratePotions', 'crateMaterials'] as const).map((k) => (
                 { label: INCOME_LABELS[k], color: INCOME_COLORS[k], values: ser.income[k] })),
             ]}
           />
         </div>
         <div class="card">
-          <div class="card-title">市場熱度</div>
+          <div class="card-title">{t('flow.market')}</div>
           <LineChart
-            ago={ser.ago} format={(n) => `×${n.toFixed(2)}`} yMax={1.5}
-            series={[{ label: '熱度', color: INCOME_COLORS.cratePotions, values: ser.market }]}
-            refLine={{ label: '平常', value: 1 }}
+            ago={ser.ago} format={(n) => `×${n.toFixed(2)}`} yMax={MARKET.max}
+            series={[{ label: t('flow.heat'), color: INCOME_COLORS.cratePotions, values: ser.market }]}
+            refLine={{ label: t('flow.normal'), value: 1 }}
           />
-          <p class="hint">熱度高於 1 時客人買得比產量多（囤貨派上用場），低於 1 時有剩（交給收購箱）。</p>
+          <p class="hint">{t('flow.marketHint')}</p>
         </div>
       </div>
     );
@@ -266,9 +268,10 @@ function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
   const it = ser.items[id];
   const name = isMat ? PLANTS[id as MaterialId].name : RECIPES[id as PotionId].name;
   const icon = isMat ? `item_${id}` : `potion_${id}`;
-  const usedLabel = isMat ? '熬煮' : '售出';
+  const usedLabel = isMat ? t('flow.brewed') : t('flow.sold');
   const f = r.items[id];
   const demand = isMat ? brewDemand(s, id as MaterialId) : customerDemand(s, id as PotionId);
+  const demandLabel = t(isMat ? 'flow.brewDemand' : 'flow.customerDemand');
   const hint = isMat ? materialHint(s, id as MaterialId, f, r) : potionHint(s, id as PotionId, f, r);
   // 原料：用到它的大釜；藥水：它自己的大釜
   const users = isMat ? s.cauldrons.filter((c) => RECIPES[c.recipe].inputs[id as MaterialId]) : s.cauldrons.filter((c) => c.recipe === id);
@@ -279,50 +282,47 @@ function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
         <FlowRow
           icon={icon} name={name} stock={isMat ? s.materials[id as MaterialId] : s.potions[id as PotionId]} f={f}
           usedLabel={usedLabel} hint={hint} fullStock potion={!isMat}
-          demand={{ label: isMat ? '大釜全速需要' : '顧客需求約', value: demand }}
+          demand={{ label: demandLabel, value: demand }}
         />
       </div>
       <div class="card">
-        <div class="card-title">每秒{isMat ? '產量' : '熬出'}與去向</div>
+        <div class="card-title">{t(isMat ? 'flow.madeTitleMat' : 'flow.madeTitlePotion')}</div>
         <LineChart
           ago={ser.ago} format={formatRate} tipFormat={formatExact}
           series={[
-            { label: isMat ? '產量' : '熬出', color: FLOW_COLORS.made, values: it.made },
+            { label: t(isMat ? 'flow.made' : 'flow.brewedOut'), color: FLOW_COLORS.made, values: it.made },
             { label: usedLabel, color: FLOW_COLORS.used, values: it.used },
-            { label: '收購', color: FLOW_COLORS.crate, values: it.crate },
+            { label: t('flow.crate'), color: FLOW_COLORS.crate, values: it.crate },
           ]}
-          refLine={demand > 0 ? { label: isMat ? '大釜全速需要' : '顧客需求約', value: demand } : undefined}
+          refLine={demand > 0 ? { label: demandLabel, value: demand } : undefined}
         />
       </div>
       <div class="card">
-        <div class="card-title">庫存</div>
-        <LineChart ago={ser.ago} format={fullCount} yMode="fit" series={[{ label: '庫存', color: STOCK_COLOR, values: it.stock }]} />
-        <p class="hint">縱軸貼著這段時間的最低～最高庫存，數量很大時也看得出增減。</p>
+        <div class="card-title">{t('flow.stockTitle')}</div>
+        <LineChart ago={ser.ago} format={fullCount} yMode="fit" series={[{ label: t('flow.stockTitle'), color: STOCK_COLOR, values: it.stock }]} />
+        <p class="hint">{t('flow.stockHint')}</p>
       </div>
       <div class="card">
-        <div class="card-title">每秒淨變化</div>
+        <div class="card-title">{t('flow.netPerSec')}</div>
         <LineChart
           ago={ser.ago} format={signed(formatRate)} tipFormat={signed(formatExact)} yMode="signed"
-          series={[{ label: '淨變化', color: NET_COLOR, values: it.net }]}
+          series={[{ label: t('flow.net'), color: NET_COLOR, values: it.net }]}
         />
-        <p class="hint">產量 − {usedLabel} − 收購。在 0 以上是庫存在增加，以下是在減少。</p>
+        <p class="hint">{t('flow.netHint', { used: usedLabel })}</p>
       </div>
       {!isMat && (
         <div class="card">
-          <div class="card-title">進門時不夠的客人</div>
+          <div class="card-title">{t('flow.shortTitle')}</div>
           <LineChart
             ago={ser.ago} format={(n) => (Number.isInteger(n) ? `${n}` : n.toFixed(1))}
-            series={[{ label: '人數', color: FLOW_COLORS.used, values: it.short }]}
+            series={[{ label: t('flow.people'), color: FLOW_COLORS.used, values: it.short }]}
           />
-          <p class="hint">
-            每一秒進門的客人裡，訂單的{name}在當下不夠、要等熬好才能結帳的人數。
-            顧客需求會跟著產量調整，所以平常很少缺貨；這裡常常出現的話，代表產能還差一點。
-          </p>
+          <p class="hint">{t('flow.shortHint', { name })}</p>
         </div>
       )}
       {users.length > 0 && (
         <div class="card">
-          <div class="card-title">{isMat ? '用到它的大釜' : '大釜'}在等原料的時間</div>
+          <div class="card-title">{t(isMat ? 'flow.starvedTitleMat' : 'flow.starvedTitlePotion')}</div>
           <LineChart
             ago={ser.ago} format={pct} yMax={1}
             series={users.map((c) => ({
@@ -330,7 +330,7 @@ function FlowDetail({ id, r }: { id: ItemId | 'income'; r: FlowReport }) {
               values: ser.starved[c.recipe],
             }))}
           />
-          <p class="hint">每一秒中，大釜湊不出一份原料、停下來等的時間比例。</p>
+          <p class="hint">{t('flow.starvedHint')}</p>
         </div>
       )}
     </div>

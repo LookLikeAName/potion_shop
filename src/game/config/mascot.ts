@@ -1,16 +1,15 @@
+import { localized, localizedList } from '../../i18n';
+
 // 看板娘露米婭：指派、體力、互動（企劃書第 7 章）
 
 export type Assignment = 'patrol' | 'greenhouse' | 'cauldron' | 'counter' | 'rest';
 /** 會產生效果的工作區域 */
 export type WorkZone = 'greenhouse' | 'cauldron' | 'counter';
 
-export const ASSIGNMENTS: Record<Assignment, { name: string; desc: string }> = {
-  patrol: { name: '自由活動', desc: '自己在溫室、大釜區、櫃台之間輪流工作，效果跟著所在的區域，一樣會消耗體力' },
-  greenhouse: { name: '溫室', desc: '植物生長速度 +25%' },
-  cauldron: { name: '大釜區', desc: '熬煮速度（被動與點擊）+25%' },
-  counter: { name: '櫃台', desc: '藥水售價 +25%、顧客耐心 +25%' },
-  rest: { name: '休息室', desc: '在坐墊上睡覺回復體力（親手派來休息會回得比較快），並慢慢產出開心度；體力滿了就在休息室悠閒地晃' },
-};
+/** 名稱與說明在語言檔 assign.<id>.name／desc */
+export const ASSIGNMENTS = Object.fromEntries(
+  (['patrol', 'greenhouse', 'cauldron', 'counter', 'rest'] as const).map((a) => [a, localized({}, `assign.${a}`, ['name', 'desc'])]),
+) as Record<Assignment, { name: string; desc: string }>;
 
 export const MASCOT = {
   staminaMax: 100,
@@ -33,12 +32,17 @@ export const MASCOT = {
   /** 在櫃台時的售價加成（看板娘池 M，和女僕裝相加） */
   counterPriceBonus: 0.25,
 
-  /** 休息（含離線）時每小時產出的開心度基礎值：再乘上開心度倍率，擺出史萊姆娃娃另 ×1.5 */
-  restHappinessPerHour: 0.9,
   /**
-   * 離線時開心度的產出會隨離開的時間衰退：剛離開是 100%，線性降到這個時數時為 0，
-   * 之後不再增加（心電感應延長的是金幣的離線上限，開心度最多一樣只算到這裡）
+   * 開著頁面時，休息每小時產出的開心度基礎值：再乘上開心度倍率，擺出史萊姆娃娃另 ×1.5。
+   * 模擬：開著頁面不操作的掛機約 36 小時、關掉頁面（每小時上線一次）約 51 小時、積極玩家約 11 小時兌換完
    */
+  restHappinessPerHour: 2.9,
+  /**
+   * 離線（關掉頁面）時休息的開心度另外算，比在線少很多：剛離開每小時 offlineRestPerHour（同樣乘開心度倍率與史萊姆娃娃），
+   * 隨離開的時間線性降到 offlineHappyHours 時為 0，之後不再增加（心電感應延長的是金幣的離線上限，開心度最多一樣只算到這裡）。
+   * 開著頁面掛機才算在玩，關掉的懲罰比較重
+   */
+  offlineRestPerHour: 0.63,
   offlineHappyHours: 24,
 
   /** 互動能量：上限、每次觸碰消耗、每小時回滿 */
@@ -55,13 +59,13 @@ export const MASCOT = {
 
 export type OutfitId = 'default' | 'maid' | 'pajama' | 'gardener' | 'robe';
 
-export const OUTFITS: Record<OutfitId, { name: string; desc: string; item?: string }> = {
-  default: { name: '見習魔女服', desc: '露米婭平常的樣子。' },
-  maid: { name: '典雅女僕裝', desc: '指派在櫃台時：售價 +50%；客人每次少買 20%，但照原本的數量付錢。', item: 'outfit_maid' },
-  pajama: { name: '星空絨毛睡衣', desc: '穿著時離線，離線效率 +20%（基礎 50%，最多 90%）。', item: 'outfit_pajama' },
-  gardener: { name: '花園精靈圍裙裝', desc: '指派在溫室時：植物生長速度 +100%。', item: 'outfit_gardener' },
-  robe: { name: '鍊金大師法袍', desc: '指派在大釜區時：熬煮速度 +100%。', item: 'outfit_robe' },
+/** 名稱與說明在語言檔 outfit.<id>.name／desc；item = 開心度兌換項目 */
+const OUTFIT_ITEMS: Record<OutfitId, string | undefined> = {
+  default: undefined, maid: 'outfit_maid', pajama: 'outfit_pajama', gardener: 'outfit_gardener', robe: 'outfit_robe',
 };
+export const OUTFITS = Object.fromEntries(
+  (Object.keys(OUTFIT_ITEMS) as OutfitId[]).map((o) => [o, localized({ item: OUTFIT_ITEMS[o] }, `outfit.${o}`, ['name', 'desc'])]),
+) as Record<OutfitId, { name: string; desc: string; item?: string }>;
 
 export const OUTFIT_BONUS = {
   maidPrice: 0.5,
@@ -80,38 +84,10 @@ export const INCOME_SMOOTHING = 120;
 export type TouchPart = 'head' | 'cheek';
 export type Reaction = 'headpat' | 'poke' | 'panic' | 'shy' | 'idle';
 
-/** 台詞（隨機挑一句） */
-export const LINES: Record<Reaction | 'daily' | 'exhausted' | 'woke', string[]> = {
-  idle: [
-    '老師，今天也一起加油吧！',
-    '紅心草今天長得特別有精神呢～',
-    '嘿嘿，看我用湯勺彈一段！',
-  ],
-  headpat: [
-    '嘿嘿，只要老師這樣摸摸，剛才背錯配方的事情好像就忘記了呢！',
-    '唔…好舒服…再一下下就好…',
-    '老師的手是暖暖的魔力呢。',
-  ],
-  poke: [
-    '唔…正在計算利潤呢，老師不要害我分心啦！',
-    '臉、臉頰不是用來戳的啦！',
-    '哼！…才、才沒有在偷笑呢。',
-  ],
-  panic: [
-    '等等！哇啊！太快了太快了！會變笨的啦！',
-    '老、老師冷靜一點！',
-  ],
-  shy: [
-    '今天已經被摸夠多了啦…老師也該工作了！',
-    '再摸下去今天就什麼都做不了了啦…',
-  ],
-  daily: [
-    '老師早安！今天也請多多指教！',
-    '啊，老師來了！我今天也會努力的！',
-  ],
-  exhausted: ['呼啊…好睏…我去坐墊上躺一下下就好…'],
-  woke: ['睡飽了！我回去工作囉！'],
-};
+/** 台詞（隨機挑一句；語言檔 lines.*） */
+export const LINES: Record<Reaction | 'daily' | 'exhausted' | 'woke', string[]> = localizedList(
+  {}, 'lines', ['idle', 'headpat', 'poke', 'panic', 'shy', 'daily', 'exhausted', 'woke'],
+);
 
 /** 場景中頭上的自言自語泡泡：多久冒一次（秒，最短～最長）、停留多久 */
 export const MUTTER = {
@@ -123,88 +99,15 @@ export const MUTTER = {
 };
 
 /** 自言自語的台詞：一般、各工作區、各服裝、疲勞、夢話，以及看店裡狀況的台詞 */
-export const MUTTER_LINES = {
-  global: [
-    '今天的天氣很適合熬藥水呢～',
-    '嗯～店裡飄著好香的味道。',
-    '啦啦啦～♪',
-    '老師有在看嗎？我很認真喔！',
-    '記帳、記帳…嗯，今天也是黑字！',
-    '等打烊了要來泡一杯紅茶。',
-    '總有一天要變成厲害的大魔女！',
-    '這間店是我最喜歡的地方了。',
-  ],
-  greenhouse: [
-    '紅心草，今天也要長得圓滾滾的喔～',
-    '澆水、澆水～不能澆太多喔。',
-    '聽說對植物說話會長得比較快！',
-    '嘿咻，這盆好像可以收成了！',
-    '葉子上有小蟲…走開走開～',
-    '月光菇在發光耶…好漂亮。',
-  ],
-  cauldron: [
-    '攪拌三圈，再反方向一圈…',
-    '咕嘟咕嘟～聞起來剛剛好！',
-    '火候…火候很重要的！',
-    '上次在這裡燒到瀏海…這次不會了！',
-    '湯勺先生，今天也拜託了。',
-    '顏色變成漂亮的粉紅色了，成功！',
-  ],
-  counter: [
-    '歡迎光臨～今天需要什麼藥水呢？',
-    '找零、找零…嗯，沒算錯！',
-    '笑容也是服務的一部分喔！',
-    '這瓶是今天最漂亮的一瓶～',
-    '客人好多喔，要打起精神！',
-  ],
-  /** 自由活動時多的台詞 */
-  patrol: [
-    '接下來去哪裡幫忙好呢～',
-    '巡視一下店裡！',
-    '東忙忙、西忙忙～',
-  ],
-  outfit: {
-    default: ['這頂帽子是師父送我的喔。', '見習魔女也是魔女！'],
-    maid: ['歡迎回來，老師…啊，說錯了，是歡迎光臨！', '女僕裝的裙子好容易飄起來…', '要用最優雅的姿勢倒茶…'],
-    pajama: ['穿著睡衣工作…好像有點想睡…', '星星圖案好可愛吧？嘿嘿。', '毛茸茸的好溫暖～'],
-    robe: ['穿上這件法袍，感覺自己變厲害了！', '鍊金大師露米婭，參上！', '袖子好長…差點掉進大釜裡。'],
-    gardener: ['花冠是溫室的花編的喔！', '圍裙口袋裡裝滿了種子～', '植物們今天也要長得壯壯的！'],
-  } satisfies Record<OutfitId, string[]>,
-  tired: ['呼啊…有點睏了…', '腳…腳好痠…', '再…再撐一下下就好…', '眼皮好重喔…'],
-  /** 體力滿了還在休息室：悠閒地晃來晃去 */
-  relax: [
-    '今天就好好放鬆一下～',
-    '坐墊曬過太陽，好蓬鬆…',
-    '窗外的星星好漂亮。',
-    '偶爾偷懶一下，老師不會生氣吧？',
-  ],
-  /** 走到休息室擺出來的禮物旁邊時 */
-  furniture: {
-    snack: ['偷吃一塊點心…一塊就好！', '老師做的點心最好吃了～'],
-    slime_doll: ['史萊姆娃娃軟綿綿的～捏捏！', '嘿嘿，今天也一起午睡嗎？'],
-    gramophone: ['放一首輕快的曲子吧♪', '這張唱片是師父最喜歡的…'],
-    tea_set: ['泡一杯魔法紅茶休息一下～', '香香的，喝完又有精神了！'],
-    bouquet: ['花還開得好好的，要記得換水喔。', '聞起來好香～'],
-    hairpin: ['髮飾有沒有戴歪？嘿嘿。', '亮晶晶的，好喜歡！'],
-    star_lamp: ['星燈亮起來了，要許什麼願好呢？', '希望明天也能跟老師一起開店～'],
-    music_box: ['轉一轉發條…小精靈又跳起舞了！', '這首曲子好溫柔喔。'],
-    dream_catcher: ['捕夢網把壞夢都抓走了！', '今晚也會做個好夢吧…'],
-    crystal_ball: ['水晶球裡…好像看到好多客人！', '占卜結果：今天大吉！'],
-  } as Record<string, string[]>,
-  /** 睡覺時的夢話 */
-  sleep: [
-    '唔嗯…藥水…賣完了…嘿嘿…',
-    '老師…那個不能吃啦…',
-    '呼…呼…紅心草…好多…',
-    '成為…大魔女…',
-    '布丁…還要一個…',
-    '嘶…呼…',
-  ],
-  /** 看店裡狀況：大釜缺原料、櫃台排滿、狂熱時刻 */
-  starved: ['原料好像不夠了…要多種一點才行。', '大釜在等原料耶…溫室要加油了！'],
-  crowded: ['櫃台排了好多人…', '客人在等了，動作要快！'],
-  fever: ['狂熱時刻！大家衝呀～！', '好厲害，全部都動得好快！'],
-  /** 市場熱度很高／很低時 */
-  marketHot: ['今天客人好多，還好有先囤貨！', '藥水大賣中～庫存要撐住啊！'],
-  marketCold: ['今天客人比較少呢…先把藥水存起來吧。', '生意有點冷清，多的就交給收購箱吧。'],
-};
+export const MUTTER_LINES = localizedList(
+  {
+    outfit: localizedList({}, 'mutter.outfit', ['default', 'maid', 'pajama', 'robe', 'gardener'] satisfies OutfitId[]),
+    /** 走到休息室擺出來的禮物旁邊時 */
+    furniture: localizedList({}, 'mutter.furniture', [
+      'snack', 'slime_doll', 'gramophone', 'tea_set', 'bouquet', 'hairpin', 'star_lamp', 'music_box', 'dream_catcher', 'crystal_ball',
+    ]) as Record<string, string[]>,
+  },
+  'mutter',
+  // 一般、各工作區、自由活動、疲勞、體力滿了在休息室、夢話、看店裡狀況（缺原料、櫃台排滿、狂熱、市場熱度高／低）
+  ['global', 'greenhouse', 'cauldron', 'counter', 'patrol', 'tired', 'relax', 'sleep', 'starved', 'crowded', 'fever', 'marketHot', 'marketCold'],
+);

@@ -7,6 +7,7 @@ import { SLOT_NEIGHBORS } from './config/balance';
 import { MASCOT } from './config/mascot';
 import { PLANTS, type MaterialId } from './config/plants';
 import { RECIPES, type PotionId } from './config/recipes';
+import { t } from '../i18n';
 import { formatNumber } from './format';
 import type { SimContext } from './sim';
 import type { ActiveEvent, Buff, BuffKind, CustomerState, GameState } from './state';
@@ -347,9 +348,14 @@ function giveMaterials(s: GameState, sec: number): string {
     const rate = s.slots.reduce((n, sl, i) => n + (sl.plant === m ? potOutputPerSec(s, i) : 0), 0);
     const amount = Math.max(EVENT.minMaterial, Math.round(rate * sec));
     s.materials[m] += amount;
-    parts.push(`${PLANTS[m].name} +${formatNumber(amount)}`);
+    parts.push(materialText(m, amount));
   }
-  return parts.join('、');
+  return parts.join(t('common.listSep'));
+}
+
+/** 「紅心草 +120」 */
+function materialText(m: MaterialId, amount: number): string {
+  return t('event.result.item', { name: PLANTS[m].name, n: formatNumber(amount) });
 }
 
 /** 加上限時增益；同種同目標的刷新時間（取較長、倍率取較大），stack = 直接覆蓋倍率 */
@@ -368,7 +374,7 @@ export function addBuff(s: GameState, b: Buff, stack = false): void {
 const buff = (kind: BuffKind, mult: number, sec: number, source: EventId, target?: number | string): Buff =>
   ({ kind, mult, time: sec, max: sec, target, source });
 
-const goldText = (g: number) => `+${formatNumber(g)} 金`;
+const goldText = (g: number) => t('event.result.gold', { n: formatNumber(g) });
 
 /** 發獎勵，回傳獎勵說明 */
 function applyReward(s: GameState, a: ActiveEvent, ctx: SimContext): string {
@@ -378,7 +384,7 @@ function applyReward(s: GameState, a: ActiveEvent, ctx: SimContext): string {
       const fx = EVENT_FX.goblin;
       const got = giveMaterials(s, fx.materialSec);
       addBuff(s, buff('growth', fx.growth, fx.buffSec, a.id));
-      return `${got}；所有盆栽生長 ×${fx.growth}（${fx.buffSec} 秒）`;
+      return t('event.result.goblin', { got, growth: fx.growth, sec: fx.buffSec });
     }
     case 'dew': {
       const fx = EVENT_FX.dew;
@@ -388,24 +394,24 @@ function applyReward(s: GameState, a: ActiveEvent, ctx: SimContext): string {
       const amount = Math.max(EVENT.minMaterial, Math.round(potOutputPerSec(s, i) * fx.yieldSec));
       s.materials[slot.plant] += amount;
       addBuff(s, buff('potGrowth', fx.growth, fx.buffSec, a.id, i));
-      return `${PLANTS[slot.plant].name} +${formatNumber(amount)}；這一盆生長 ×${fx.growth}（${fx.buffSec} 秒）`;
+      return t('event.result.dew', { item: materialText(slot.plant, amount), growth: fx.growth, sec: fx.buffSec });
     }
     case 'raincloud': {
       const fx = EVENT_FX.raincloud;
       const i = a.slot ?? 0;
       const targets = [i, ...(SLOT_NEIGHBORS[i] ?? [])].filter((k) => s.slots[k]?.plant);
       for (const k of targets) addBuff(s, buff('potGrowth', fx.growth, fx.buffSec, a.id, k));
-      return `${targets.length} 盆盆栽生長 ×${fx.growth}（${fx.buffSec} 秒）`;
+      return t('event.result.raincloud', { n: targets.length, growth: fx.growth, sec: fx.buffSec });
     }
     case 'butterfly': {
       const n = a.landed?.length ?? 0;
-      return `${n} 隻蝴蝶停在盆栽上：生長加速（${EVENT_FX.butterfly.buffSec} 秒）`;
+      return t('event.result.butterfly', { n, sec: EVENT_FX.butterfly.buffSec });
     }
     case 'sneeze': {
       const fx = EVENT_FX.sneeze;
       const sec = a.hits * fx.secPerHit;
       addBuff(s, buff('brew', fx.brew, sec, a.id));
-      return `接住 ${a.hits} 顆火花：所有大釜熬煮 ×${fx.brew}（${sec} 秒）`;
+      return t('event.result.sneeze', { n: a.hits, brew: fx.brew, sec });
     }
     case 'bubble': {
       const c = s.cauldrons.find((x) => x.recipe === a.recipe);
@@ -413,52 +419,52 @@ function applyReward(s: GameState, a: ActiveEvent, ctx: SimContext): string {
       const rate = Math.max(cauldronOutputPerSec(s, c), s.potionRate[c.recipe]);
       const amount = Math.max(1, Math.round(rate * EVENT_FX.bubble.brewSec));
       s.potions[c.recipe] += amount;
-      return `${RECIPES[c.recipe].name} +${formatNumber(amount)} 瓶`;
+      return t('event.result.bubble', { potion: RECIPES[c.recipe].name, n: formatNumber(amount), count: amount });
     }
     case 'perfect_heat': {
       const sec = a.hits * EVENT_FX.perfect_heat.secPerHit;
       addBuff(s, buff('double', 2, sec, a.id, a.recipe));
-      return `命中 ${a.hits} 次：${RECIPES[a.recipe!].name}每輪都是雙倍（${sec} 秒）`;
+      return t('event.result.perfect_heat', { n: a.hits, potion: RECIPES[a.recipe!].name, sec });
     }
     case 'apprentice': {
       const fx = EVENT_FX.apprentice;
       addBuff(s, buff('cauldronBrew', fx.brew, fx.buffSec, a.id, a.recipe));
-      return `${RECIPES[a.recipe!].name}的大釜熬煮 ×${fx.brew}（${fx.buffSec} 秒）`;
+      return t('event.result.apprentice', { potion: RECIPES[a.recipe!].name, brew: fx.brew, sec: fx.buffSec });
     }
     case 'hero': {
       const fx = EVENT_FX.hero;
       const total = inc * fx.incomePerHit * a.hits;
       if (a.hits >= fx.hypeAt) {
         addBuff(s, buff('market', fx.hype, fx.buffSec, a.id));
-        return `搬走 ${a.hits} 箱（${goldText(total)}）；勇者到處宣傳，市場熱度 ×${fx.hype}（${fx.buffSec} 秒）`;
+        return t('event.result.heroHype', { n: a.hits, gold: goldText(total), hype: fx.hype, sec: fx.buffSec });
       }
-      return `搬走 ${a.hits} 箱（${goldText(total)}）`;
+      return t('event.result.hero', { n: a.hits, gold: goldText(total) });
     }
     case 'merchant': {
       const offer = a.options![a.tries] as MerchantOffer;
       const fx = MERCHANT_FX;
       switch (offer) {
-        case 'gold': return `${MERCHANT_OFFERS.gold.name}：${goldText(giveGold(s, inc * fx.goldSec))}`;
+        case 'gold': return t('event.result.named', { name: MERCHANT_OFFERS.gold.name, what: goldText(giveGold(s, inc * fx.goldSec)) });
         case 'growth': addBuff(s, buff('growth', fx.mult, fx.buffSec, a.id)); break;
         case 'brew': addBuff(s, buff('brew', fx.mult, fx.buffSec, a.id)); break;
         case 'arrival': addBuff(s, buff('arrival', fx.mult, fx.buffSec, a.id)); break;
-        case 'materials': return `${MERCHANT_OFFERS.materials.name}：${giveMaterials(s, fx.materialSec)}`;
+        case 'materials': return t('event.result.named', { name: MERCHANT_OFFERS.materials.name, what: giveMaterials(s, fx.materialSec) });
       }
-      return `${MERCHANT_OFFERS[offer].name}：${MERCHANT_OFFERS[offer].desc}`;
+      return t('event.result.named', { name: MERCHANT_OFFERS[offer].name, what: MERCHANT_OFFERS[offer].desc });
     }
-    case 'princess': return `公主訂下一整季的藥水：${goldText(giveGold(s, inc * EVENT_FX.princess.incomeSec))}`;
+    case 'princess': return t('event.result.princess', { gold: goldText(giveGold(s, inc * EVENT_FX.princess.incomeSec)) });
     case 'guild_rush': {
       const sec = EVENT_FX.guild_rush.buffSec;
       addBuff(s, buff('crateFull', 2, sec, a.id));
-      return `收購箱照售價全額收購（${sec} 秒）`;
+      return t('event.result.guild_rush', { sec });
     }
     case 'dream': {
       s.mascot.stamina = MASCOT.staminaMax;
       const h = EVENT_FX.dream.happy * happyMult(s);
       s.happiness += h;
-      return `露米婭睡得好香：體力回滿、開心度 +${h.toFixed(2)}`;
+      return t('event.result.dream', { happy: h.toFixed(2) });
     }
-    case 'letter': return `${LETTERS[a.letter ?? 0].title}：${goldText(giveGold(s, inc * EVENT_FX.letter.incomeSec))}`;
+    case 'letter': return t('event.result.named', { name: LETTERS[a.letter ?? 0].title, what: goldText(giveGold(s, inc * EVENT_FX.letter.incomeSec)) });
     case 'fortune': {
       const card = a.options![a.tries] as FortuneCard;
       const fx = FORTUNE_FX;
@@ -469,9 +475,9 @@ function applyReward(s: GameState, a: ActiveEvent, ctx: SimContext): string {
           break;
         case 'star': addBuff(s, buff('price', fx.price, fx.buffSec, a.id)); break;
         case 'moon': addBuff(s, buff('arrival', fx.arrival, fx.buffSec, a.id)); break;
-        case 'wheel': return `「${FORTUNE_CARDS.wheel.name}」：${goldText(giveGold(s, inc * fx.goldSec))}`;
+        case 'wheel': return t('event.result.card', { name: FORTUNE_CARDS.wheel.name, what: goldText(giveGold(s, inc * fx.goldSec)) });
       }
-      return `「${FORTUNE_CARDS[card].name}」：${FORTUNE_CARDS[card].desc}`;
+      return t('event.result.card', { name: FORTUNE_CARDS[card].name, what: FORTUNE_CARDS[card].desc });
     }
     case 'meteor': {
       const fx = EVENT_FX.meteor;
@@ -479,11 +485,11 @@ function applyReward(s: GameState, a: ActiveEvent, ctx: SimContext): string {
       // 全部點到：再拿一次一樣多
       if (a.hits >= EVENT_MAP.meteor.goal) {
         const bonus = giveGold(s, each * a.hits);
-        return `抓住全部 ${a.hits} 顆流星！加碼 ${goldText(bonus)}`;
+        return t('event.result.meteorAll', { n: a.hits, gold: goldText(bonus) });
       }
-      return `抓住 ${a.hits} 顆流星（${goldText(each * a.hits)}）`;
+      return t('event.result.meteor', { n: a.hits, gold: goldText(each * a.hits) });
     }
-    case 'slime': return `史萊姆的見面禮：${giveMaterials(s, EVENT_FX.slime.materialSec)}`;
+    case 'slime': return t('event.result.slime', { got: giveMaterials(s, EVENT_FX.slime.materialSec) });
   }
   void ctx;
   return '';
@@ -498,16 +504,16 @@ export function codexEntry(s: GameState, id: EventId) {
 
 /** 增益的說明（頂部小圖示用） */
 export function buffLabel(b: Buff): string {
-  const x = `×${Number(b.mult.toFixed(2))}`;
+  const x = Number(b.mult.toFixed(2));
   switch (b.kind) {
-    case 'growth': return `所有盆栽生長 ${x}`;
-    case 'potGrowth': return `第 ${Number(b.target) + 1} 盆生長 ${x}`;
-    case 'brew': return `所有大釜熬煮 ${x}`;
-    case 'cauldronBrew': return `${RECIPES[b.target as PotionId]?.name ?? ''}熬煮 ${x}`;
-    case 'double': return `${RECIPES[b.target as PotionId]?.name ?? ''}每輪雙倍`;
-    case 'crateFull': return '收購箱全價收購';
-    case 'arrival': return `來客速度 ${x}`;
-    case 'price': return `售價 ${x}`;
-    case 'market': return `市場熱度拉到 ×${b.mult}`;
+    case 'growth': return t('buff.growth', { x });
+    case 'potGrowth': return t('buff.potGrowth', { n: Number(b.target) + 1, x });
+    case 'brew': return t('buff.brew', { x });
+    case 'cauldronBrew': return t('buff.cauldronBrew', { potion: RECIPES[b.target as PotionId]?.name ?? '', x });
+    case 'double': return t('buff.double', { potion: RECIPES[b.target as PotionId]?.name ?? '' });
+    case 'crateFull': return t('buff.crateFull');
+    case 'arrival': return t('buff.arrival', { x });
+    case 'price': return t('buff.price', { x });
+    case 'market': return t('buff.market', { x: b.mult });
   }
 }

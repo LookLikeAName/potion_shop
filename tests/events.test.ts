@@ -34,7 +34,7 @@ function opened(): GameState {
 }
 
 describe('事件的檢定', () => {
-  it('每 10–20 分鐘檢定一次、成功率 62%：一小時平均約 2.5 個事件', () => {
+  it('每 8–12 分鐘檢定一次、成功率 60%：一小時平均約 3.6 個事件', () => {
     const s = opened();
     const c = ctx(seeded(7));
     let started = 0;
@@ -44,8 +44,8 @@ describe('事件的檢定', () => {
     const hours = 200;
     for (let t = 0; t < hours * 3600; t++) tickEvents(s, 1, c);
     const perHour = started / hours;
-    expect(perHour).toBeGreaterThan(2.1);
-    expect(perHour).toBeLessThan(2.9);
+    expect(perHour).toBeGreaterThan(3.1);
+    expect(perHour).toBeLessThan(4.1);
   });
 
   it('背景分頁、離線、劇情視窗開著時不計時也不出現；限時增益照樣倒數', () => {

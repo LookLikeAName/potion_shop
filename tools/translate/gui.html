@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>藥水舖翻譯工具</title>
+<style>
+  :root {
+    --bg: #faf6ef; --panel: #fff; --ink: #3a2b22; --muted: #8a7768; --line: #e7dccd;
+    --accent: #b0643a; --ok: #2f8a57; --warn: #c07a12; --bad: #c0392b; --info: #2a6fb0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  h1 { font-size: 16px; margin: 0 8px 0 0; }
+  select, input, textarea, button { font: inherit; color: inherit; }
+  select, input[type=text], input[type=password], input[type=number] { border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: #fff; }
+  button { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 4px 12px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .counts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { border-radius: 999px; padding: 2px 10px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .spacer { flex: 1; }
+  main { padding: 12px 16px 40px; max-width: 1500px; margin: 0 auto; }
+  details.settings { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+  details.settings summary { cursor: pointer; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; margin: 10px 0; }
+  .grid label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+  .grid label input { color: var(--ink); }
+  .note { color: var(--muted); font-size: 12px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .toolbar input[type=text] { width: 260px; }
+  .job { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: none; }
+  .job.show { display: block; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin: 6px 0; }
+  .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  .log { max-height: 160px; overflow: auto; font: 12px/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; color: #5b4a3d; }
+  /* 不能加 overflow: hidden，否則表頭的 sticky 會以表格為準而不是整頁 */
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #f3ebdf; font-size: 12px; position: sticky; top: var(--head-h, 56px); z-index: 1; }
+  td.key { font: 12px ui-monospace, Consolas, monospace; width: 18%; word-break: break-all; color: var(--muted); }
+  td.key b { color: var(--ink); display: block; }
+  td.src { width: 32%; }
+  td.tr { width: 34%; }
+  td.src textarea, td.tr textarea { width: 100%; min-height: 2.4em; border: 1px solid transparent; border-radius: 6px; padding: 4px 6px; resize: vertical; background: #fdfaf5; }
+  td.src textarea, td.tr textarea:focus { border-color: var(--accent); background: #fff; outline: none; }
+  td.src textarea { background: transparent; }
+  td.src textarea:hover { border-color: var(--line); }
+  td.src textarea:focus { border-color: var(--info); background: #fff; }
+  td.st { width: 12%; font-size: 12px; }
+  .badge { display: inline-block; border-radius: 4px; padding: 0 6px; font-size: 12px; color: #fff; }
+  .b-ok { background: var(--ok); } .b-missing { background: var(--muted); } .b-stale { background: var(--warn); } .b-invalid { background: var(--bad); }
+  .issues { color: var(--bad); margin-top: 2px; }
+  .arr { color: var(--info); font-size: 11px; }
+  .rowbtns { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .rowbtns button { padding: 0 6px; font-size: 12px; }
+  .lock.on { background: #fff3d6; border-color: var(--warn); }
+  .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: .95; }
+  .empty { padding: 24px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧪 藥水舖翻譯工具</h1>
+  <label>語言 <select id="lang"></select></label>
+  <div class="counts" id="counts"></div>
+  <span class="spacer"></span>
+  <button class="primary" id="btnPending">翻譯待處理的</button>
+  <button id="btnSelected" disabled>翻譯勾選的</button>
+  <button id="btnStop" disabled>停止</button>
+</header>
+<main>
+  <details class="settings" id="settings">
+    <summary>API 與翻譯設定 <span class="note" id="keyNote"></span></summary>
+    <div class="grid">
+      <label>API 網址（OpenAI 相容）<input type="text" data-cfg="base_url"></label>
+      <label>模型<input type="text" data-cfg="model"></label>
+      <label>API 金鑰的環境變數名稱<input type="text" data-cfg="api_key_env"></label>
+      <label>API 金鑰（只存在記憶體，不寫進檔案）<input type="password" id="apiKey" placeholder="沒設定環境變數時才需要"></label>
+      <label>temperature<input type="number" step="0.1" min="0" max="2" data-cfg="temperature"></label>
+      <label>每批最多幾段<input type="number" min="1" data-cfg="batch_size"></label>
+      <label>每批最多幾字（原文）<input type="number" min="200" data-cfg="batch_chars"></label>
+      <label>同時送出幾個請求<input type="number" min="1" max="8" data-cfg="concurrency"></label>
+      <label>失敗重試次數<input type="number" min="0" max="8" data-cfg="max_retries"></label>
+      <label><span><input type="checkbox" data-cfg="json_mode"> 要求模型只回 JSON（response_format）</span></label>
+    </div>
+    <button id="btnSaveCfg">儲存設定</button>
+    <span class="note">Gemini：https://generativelanguage.googleapis.com/v1beta/openai/ ・ OpenAI：https://api.openai.com/v1 ・ OpenRouter：https://openrouter.ai/api/v1 ・ DeepSeek：https://api.deepseek.com/v1</span>
+  </details>
+
+  <div class="job" id="job">
+    <div><b id="jobTitle">翻譯中…</b> <span id="jobCount"></span></div>
+    <div class="bar"><div id="jobBar"></div></div>
+    <div class="log" id="jobLog"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="counts" id="filters"></div>
+    <select id="file"><option value="">全部檔案</option></select>
+    <input type="text" id="search" placeholder="搜尋 key、原文或譯文">
+    <label><input type="checkbox" id="checkAll"> 全選目前列出的</label>
+    <span class="note" id="shown"></span>
+  </div>
+  <table>
+    <thead><tr><th style="width:28px"></th><th>key</th><th>原文（繁體中文，可直接修改）</th><th>譯文</th><th>狀態</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATUS = { missing: '沒翻', stale: '原文已改', invalid: '格式錯', ok: '正常' };
+let lang = localStorage.getItem('tr-lang') || 'ja';
+let rows = [];
+let filter = 'todo';
+const checked = new Set();
+
+async function api(path, body) {
+  const res = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+const asText = (v) => (Array.isArray(v) ? v.join('\n') : v ?? '');
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function loadMeta() {
+  const m = await api('/api/meta');
+  $('lang').innerHTML = m.langs.map((l) => `<option value="${l.id}">${l.id} — ${l.name}</option>`).join('');
+  $('lang').value = lang;
+  for (const el of document.querySelectorAll('[data-cfg]')) {
+    const v = m.config[el.dataset.cfg];
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+  }
+  $('keyNote').textContent = m.hasKey
+    ? (m.keySource === 'env' ? `（金鑰：環境變數 ${m.config.api_key_env}）` : '（金鑰：這次輸入的）')
+    : `（還沒有金鑰：設定環境變數 ${m.config.api_key_env}，或在這裡輸入）`;
+  if (!m.hasKey) $('settings').open = true;
+}
+
+async function loadRows() {
+  rows = await api('/api/rows?lang=' + encodeURIComponent(lang));
+  const files = [...new Set(rows.map((r) => r.file))];
+  const cur = $('file').value;
+  $('file').innerHTML = '<option value="">全部檔案</option>' + files.map((f) => `<option>${f}</option>`).join('');
+  $('file').value = cur;
+  render();
+}
+
+function counts() {
+  const c = { todo: 0, missing: 0, stale: 0, invalid: 0, ok: 0, locked: 0, all: rows.length };
+  for (const r of rows) {
+    c[r.status]++;
+    if (r.locked) c.locked++;
+    if (r.status !== 'ok' && !r.locked) c.todo++;
+  }
+  return c;
+}
+
+function visible() {
+  const q = $('search').value.trim().toLowerCase();
+  const f = $('file').value;
+  return rows.filter((r) => {
+    if (f && r.file !== f) return false;
+    if (filter === 'todo' && (r.status === 'ok' || r.locked)) return false;
+    if (['missing', 'stale', 'invalid', 'ok'].includes(filter) && r.status !== filter) return false;
+    if (filter === 'locked' && !r.locked) return false;
+    if (q && !(r.key.toLowerCase().includes(q) || asText(r.source).toLowerCase().includes(q) || asText(r.target).toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function render() {
+  const c = counts();
+  $('counts').innerHTML = `<span class="note">共 ${c.all} 段・待處理 ${c.todo}・鎖定 ${c.locked}</span>`;
+  $('btnPending').textContent = `翻譯待處理的（${c.todo}）`;
+  $('btnPending').disabled = c.todo === 0;
+  const tabs = [['todo', '待處理'], ['missing', '沒翻'], ['stale', '原文已改'], ['invalid', '格式錯'], ['ok', '正常'], ['locked', '鎖定'], ['all', '全部']];
+  $('filters').innerHTML = tabs.map(([k, n]) => `<span class="chip ${filter === k ? 'on' : ''}" data-f="${k}">${n} ${c[k]}</span>`).join('');
+  const list = visible();
+  $('shown').textContent = `列出 ${list.length} 段`;
+  const LIMIT = 400;
+  $('rows').innerHTML = list.length === 0 ? '<tr><td colspan="5" class="empty">沒有符合的文字</td></tr>' : list.slice(0, LIMIT).map((r) => `
+    <tr data-key="${esc(r.key)}">
+      <td><input type="checkbox" class="pick" ${checked.has(r.key) ? 'checked' : ''}></td>
+      <td class="key"><b>${esc(r.key)}</b>${esc(r.file)}.json${Array.isArray(r.source) ? `<div class="arr">陣列 ${r.source.length} 句（每行一句）</div>` : ''}</td>
+      <td class="src"><textarea class="src-edit" title="修改中文原文：變數與陣列句數要維持不變；改完後各語言的這一段會變成「原文已改」" rows="${rowsOf(r)}">${esc(asText(r.source))}</textarea></td>
+      <td class="tr"><textarea rows="${rowsOf(r)}">${esc(asText(r.target))}</textarea></td>
+      <td class="st">
+        <span class="badge b-${r.status}">${STATUS[r.status]}</span>
+        ${r.by ? `<div class="note">${r.by === 'human' ? '人工' : 'AI'}・${esc(r.time)}</div>` : ''}
+        ${r.issues.length ? `<div class="issues">${r.issues.map(esc).join('<br>')}</div>` : ''}
+        <div class="rowbtns">
+          <button class="lock ${r.locked ? 'on' : ''}" title="鎖定後自動翻譯不會覆蓋">${r.locked ? '🔒 已鎖定' : '🔓 鎖定'}</button>
+          <button class="one" title="只重翻這一段">重翻</button>
+          ${r.status === 'stale' && r.target ? '<button class="accept" title="原文的修改不影響譯文：保留目前譯文、標成正常">保留</button>' : ''}
+        </div>
+      </td>
+    </tr>`).join('') + (list.length > LIMIT ? `<tr><td colspan="5" class="empty">只顯示前 ${LIMIT} 段，請用搜尋或篩選縮小範圍</td></tr>` : '');
+  $('btnSelected').disabled = checked.size === 0;
+  $('btnSelected').textContent = `翻譯勾選的（${checked.size}）`;
+}
+
+const rowsOf = (r) => Math.min(8, Math.max(1, asText(r.source).split('\n').length, Math.ceil(Math.max(asText(r.target).length, asText(r.source).length * 1.6) / 34)));
+
+function fromText(row, text) {
+  if (!Array.isArray(row.source)) return text;
+  return text.split('\n');
+}
+
+$('rows').addEventListener('change', async (e) => {
+  const tr = e.target.closest('tr');
+  if (!tr) return;
+  const key = tr.dataset.key;
+  if (e.target.classList.contains('pick')) {
+    e.target.checked ? checked.add(key) : checked.delete(key);
+    render();
+    return;
+  }
+  if (e.target.classList.contains('src-edit')) {
+    const row = rows.find((r) => r.key === key);
+    try {
+      await api('/api/source', { key, value: fromText(row, e.target.value) });
+      toast('原文已修改：各語言的這一段會標成「原文已改」');
+      await loadRows();
+    } catch (err) {
+      toast(err.message);
+      e.target.value = asText(row.source);
+    }
+    return;
+  }
+  if (e.target.tagName === 'TEXTAREA') {
+    const row = rows.find((r) => r.key === key);
+    const value = fromText(row, e.target.value);
+    try {
+      const res = await api('/api/set', { lang, key, value });
+      toast(res.issues.length ? '已存，但有問題：' + res.issues.join('；') : '已存（人工修改會自動鎖定）');
+      await loadRows();
+    } catch (err) { toast(err.message); }
+  }
+});
+
+$('rows').addEventListener('click', async (e) => {
+  const tr = e.target.closest('tr');
+  if (!tr || e.target.tagName !== 'BUTTON') return;
+  const key = tr.dataset.key;
+  const row = rows.find((r) => r.key === key);
+  try {
+    if (e.target.classList.contains('lock')) {
+      await api('/api/lock', { lang, key, locked: !row.locked });
+    } else if (e.target.classList.contains('one')) {
+      await start([key]);
+      return;
+    } else if (e.target.classList.contains('accept')) {
+      await api('/api/set', { lang, key, value: row.target, locked: row.locked });
+      toast('已保留目前的譯文');
+    }
+    await loadRows();
+  } catch (err) { toast(err.message); }
+});
+
+$('filters').addEventListener('click', (e) => {
+  const f = e.target.dataset.f;
+  if (f) { filter = f; render(); }
+});
+$('search').addEventListener('input', render);
+$('file').addEventListener('change', render);
+$('checkAll').addEventListener('change', (e) => {
+  for (const r of visible()) e.target.checked ? checked.add(r.key) : checked.delete(r.key);
+  render();
+});
+$('lang').addEventListener('change', async (e) => {
+  lang = e.target.value;
+  localStorage.setItem('tr-lang', lang);
+  checked.clear();
+  await loadRows();
+});
+
+$('btnSaveCfg').addEventListener('click', async () => {
+  const config = {};
+  for (const el of document.querySelectorAll('[data-cfg]')) {
+    config[el.dataset.cfg] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
+  }
+  const body = { config };
+  if ($('apiKey').value) body.apiKey = $('apiKey').value;
+  await api('/api/config', body);
+  toast('設定已儲存');
+  await loadMeta();
+});
+
+async function start(keys) {
+  try {
+    const res = await api('/api/translate', { lang, keys });
+    toast(`開始翻譯 ${res.count} 段`);
+    poll();
+  } catch (err) { toast(err.message); }
+}
+$('btnPending').addEventListener('click', () => start(null));
+$('btnSelected').addEventListener('click', () => start([...checked]));
+$('btnStop').addEventListener('click', () => api('/api/stop', {}));
+
+let polling = false;
+async function poll() {
+  if (polling) return;
+  polling = true;
+  let wasRunning = false;
+  for (;;) {
+    const j = await api('/api/job');
+    $('job').classList.add('show');
+    $('jobTitle').textContent = j.running ? `翻譯中（${j.lang}）…` : `翻譯結束（${j.lang}）`;
+    $('jobCount').textContent = `${j.done} / ${j.total}`;
+    $('jobBar').style.width = j.total ? `${(j.done / j.total) * 100}%` : '0';
+    $('jobLog').textContent = j.log.join('\n');
+    $('jobLog').scrollTop = 1e9;
+    $('btnStop').disabled = !j.running;
+    $('btnPending').disabled = j.running;
+    if (j.running) wasRunning = true;
+    if (!j.running) break;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  polling = false;
+  if (wasRunning) { checked.clear(); await loadRows(); }
+}
+
+// 表頭貼在頂列下方（頂列在窄視窗會換行變高）
+const syncHead = () => document.documentElement.style.setProperty('--head-h', `${document.querySelector('header').offsetHeight}px`);
+new ResizeObserver(syncHead).observe(document.querySelector('header'));
+
+(async () => {
+  await loadMeta();
+  await loadRows();
+  const j = await api('/api/job');
+  if (j.running) poll();
+})();
+</script>
+</body>
+</html>

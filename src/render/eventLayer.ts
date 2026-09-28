@@ -8,11 +8,13 @@ import { EVENT_MAP, type EventId } from '../game/config/events';
 import type { PotionId } from '../game/config/recipes';
 import type { EventAction } from '../game/events';
 import { formatFull } from '../game/format';
+import { t, t as tr } from '../i18n';
+import { startGrabbing } from '../ui/cursors';
 import type { Game } from '../game/game';
 import type { ActiveEvent, GameState } from '../game/state';
 import { showToast } from '../ui/store';
 import { H, W, ZONES } from './layout';
-import { FONT, Pic, type TextureBank } from './textures';
+import { Pic, uiFont, type TextureBank } from './textures';
 
 type Pt = { x: number; y: number };
 type Rect = { x: number; y: number; w: number; h: number };
@@ -40,7 +42,7 @@ export interface EventRefs {
 const text = (s: string, size: number, fill = 0xffffff) =>
   new Text({
     text: s,
-    style: { fontFamily: FONT, fontSize: size, fill, fontWeight: '700', align: 'center', stroke: { color: 0x2b1d14, width: Math.max(3, size / 6) } },
+    style: { fontFamily: uiFont(), fontSize: size, fill, fontWeight: '700', align: 'center', stroke: { color: 0x2b1d14, width: Math.max(3, size / 6) } },
   });
 
 /** 會蓋住場景的介面（舞台座標）；pointer-events: none 的也算，因為會擋住視線 */
@@ -222,7 +224,7 @@ export class EventLayer extends Container {
   note(e: { id: EventId; result: 'start' | 'done' | 'leave' }): void {
     const p = this.stage?.anchor() ?? this.lastAnchor;
     if (e.result === 'done') {
-      this.refs.float('完成！', p.x, p.y - 30, 0xfff08a, true);
+      this.refs.float(t('float.eventDone'), p.x, p.y - 30, 0xfff08a, true);
       this.refs.burst(p.x, p.y, 0xffe066, 16, 1.4);
       this.refs.ring(p.x, p.y, 0xfff6c0, 1.4);
     }
@@ -266,7 +268,7 @@ export class EventLayer extends Container {
     const r = this.act(extra ?? { type: 'hit' });
     if (!r.ok) return false;
     this.hitFx(t, color);
-    if (r.gold) this.refs.float(`+${formatFull(r.gold)} 金`, t.x, t.y - 40, 0xffd34d, true);
+    if (r.gold) this.refs.float(tr('float.gold', { n: formatFull(r.gold) }), t.x, t.y - 40, 0xffd34d, true);
     if (kill) t.kill();
     return true;
   }
@@ -356,6 +358,7 @@ function draggable(
     showToast(wrongHint);
   };
   // 按下目標：開始拖
+  t.cursor = 'grab';
   t.removeAllListeners('pointerdown');
   t.on('pointerdown', (e: FederatedPointerEvent) => {
     if (!t.alive) return;
@@ -367,6 +370,7 @@ function draggable(
     mode = 'drag';
     moved = false;
     from = { x: e.global.x, y: e.global.y };
+    startGrabbing();
   });
   return {
     update: (dt, _a, _s) => {
@@ -430,7 +434,7 @@ const raincloud: Builder = function (_a, s0) {
       const hit = potAt(this, game.state ?? s0, p);
       return hit ? { action: { type: 'drop', slot: hit.slot }, at: hit.at } : null;
     },
-    '把雨雲寶寶放到有種植物的盆栽上喔',
+    tr('event.raincloud.dropHint'),
   );
 };
 
@@ -454,7 +458,7 @@ const apprentice: Builder = function () {
       }
       return null;
     },
-    '把精靈學徒放到大釜上喔',
+    tr('event.apprentice.dropHint'),
   );
 };
 
@@ -512,7 +516,7 @@ const sneeze: Builder = function (_a, s) {
   const sources = s.cauldrons.filter((c) => c.salamander > 0)
     .map((c) => refs.cauldronX(c.recipe)).filter((x): x is number => x !== null);
   if (sources.length === 0) sources.push(800);
-  for (const x of sources) refs.float('哈啾！', x - 50, refs.cauldronY - 40, 0xffb347, true);
+  for (const x of sources) refs.float(t('float.sneeze'), x - 50, refs.cauldronY - 40, 0xffb347, true);
   const sparks: { t: Target; vx: number; vy: number; age: number }[] = [];
   let time = 0;
   let spawned = 0;
@@ -599,7 +603,7 @@ const perfectHeat: Builder = function (a) {
     const hit = Math.abs(needle - zone) <= half;
     const r = this.gameForStage.eventAction({ type: hit ? 'hit' : 'miss' });
     if (!r.ok) return;
-    label.text = hit ? '完美火候！' : '差一點…';
+    label.text = t(hit ? 'float.perfect' : 'float.almost');
     label.style.fill = hit ? 0xfff08a : 0xd0c0b0;
     flash = 1;
     if (hit) refs.burst(gauge.x, gauge.y, 0xffc234, 14, 1.2);
