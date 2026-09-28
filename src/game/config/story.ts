@@ -4,10 +4,12 @@
 // - 每一句台詞有固定的 ID：「場景.編號」，例如 opening.07。
 //   文字在語言檔 dialogue.json：script.<ID> 是台詞（要唸出來的部分），script.<ID>.act 是動作、表情（括號裡的舞台指示，不唸）。
 //   兩個都可以省略：只有動作的句子沒有 script.<ID>，沒有動作的句子沒有 script.<ID>.act。
-// - 配音檔之後照 ID 放：public/voice/<語言>/<場景>/<編號>.ogg（voicePath）。
-//   有了配音之後 ID 就不要改；要插入新句子就用新的編號（例如 07b），播放順序由下面的清單決定，不看編號大小。
-// - 說話者：lumia 露米婭、book 魔導書（老師）、narration 旁白與場景描述（不顯示名字）。
+// - 場景的說話順序在 script.json（語音工具 tools/voice 也讀這個檔）。
+// - 配音檔照 ID 放：public/voice/<ID>.<格式>，由 public/voice/manifest.json 列出（語音工具產生；所有語言共用一套）。
+//   有了配音之後 ID 就不要改；要插入新句子就用新的編號（例如 07b），播放順序由 script.json 的清單決定，不看編號大小。
+// - 說話者：lumia 露米婭、book 魔導書（老師）、narration 旁白與場景描述（不顯示名字、不配音）。
 import { hasText, localized, localizedList, t } from '../../i18n';
+import SCRIPT_JSON from './script.json';
 
 export type Speaker = 'lumia' | 'book' | 'narration';
 
@@ -40,34 +42,11 @@ const line = (scene: SceneId, who: Speaker, n: string): ScriptLine => {
   };
 };
 
-/** 各場景的說話順序：[說話者, 編號] */
-const SCRIPT: Record<SceneId, { cg: string | null; title: string; lines: [Speaker, string][] }> = {
-  opening: {
-    cg: 'cg_opening', title: 'story.opening.title',
-    lines: [
-      ['lumia', '01'], ['lumia', '02'], ['narration', '03'], ['lumia', '04'], ['narration', '05'],
-      ['book', '06'], ['lumia', '07'], ['book', '08'], ['lumia', '09'], ['book', '10'], ['lumia', '11'], ['book', '12'],
-    ],
-  },
-  celebration: {
-    cg: 'cg_celebration', title: 'story.celebration.title',
-    lines: [
-      ['lumia', '01'], ['book', '02'], ['lumia', '03'], ['book', '04'], ['lumia', '05'], ['lumia', '06'],
-      ['book', '07'], ['book', '08'], ['narration', '09'],
-    ],
-  },
-  // 信件的感想：讀完信之後接著播
-  letter1: { cg: 'cg_letter1', title: 'letter.1.title', lines: [['lumia', '01'], ['lumia', '02']] },
-  letter2: { cg: 'cg_letter2', title: 'letter.2.title', lines: [['lumia', '01'], ['lumia', '02']] },
-  letter3: { cg: 'cg_letter3', title: 'letter.3.title', lines: [['lumia', '01'], ['narration', '02'], ['lumia', '03']] },
-  vow: {
-    cg: 'cg_starry_vow', title: 'story.vow.title',
-    lines: [
-      ['lumia', '01'], ['book', '02'], ['lumia', '03'], ['lumia', '04'], ['book', '05'], ['lumia', '06'],
-      ['lumia', '07'], ['lumia', '08'], ['book', '09'], ['book', '10'], ['lumia', '11'], ['narration', '12'],
-    ],
-  },
-};
+/** 各場景的說話順序：[說話者, 編號]（script.json；信件的感想 letter1～3 讀完信之後接著播） */
+const SCRIPT = SCRIPT_JSON.scenes as Record<SceneId, { cg: string | null; title: string; lines: [Speaker, string][] }>;
+
+/** 場景裡露米婭頭上泡泡的台詞：語言檔裡這些開頭的陣列（配音 ID = <key>.<第幾句，兩位數>） */
+export const BUBBLE_PREFIXES: readonly string[] = SCRIPT_JSON.bubbles.prefixes;
 
 export const SCENES = Object.fromEntries(
   (Object.keys(SCRIPT) as SceneId[]).map((id) => {
@@ -85,12 +64,6 @@ export const isScene = (id: string): id is SceneId => id in SCRIPT;
 /** 說話者顯示的名字（語言檔 speaker.<who>；旁白沒有名字） */
 export function speakerName(who: Speaker): string {
   return who === 'narration' ? '' : t(`speaker.${who}`);
-}
-
-/** 之後加配音時的檔案位置（照台詞 ID） */
-export function voicePath(l: ScriptLine, lang: string): string {
-  const [scene, n] = l.id.split('.');
-  return `voice/${lang}/${scene}/${n}.ogg`;
 }
 
 /**

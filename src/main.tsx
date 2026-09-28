@@ -1,5 +1,9 @@
 import { render } from 'preact';
 import { TabLock } from './engine/tabLock';
+import { installAudioUnlock, onAudioUnlock } from './audio/engine';
+import { playMusic, trackFor } from './audio/music';
+import { initSfx } from './audio/sfx';
+import { loadVoiceManifest } from './audio/voice';
 import { t } from './i18n';
 import { initI18n } from './i18n/load';
 import { installCursors } from './ui/cursors';
@@ -25,6 +29,12 @@ function fitStage(stage: HTMLElement): number {
 async function main() {
   // 先決定語言、載入語言檔，之後所有文字才查得到
   await initI18n();
+  // 聲音：第一次點擊／按鍵時喚醒；音效先合成好、讀語音清單（都在背景進行，不擋遊戲啟動）
+  installAudioUnlock();
+  void initSfx();
+  void loadVoiceManifest();
+  // 配樂：第一次操作之後開始播（瀏覽器不讓網頁自己出聲）
+  onAudioUnlock(() => playMusic(trackFor('main')));
   installCursors();
   installUiArt();
   const stage = document.getElementById('stage')!;

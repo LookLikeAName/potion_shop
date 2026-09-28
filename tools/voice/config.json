@@ -1,0 +1,13 @@
+{
+  "base_url": "https://generativelanguage.googleapis.com/v1beta",
+  "model": "gemini-3.8-flash-tts",
+  "api_key_env": "GEMINI_API_KEY",
+  "voice_lang": "ja",
+  "language_code": "ja-JP",
+  "output_format": "mp3",
+  "mp3_bitrate": "64k",
+  "act_as_style": true,
+  "concurrency": 2,
+  "max_retries": 3,
+  "timeout": 120
+}

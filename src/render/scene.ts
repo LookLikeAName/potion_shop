@@ -19,6 +19,8 @@ import type { CustomerState, GameState } from '../game/state';
 import { tutorialStep } from '../game/tutorial';
 import { effect } from '@preact/signals';
 import { FLOAT_LIMITS, LOW_QUALITY_SCALE, PARTICLE_SCALE, decoTier, perf } from './perf';
+import { playSfx, setLoop } from '../audio/sfx';
+import { playBubbleVoice } from '../audio/voice';
 import {
   autoHarvest, brewPassiveSpeed, growthSpeed, hasAutoCheckout, payTime, has, isRelaxing, isResting, isSleeping, isTired, milestoneCount, recipeInputs,
   decorSlots,
@@ -355,6 +357,8 @@ const POT_HOLD_MS = 500;
 
 class PotView extends Container {
   readonly hud = new Container();
+  /** 目前的高速模式分級（聲音用：高速時改成循環環境音） */
+  fastTier: FastTier = 0;
   private pot: Pic;
   private plant: Pic;
   private bar = new Bar(96);
@@ -457,6 +461,7 @@ class PotView extends Container {
       openDrawer('greenhouse', `slot-${this.i}`);
     } else if (this.game.clickPlant(this.i) !== 'none') {
       this.punch = 1;
+      playSfx('tapPot');
     }
   }
 
@@ -499,6 +504,7 @@ class PotView extends Container {
     // 進度條以 FAST_CYCLE 循環；植物以更快的速度在幼苗 → 成長中 → 成熟之間變換，
     // 每輪結束「啵」一下：擠壓回彈 + 噴出同色光點。越快（分級越高）效果越浮誇
     const tier: FastTier = autoHarvest(s, slot) ? fastTier(def.growTime / growthSpeed(s, slot)) : 0;
+    this.fastTier = tier;
     const fast = tier > 0;
     const fx = tier > 0 ? TIER_FX[tier as 1 | 2 | 3] : null;
     // 裝飾（光暈、星星、彩虹、閃光、粒子、搖擺）照效能設定降級；fx 只管節奏
@@ -619,6 +625,9 @@ const RIM: Record<string, { top: number; width: number }> = {
 
 class CauldronView extends Container {
   readonly hud = new Container();
+  /** 目前的高速模式分級、是否極速沸騰中（聲音用） */
+  fastTier: FastTier = 0;
+  boiling = false;
   private body: Pic;
   private liquid: Pic;
   private bubbles: Pic[];
@@ -724,6 +733,8 @@ class CauldronView extends Container {
     const r = this.game.clickCauldron(this.recipe);
     if (r === 'missing') this.shake = 0.35;
     else if (r === 'brew') this.punch = 1;
+    // 缺原料時低沉一點、小聲一點
+    if (r !== 'none') playSfx('tapCauldron', r === 'missing' ? { rate: 0.7, gain: 0.6 } : {});
   }
 
   update(s: GameState, dt: number): void {
@@ -747,6 +758,8 @@ class CauldronView extends Container {
     // 越快（分級越高）效果越浮誇：泡泡更多更快、鍋子閃爍、每輪噴光點，3 級變彩虹色
     const speed = c ? brewPassiveSpeed(s, c) : 0;
     const tier: FastTier = c && speed > 0 && this.sinceBrew < 1 ? fastTier(RECIPES[c.recipe].brewTime / speed) : 0;
+    this.fastTier = tier;
+    this.boiling = !!c && c.boil > 0;
     const fast = tier > 0;
     const fx = tier > 0 ? TIER_FX[tier as 1 | 2 | 3] : null;
     // 裝飾（光暈、閃光、彩虹、泡泡數、粒子）照效能設定降級；fx 只管節奏
@@ -1453,6 +1466,7 @@ class LumiaView extends Container {
   say(line: string): void {
     if (this.dragging) return;
     this.bubble.show(line, false);
+    playBubbleVoice(line);
     this.mutterIn = Math.max(this.mutterIn, MUTTER.intervalMin);
   }
 
@@ -1469,7 +1483,9 @@ class LumiaView extends Container {
     this.mutterIn = sleeping
       ? MUTTER.sleepIntervalMin + Math.random() * (MUTTER.sleepIntervalMax - MUTTER.sleepIntervalMin)
       : MUTTER.intervalMin + Math.random() * (MUTTER.intervalMax - MUTTER.intervalMin);
-    this.bubble.show(pickMutter(s), sleeping);
+    const line = pickMutter(s);
+    this.bubble.show(line, sleeping);
+    playBubbleVoice(line);
     this.placeBubble();
   }
 
@@ -2612,6 +2628,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         const color = lighten(PLANTS[e.material].color);
         const label = `+${formatNumber(e.amount)} ${name}`;
         const key = `pot:${e.slot}`;
+        // 高速模式的盆栽不一下一下響（改成溫室的循環環境音）；暴擊稍微高一點
+        if (pot.fastTier === 0) playSfx('harvest', { key, rate: e.crit ? 1.25 : 1 });
         if (e.crit) floats.spawn(t('float.crit', { label }), p.x, p.y - 20, 0xffe066, { big: true, key });
         else if (e.bounty) floats.spawn(t('float.bounty', { label }), p.x, p.y - 10, 0x9dff8a, { key });
         else floats.spawn(label, p.x, p.y, color, { key });
@@ -2622,6 +2640,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         if (idx < 0) break;
         const view = cauldrons[idx];
         view.noteBrew(e.amount);
+        // 高速模式的大釜不一下一下響（改成大釜的循環環境音）
+        if (view.fastTier === 0) playSfx('brew', { key: `cauldron:${e.recipe}`, rate: e.double ? 1.15 : 1 });
         const p = view.anchorPoint;
         const name = RECIPES[e.recipe].name;
         const color = lighten(RECIPES[e.recipe].color);
@@ -2633,6 +2653,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
       }
       // 極速沸騰：鍋身上的連擊字會變成「🔥 極速沸騰」並彈一下，不另外飄字（以前會被產出的字擋住）
       case 'sale': {
+        // 收銀機（成交很頻繁時音效本身有最短間隔與同時上限）
+        playSfx('sale');
         props.bumpSquirrel();
         lumia.thankCustomer();
         const p = customers.posOf(e.id) ?? { x: COUNTER.x + 100, y: COUNTER.y - 40 };
@@ -2648,9 +2670,13 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         floats.spawn(t('float.crate', { n: formatFull(e.gold), what }), p.x, p.y, 0xe8c56a, { always: true, key: `crate:${e.crate}` });
         break;
       }
+      // 極速沸騰：「呼」一聲；沸騰中的劈啪聲在每幀的循環音處理
+      case 'boil':
+        playSfx('boil');
+        break;
       case 'achievement': {
         const a = ACHIEVEMENTS.find((x) => x.id === e.id);
-        if (a) showToast(t('toast.achievement', { name: a.name, n: a.reward }), 2200, { id: 'icon_trophy', glyph: '🏆' });
+        if (a) showToast(t('toast.achievement', { name: a.name, n: a.reward }), 2200, { id: 'icon_trophy', glyph: '🏆' }, 'achievement');
         break;
       }
       case 'wish': {
@@ -2659,7 +2685,8 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         if (e.result === 'new') {
           say(WISH_LINES.new);
           const r = WISH.rarities[s.wish?.rarity ?? 0];
-          if (s.wish && s.wish.rarity > 0) showToast(t('toast.bigWish', { name: r.name }), 2200, { id: 'icon_wish', glyph: '✨' });
+          if (s.wish && s.wish.rarity > 0) showToast(t('toast.bigWish', { name: r.name }), 2200, { id: 'icon_wish', glyph: '✨' }, 'wish');
+          else playSfx('wish');
         } else if (e.result === 'done') {
           say(WISH_LINES.done);
           floats.spawn(t('float.wishDone', { heart }), lumia.x + 120, lumia.y - 140, 0xff8fb8, { big: true });
@@ -2673,6 +2700,7 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
         events.note(e);
         const def = EVENT_MAP[e.id];
         if (e.result === 'start') {
+          playSfx('event');
           lumia.say(EVENT_LINES.start[Math.floor(Math.random() * EVENT_LINES.start.length)]);
         } else if (e.result === 'done') {
           const book = e.first ? `　${t('toast.eventNewPage')}` : '';
@@ -2711,6 +2739,12 @@ export async function createScene(host: HTMLElement, game: Game, resolution: num
     lumiaDrag.update(s, dt);
     fever.update(s, dt);
     pointer.update(pointerTarget(s), dt);
+    // 循環音：高速模式的溫室沙沙聲、大釜咕嘟聲（越快稍微大聲一點），極速沸騰中的劈啪聲
+    const potTier = Math.max(0, ...pots.map((p) => p.fastTier));
+    const cauldronTier = Math.max(0, ...cauldrons.map((c) => c.fastTier));
+    setLoop('ambGreenhouse', potTier > 0 ? 0.55 + 0.15 * (potTier - 1) : 0);
+    setLoop('ambCauldron', cauldronTier > 0 ? 0.55 + 0.15 * (cauldronTier - 1) : 0);
+    setLoop('boilLoop', cauldrons.some((c) => c.boiling) ? 1 : 0);
     events.update(s, dt);
     for (const e of game.drainEvents()) onEvent(e, s);
     particles.update(dt);

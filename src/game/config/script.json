@@ -1,0 +1,42 @@
+{
+  "_說明": "劇本的結構：遊戲（config/story.ts）與語音工具（tools/voice）共用。scenes = 各場景的說話順序 [說話者, 編號]，文字在語言檔 script.<場景>.<編號>（台詞）與 .act（動作）；bubbles = 場景裡露米婭頭上泡泡的台詞（語言檔裡這些開頭的陣列，每一句的 ID 是 <key>.<第幾句，兩位數>）。有了配音之後編號就不要改，插入新句子用新編號（例如 07b）。",
+  "speakers": {
+    "lumia": "露米婭",
+    "book": "魔導書（老師）",
+    "narration": "旁白（不配音）"
+  },
+  "voiced": ["lumia", "book"],
+  "scenes": {
+    "opening": {
+      "cg": "cg_opening",
+      "title": "story.opening.title",
+      "lines": [
+        ["lumia", "01"], ["lumia", "02"], ["narration", "03"], ["lumia", "04"], ["narration", "05"],
+        ["book", "06"], ["lumia", "07"], ["book", "08"], ["lumia", "09"], ["book", "10"], ["lumia", "11"], ["book", "12"]
+      ]
+    },
+    "celebration": {
+      "cg": "cg_celebration",
+      "title": "story.celebration.title",
+      "lines": [
+        ["lumia", "01"], ["book", "02"], ["lumia", "03"], ["book", "04"], ["lumia", "05"], ["lumia", "06"],
+        ["book", "07"], ["book", "08"], ["narration", "09"]
+      ]
+    },
+    "letter1": { "cg": "cg_letter1", "title": "letter.1.title", "lines": [["lumia", "01"], ["lumia", "02"]] },
+    "letter2": { "cg": "cg_letter2", "title": "letter.2.title", "lines": [["lumia", "01"], ["lumia", "02"]] },
+    "letter3": { "cg": "cg_letter3", "title": "letter.3.title", "lines": [["lumia", "01"], ["narration", "02"], ["lumia", "03"]] },
+    "vow": {
+      "cg": "cg_starry_vow",
+      "title": "story.vow.title",
+      "lines": [
+        ["lumia", "01"], ["book", "02"], ["lumia", "03"], ["lumia", "04"], ["book", "05"], ["lumia", "06"],
+        ["lumia", "07"], ["lumia", "08"], ["book", "09"], ["book", "10"], ["lumia", "11"], ["narration", "12"]
+      ]
+    }
+  },
+  "bubbles": {
+    "speaker": "lumia",
+    "prefixes": ["mutter.", "wish.lines.", "event.lines.", "lines."]
+  }
+}

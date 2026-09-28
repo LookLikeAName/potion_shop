@@ -38,6 +38,10 @@ html, body {
 /* clip：關閉的抽屜在畫面外，聚焦到裡面的按鈕時不會把整個畫面捲過去 */
 #viewport { position: fixed; inset: 0; overflow: hidden; overflow: clip; }
 
+/*
+ * 遊戲畫面（16:9，等比縮放置中）。視窗比例不是 16:9 時旁邊會留黑邊：
+ * 裁掉畫面外的東西（收起來的魔導書就停在畫面右邊外面，不裁的話會露在黑邊上）
+ */
 #stage {
   position: absolute;
   left: 50%;
@@ -46,6 +50,8 @@ html, body {
   height: 1080px;
   transform-origin: center center;
   touch-action: none;
+  overflow: hidden;
+  overflow: clip;
 }
 
 #scene, #scene canvas { position: absolute; inset: 0; display: block; }
@@ -545,6 +551,22 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 
 .chip-label { font-size: 0.75em; font-weight: 700; color: var(--ink-soft); margin-top: 0.5em; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.35em; margin: 0.25em 0; }
+/* 聲音設定：名稱、音量滑桿、百分比、靜音 */
+.audio-row { display: grid; grid-template-columns: 3.2em 1fr 2.8em auto; align-items: center; gap: 0.5em; margin-top: 0.4em; }
+.audio-row input[type='range'] { width: 100%; accent-color: var(--teal); }
+.audio-row input[type='range']:disabled { opacity: 0.4; }
+/* 個別音效：音效那一列下面的摺疊選單，兩欄排列 */
+.sfx-toggles { margin: 0.3em 0 0.2em 0.4em; font-size: 0.8em; }
+.sfx-toggles summary { cursor: var(--cursor-pointer, pointer); color: var(--teal); font-weight: 700; }
+.sfx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5em, 1fr)); gap: 0.25em 0.9em; margin-top: 0.35em; }
+.sfx-toggle { display: flex; align-items: center; gap: 0.35em; cursor: var(--cursor-pointer, pointer); }
+.sfx-toggle.off span { color: var(--ink-soft); text-decoration: line-through; }
+.sfx-toggle input { accent-color: var(--teal); margin: 0; }
+.sfx-preview { margin-left: auto; padding: 0 0.5em; font-size: 0.85em; line-height: 1.4; }
+/* 總音量：字粗一點，和下面三條線隔開 */
+.audio-master { padding-bottom: 0.4em; border-bottom: 1px dashed var(--parchment-dark); }
+.audio-master .perf-label { color: var(--ink); }
+.audio-pct { font-size: 0.8em; color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
 /* 效能設定：每一列 = 名稱 + 選項 */
 .perf-row { margin-top: 0.45em; }
 .perf-label { font-size: 0.8em; font-weight: 700; color: var(--ink-soft); }

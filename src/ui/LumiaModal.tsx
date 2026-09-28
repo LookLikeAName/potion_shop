@@ -8,6 +8,7 @@ import type { GameState } from '../game/state';
 import { t, tx } from '../i18n';
 import { Glyph } from './Glyph';
 import { lumiaOpen, useGame } from './store';
+import { bubbleVoiceId, playVoice } from '../audio/voice';
 
 const pick = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
 
@@ -110,7 +111,11 @@ export function LumiaModal() {
   const touch = (part: TouchPart, e: MouseEvent) => {
     const r = game.touchLumia(part);
     setReaction(r.reaction);
-    setLine((r.daily ? pick(LINES.daily) + '\n' : '') + pick(LINES[r.reaction]));
+    const reactionLine = pick(LINES[r.reaction]);
+    setLine((r.daily ? pick(LINES.daily) + '\n' : '') + reactionLine);
+    // 反應的那句有配音就播（每次觸碰都換一句，前一句會被打斷）
+    const vid = bubbleVoiceId(reactionLine);
+    if (vid) playVoice(vid);
     setAnim((n) => n + 1);
     const rect = (e.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
     const text = r.gain > 0 ? `+${formatHappiness(r.gain).replace(/0+$/, '')} ♥${r.daily ? t('lumia.daily') : ''}` : r.reaction === 'panic' ? '！？' : '…';

@@ -6,6 +6,9 @@ import { currentLang, t, tx, type Lang } from '../../i18n';
 import { availableLangs, switchLang } from '../../i18n/load';
 import { drawerOpen, rememberTitle, showToast, titleOpen, useGame } from '../store';
 import { perf, setPerf, type PerfSettings } from '../../render/perf';
+import { CHANNELS, audioSettings, setBus } from '../../audio/engine';
+import { SFX_TOGGLES, playSfx, setSfxOn, sfxOff } from '../../audio/sfx';
+import { Fragment } from 'preact';
 
 /** 遊玩時間：合計 = 遊戲開著（其中畫面在前景）＋ 離開（關掉遊戲、離線） */
 function PlayTime() {
@@ -20,6 +23,62 @@ function PlayTime() {
         <span>{tx('settings.playAway', { t: <b>{formatDuration(st.playAway)}</b> })}</span>
       </div>
     </div>
+  );
+}
+
+/** 聲音：音效、配樂、語音各自的音量與靜音（存在這台裝置） */
+function AudioSettingsCard() {
+  const st = audioSettings.value;
+  return (
+    <div class="card">
+      <div class="card-title">{t('settings.audio')}</div>
+      {CHANNELS.map((bus) => (
+        <Fragment key={bus}>
+          <div class={`audio-row ${bus === 'master' ? 'audio-master' : ''}`}>
+            <span class="perf-label">{t(`settings.audio.${bus}`)}</span>
+            <input
+              type="range" min={0} max={100} step={5} value={Math.round(st[bus].volume * 100)} disabled={st[bus].muted}
+              onInput={(e) => setBus(bus, { volume: Number(e.currentTarget.value) / 100 })}
+              // 放開滑桿時試聽一下大小（總音量、音效）
+              onChange={() => (bus === 'sfx' || bus === 'master') && playSfx('notify')}
+            />
+            <span class="audio-pct">{st[bus].muted ? '—' : `${Math.round(st[bus].volume * 100)}%`}</span>
+            <button class={`chip ${st[bus].muted ? 'active' : ''}`} onClick={() => setBus(bus, { muted: !st[bus].muted })}>
+              {t('settings.audio.mute')}
+            </button>
+          </div>
+          {bus === 'sfx' && <SfxToggles />}
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+/** 個別音效：摺疊選單，每一種音效可以單獨開關（▶ 試聽） */
+function SfxToggles() {
+  const off = sfxOff.value;
+  const onCount = SFX_TOGGLES.filter((g) => !off.includes(g.key)).length;
+  return (
+    <details class="sfx-toggles">
+      <summary>{t('settings.sfx.title', { n: onCount, total: SFX_TOGGLES.length })}</summary>
+      <div class="sfx-grid">
+      {SFX_TOGGLES.map((g) => {
+        const on = !off.includes(g.key);
+        return (
+          <label class={`sfx-toggle ${on ? '' : 'off'}`} key={g.key}>
+            <input type="checkbox" checked={on} onChange={(e) => setSfxOn(g.key, e.currentTarget.checked)} />
+            <span>{t(`settings.sfx.${g.key}`)}</span>
+            {g.preview && (
+              <button
+                class="chip sfx-preview" disabled={!on} title={t('settings.sfx.preview')}
+                onClick={(e) => { e.preventDefault(); playSfx(g.preview!); }}
+              >▶</button>
+            )}
+          </label>
+        );
+      })}
+      </div>
+    </details>
   );
 }
 
@@ -128,6 +187,7 @@ export function SettingsPanel() {
           ))}
         </div>
       </div>}
+      <AudioSettingsCard />
       <PerfSettingsCard />
       <div class="card">
         <div class="card-title">{t('settings.stats')}</div>

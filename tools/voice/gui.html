@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>藥水舖語音工具</title>
+<style>
+  :root {
+    --bg: #faf6ef; --panel: #fff; --ink: #3a2b22; --muted: #8a7768; --line: #e7dccd;
+    --accent: #b0643a; --ok: #2f8a57; --warn: #c07a12; --bad: #c0392b; --info: #2a6fb0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  h1 { font-size: 16px; margin: 0 8px 0 0; }
+  h2 { font-size: 15px; margin: 0 0 6px; }
+  select, input, textarea, button { font: inherit; color: inherit; }
+  select, input[type=text], input[type=password], input[type=number], textarea { border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: #fff; }
+  textarea { width: 100%; resize: vertical; }
+  button { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 4px 12px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.small { padding: 0 8px; font-size: 12px; }
+  .tabs { display: flex; gap: 4px; }
+  .tab { border-radius: 999px; padding: 3px 14px; }
+  .tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .spacer { flex: 1; }
+  main { padding: 12px 16px 40px; max-width: 1500px; margin: 0 auto; }
+  details.settings { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+  details.settings summary { cursor: pointer; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 16px; margin: 10px 0; }
+  .grid label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+  .grid label input, .grid label select { color: var(--ink); }
+  .note { color: var(--muted); font-size: 12px; }
+  .warn { color: var(--warn); }
+  .speakers { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+  .cand { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+  .cand.current { border-color: var(--ok); box-shadow: 0 0 0 2px rgba(47, 138, 87, .15); }
+  .cand .desc { font-size: 12px; color: var(--muted); white-space: pre-wrap; }
+  .cand .vid { font: 11px ui-monospace, Consolas, monospace; color: var(--muted); }
+  .tries { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .try { display: grid; grid-template-columns: 1fr 260px; gap: 8px; align-items: center; font-size: 12px; background: #fbf7f0; border-radius: 6px; padding: 4px 8px; }
+  audio { height: 30px; width: 260px; }
+  .speak { display: grid; grid-template-columns: 1fr 200px auto; gap: 6px; margin-top: 6px; }
+  .badge { display: inline-block; border-radius: 4px; padding: 0 6px; font-size: 12px; color: #fff; }
+  .b-ok { background: var(--ok); } .b-none { background: var(--muted); } .b-stale { background: var(--warn); } .b-novoice { background: var(--bad); }
+  .job { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: none; }
+  .job.show { display: block; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin: 6px 0; }
+  .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  .log { max-height: 160px; overflow: auto; font: 12px/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; color: #5b4a3d; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .chip { border-radius: 999px; padding: 2px 10px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #f3ebdf; font-size: 12px; position: sticky; top: var(--head-h, 56px); z-index: 1; }
+  td.id { font: 12px ui-monospace, Consolas, monospace; width: 16%; word-break: break-all; color: var(--muted); }
+  td.id b { color: var(--ink); display: block; }
+  td.text { width: 24%; }
+  td.speech { width: 26%; }
+  td.speech textarea { min-height: 2.4em; border-color: transparent; background: #fdfaf5; }
+  td.speech textarea:hover { border-color: var(--line); }
+  td.speech textarea:focus { border-color: var(--accent); background: #fff; outline: none; }
+  td.speech textarea.edited { border-color: var(--warn); background: #fff8ea; }
+  td.style { width: 16%; }
+  td.style input { width: 100%; }
+  td.st { font-size: 12px; }
+  .hidden { display: none !important; }
+  .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: .95; }
+  .empty { padding: 24px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎙 藥水舖語音工具</h1>
+  <div class="tabs">
+    <button class="tab on" data-tab="design">聲音設計</button>
+    <button class="tab" data-tab="batch">批次產生</button>
+  </div>
+  <span class="spacer"></span>
+  <span class="note" id="headNote"></span>
+</header>
+<main>
+  <details class="settings" id="settings">
+    <summary>API 與配音設定 <span class="note" id="keyNote"></span></summary>
+    <div class="grid">
+      <label>API 網址<input type="text" data-cfg="base_url"></label>
+      <label>模型<input type="text" data-cfg="model"></label>
+      <label>API 金鑰的環境變數名稱<input type="text" data-cfg="api_key_env"></label>
+      <label>API 金鑰（只存在記憶體，不寫進檔案）<input type="password" id="apiKey" placeholder="沒設定環境變數時才需要"></label>
+      <label>配音用哪個語言的文字（所有語言共用）<select data-cfg="voice_lang" id="voiceLang"></select></label>
+      <label>建立聲音的 language_code<input type="text" data-cfg="language_code" placeholder="ja-JP / cmn-TW / en-US"></label>
+      <label>輸出格式<select data-cfg="output_format"><option value="mp3">mp3（需要 ffmpeg）</option><option value="wav">wav</option></select></label>
+      <label>MP3 位元率<input type="text" data-cfg="mp3_bitrate"></label>
+      <label>同時送出幾個請求<input type="number" min="1" max="8" data-cfg="concurrency"></label>
+      <label>失敗重試次數<input type="number" min="0" max="8" data-cfg="max_retries"></label>
+      <label><span><input type="checkbox" data-cfg="act_as_style"> 沒另外指定時，用劇本的動作描述當這句的語氣</span></label>
+    </div>
+    <button id="btnSaveCfg">儲存設定</button>
+    <span class="note" id="ffmpegNote"></span>
+  </details>
+
+  <!-- 聲音設計 -->
+  <section id="tab-design">
+    <p class="note">
+      流程：寫聲音描述（年齡、性別、音色、口音、平常的語氣；英文描述通常比較準）→「建立並試聽」會在雲端存下一個候選聲音 →
+      用下面的台詞與不同語氣「試講」→ 滿意的按「設為正式」。不要的候選按「刪除」（雲端每個專案最多 200 個聲音，一年後過期）。
+      語氣（style）是這一句的情緒，例如 cheerful and energetic、whispered urgently、嚇到的語氣。
+    </p>
+    <div class="speakers" id="speakers"></div>
+    <details class="settings" style="margin-top:12px">
+      <summary>雲端上的所有聲音（清理用）</summary>
+      <div class="row"><button id="btnListVoices">重新整理</button><span class="note">不在上面候選清單裡的聲音，也可以在這裡刪除。</span></div>
+      <div id="remoteVoices"></div>
+    </details>
+  </section>
+
+  <!-- 批次產生 -->
+  <section id="tab-batch" class="hidden">
+    <div class="toolbar">
+      <button class="primary" id="btnPending">產生待處理的</button>
+      <button id="btnSelected" disabled>產生勾選的</button>
+      <button id="btnStop" disabled>停止</button>
+      <span class="spacer"></span>
+      <span class="note" id="counts"></span>
+    </div>
+    <div class="job" id="job">
+      <div><b id="jobTitle">產生中…</b> <span id="jobCount"></span></div>
+      <div class="bar"><div id="jobBar"></div></div>
+      <div class="log" id="jobLog"></div>
+    </div>
+    <div class="toolbar">
+      <div id="filters"></div>
+      <input type="text" id="search" placeholder="搜尋 ID 或台詞" style="width:240px">
+      <label><input type="checkbox" id="checkAll"> 全選目前列出的</label>
+      <span class="note" id="shown"></span>
+    </div>
+    <table>
+      <thead><tr><th style="width:28px"></th><th>ID</th><th>原始台詞（字幕）</th><th>送給模型的台詞（可加音效詞）</th><th>語氣（style，可改）</th><th>狀態／試聽</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let meta = null;
+let rows = [];
+let filter = 'todo';
+const checked = new Set();
+const STATUS = { none: '還沒產生', stale: '要重做', ok: '完成', novoice: '還沒選聲音' };
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+// ---------- 分頁 ----------
+document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
+  $('tab-design').classList.toggle('hidden', b.dataset.tab !== 'design');
+  $('tab-batch').classList.toggle('hidden', b.dataset.tab !== 'batch');
+  if (b.dataset.tab === 'batch') loadRows();
+}));
+
+// ---------- 設定 ----------
+async function loadMeta() {
+  meta = await api('/api/meta');
+  $('voiceLang').innerHTML = meta.langs.map((l) => `<option>${esc(l)}</option>`).join('');
+  document.querySelectorAll('[data-cfg]').forEach((el) => {
+    const v = meta.config[el.dataset.cfg];
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+  });
+  $('keyNote').textContent = meta.hasKey ? `（金鑰：${meta.keySource === 'env' ? '環境變數' : '這次輸入的'}）` : '（還沒有 API 金鑰）';
+  if (!meta.hasKey) $('settings').open = true;
+  $('ffmpegNote').innerHTML = meta.ffmpeg ? '有 ffmpeg：會轉成 MP3。' : '<span class="warn">沒有 ffmpeg：先存成 WAV（檔案比較大）。WSL 可以用 sudo apt install ffmpeg 安裝。</span>';
+  $('headNote').textContent = `配音語言：${meta.config.voice_lang}（所有語言共用）`;
+  renderSpeakers();
+}
+
+$('btnSaveCfg').addEventListener('click', async () => {
+  const config = {};
+  document.querySelectorAll('[data-cfg]').forEach((el) => { config[el.dataset.cfg] = el.type === 'checkbox' ? el.checked : el.value; });
+  const body = { config };
+  if ($('apiKey').value) body.apiKey = $('apiKey').value;
+  await api('/api/config', body);
+  toast('已儲存設定');
+  await loadMeta();
+});
+
+// ---------- 聲音設計 ----------
+/** 試講的台詞選單：自我介紹 + 這個角色的所有劇情台詞（選了自動填入台詞與語氣） */
+function pickOptions(sp, p) {
+  const lines = meta.testLines[sp] || [];
+  const cut = (s) => (s.length > 34 ? s.slice(0, 34) + '…' : s);
+  return `<option value="">── 選一句台詞（或在下面自己打）──</option>`
+    + (p.intro ? `<option value="intro">自我介紹：${esc(cut(p.intro))}</option>` : '')
+    + lines.map((l, k) => `<option value="${k}">${esc(l.id)}　${esc(cut(l.text))}</option>`).join('');
+}
+
+function renderSpeakers() {
+  $('speakers').innerHTML = Object.entries(meta.profiles).map(([sp, p]) => {
+    const cands = p.candidates.slice().reverse().map((c) => `
+      <div class="cand ${c.voice_id === p.voice_id ? 'current' : ''}" data-vid="${esc(c.voice_id)}">
+        <div class="row">
+          <b>${c.voice_id === p.voice_id ? '✔ 正式聲音' : '候選'}</b>
+          <span class="vid">${esc(c.voice_id)}・${esc(c.created)}${c.gender ? '・' + esc(c.gender) : ''}</span>
+          <span class="spacer"></span>
+          <button class="small" data-act="select" ${c.voice_id === p.voice_id ? 'disabled' : ''}>設為正式</button>
+          <button class="small" data-act="delete">刪除</button>
+        </div>
+        <div class="desc">${esc(c.description)}</div>
+        ${c.sample ? `<div class="try"><span class="note">建立時附的試聽（模型自己挑的句子，常常是英文，只聽音色）</span>
+          <audio controls preload="none" src="/samples/${encodeURIComponent(c.sample)}"></audio></div>` : ''}
+        <div class="speak">
+          <select class="spk-pick" style="grid-column: 1 / -1">${pickOptions(sp, p)}</select>
+          <input type="text" class="spk-text" placeholder="要試講的台詞">
+          <input type="text" class="spk-style" placeholder="語氣（可空白）">
+          <button class="small" data-act="speak">試講</button>
+        </div>
+        <div class="tries">${(c.tries || []).map((t) => `
+          <div class="try"><span>${esc(t.text)}${t.style ? ` <span class="note">〔${esc(t.style)}〕</span>` : ''}</span>
+          <audio controls preload="none" src="/samples/${encodeURIComponent(t.sample)}"></audio></div>`).join('')}
+        </div>
+      </div>`).join('');
+    return `
+      <div class="card" data-sp="${sp}">
+        <h2>${esc(p.name)} ${p.voice_id ? '' : '<span class="badge b-novoice">還沒選正式聲音</span>'}</h2>
+        <div class="row">
+          <label>性別 <select class="gender">
+            <option value="" ${!p.gender ? 'selected' : ''}>（不指定）</option>
+            <option value="female" ${p.gender === 'female' ? 'selected' : ''}>female</option>
+            <option value="male" ${p.gender === 'male' ? 'selected' : ''}>male</option>
+          </select></label>
+        </div>
+        <textarea class="desc-edit" rows="4" placeholder="聲音描述：年齡、性別、音色、口音、平常說話的語氣">${esc(p.description)}</textarea>
+        <label class="note">自我介紹（建立聲音後會自動用新聲音唸一次，用來聽配音語言的效果）</label>
+        <textarea class="intro-edit" rows="2">${esc(p.intro || '')}</textarea>
+        <div class="row">
+          <button class="primary" data-act="create">建立並試聽</button>
+          <button data-act="saveDesc">只儲存描述</button>
+          <span class="note">每按一次「建立」會在雲端存一個新的候選聲音。</span>
+        </div>
+        ${cands || '<div class="note">還沒有候選聲音。</div>'}
+      </div>`;
+  }).join('');
+}
+
+$('speakers').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const card = btn.closest('.card');
+  const sp = card.dataset.sp;
+  const cand = btn.closest('.cand');
+  const vid = cand?.dataset.vid;
+  const act = btn.dataset.act;
+  const desc = card.querySelector('.desc-edit').value;
+  const gender = card.querySelector('.gender').value;
+  const intro = card.querySelector('.intro-edit').value;
+  btn.disabled = true;
+  const old = btn.textContent;
+  try {
+    if (act === 'saveDesc') {
+      await api('/api/profile', { speaker: sp, description: desc, gender, intro });
+      toast('已儲存描述與自我介紹');
+    } else if (act === 'create') {
+      btn.textContent = '建立中…（接著唸自我介紹）';
+      const r = await api('/api/create', { speaker: sp, description: desc, gender, intro });
+      toast(r.introError ? `已建立，但自我介紹產生失敗：${r.introError}` : '已建立候選聲音，播放自我介紹');
+    } else if (act === 'select') {
+      await api('/api/select', { speaker: sp, voice_id: vid });
+      toast('已設為正式聲音：批次產生頁會列出要重做的台詞');
+    } else if (act === 'delete') {
+      if (!confirm('刪除這個候選聲音？（雲端上的聲音也會刪掉）')) { btn.disabled = false; return; }
+      try {
+        await api('/api/delete', { speaker: sp, voice_id: vid });
+      } catch (err) {
+        if (!confirm(`雲端刪除失敗：${err.message}\n仍然從清單移除？`)) throw err;
+        await api('/api/delete', { speaker: sp, voice_id: vid, force: true });
+      }
+      toast('已刪除');
+    } else if (act === 'speak') {
+      const text = cand.querySelector('.spk-text').value.trim();
+      if (!text) { toast('先輸入要試講的台詞'); btn.disabled = false; return; }
+      btn.textContent = '產生中…';
+      await api('/api/speak', { speaker: sp, voice_id: vid, text, style: cand.querySelector('.spk-style').value });
+    }
+    await loadMeta();
+    // 新的試聽直接播：建立 → 最新候選的自我介紹（沒有就播建立時附的試聽）；試講 → 那一句
+    if (act === 'create' || act === 'speak') {
+      const card2 = document.querySelector(`.card[data-sp="${sp}"]`);
+      const cand2 = act === 'create' ? card2.querySelector('.cand') : card2.querySelector(`.cand[data-vid="${CSS.escape(vid)}"]`);
+      const target = cand2?.querySelector('.tries audio') ?? cand2?.querySelector('audio');
+      target?.play().catch(() => {});
+    }
+  } catch (err) {
+    toast(err.message);
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+});
+
+// 從選單選一句：填入台詞與它的語氣（劇本的動作描述），可以再改
+$('speakers').addEventListener('change', (e) => {
+  const pick = e.target.closest('.spk-pick');
+  if (!pick) return;
+  const sp = pick.closest('.card').dataset.sp;
+  const cand = pick.closest('.cand');
+  const v = pick.value;
+  if (v === '') return;
+  const line = v === 'intro' ? { text: meta.profiles[sp].intro, style: '' } : meta.testLines[sp][Number(v)];
+  cand.querySelector('.spk-text').value = line.text;
+  cand.querySelector('.spk-style').value = line.style || '';
+});
+
+$('btnListVoices').addEventListener('click', async () => {
+  try {
+    const list = await api('/api/voices');
+    const known = new Set(Object.values(meta.profiles).flatMap((p) => p.candidates.map((c) => c.voice_id)));
+    $('remoteVoices').innerHTML = list.length === 0 ? '<div class="note">雲端上沒有聲音。</div>' : list.map((v) => `
+      <div class="row"><span class="vid">${esc(v.voice_id)}</span> ${esc(v.display_name)} <span class="note">${esc(v.language_code)}${known.has(v.voice_id) ? '・在候選清單裡' : ''}</span>
+      <button class="small" data-vid="${esc(v.voice_id)}">刪除</button></div>`).join('');
+  } catch (err) { toast(err.message); }
+});
+$('remoteVoices').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-vid]');
+  if (!b || !confirm('刪除雲端上的這個聲音？')) return;
+  try {
+    await api('/api/delete', { voice_id: b.dataset.vid });
+    b.parentElement.remove();
+    await loadMeta();
+  } catch (err) { toast(err.message); }
+});
+
+// ---------- 批次產生 ----------
+async function loadRows() {
+  rows = await api('/api/rows');
+  render();
+}
+
+function counts() {
+  const c = { todo: 0, none: 0, stale: 0, ok: 0, novoice: 0, all: rows.length };
+  for (const r of rows) {
+    c[r.status]++;
+    if (r.status === 'none' || r.status === 'stale') c.todo++;
+  }
+  return c;
+}
+
+function visible() {
+  const q = $('search').value.trim().toLowerCase();
+  return rows.filter((r) => {
+    if (filter === 'todo' && r.status !== 'none' && r.status !== 'stale') return false;
+    if (['none', 'stale', 'ok', 'novoice'].includes(filter) && r.status !== filter) return false;
+    if (filter === 'story' && r.kind !== 'story') return false;
+    if (filter === 'bubble' && r.kind !== 'bubble') return false;
+    if (q && !(r.id.toLowerCase().includes(q) || r.text.toLowerCase().includes(q) || r.speech.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function render() {
+  const c = counts();
+  $('counts').textContent = `共 ${c.all} 句・待處理 ${c.todo}・完成 ${c.ok}`;
+  $('btnPending').textContent = `產生待處理的（${c.todo}）`;
+  $('btnPending').disabled = c.todo === 0;
+  $('btnSelected').disabled = checked.size === 0;
+  $('btnSelected').textContent = `產生勾選的（${checked.size}）`;
+  const tabs = [['todo', '待處理'], ['none', '還沒產生'], ['stale', '要重做'], ['ok', '完成'], ['novoice', '還沒選聲音'], ['story', '劇情'], ['bubble', '泡泡'], ['all', '全部']];
+  $('filters').innerHTML = tabs.map(([k, n]) => `<span class="chip ${filter === k ? 'on' : ''}" data-f="${k}">${n}${c[k] !== undefined ? ' ' + c[k] : ''}</span>`).join(' ');
+  const list = visible();
+  $('shown').textContent = `列出 ${list.length} 句`;
+  $('rows').innerHTML = list.length === 0 ? '<tr><td colspan="6" class="empty">沒有符合的台詞</td></tr>' : list.map((r) => `
+    <tr data-id="${esc(r.id)}">
+      <td><input type="checkbox" class="pick" ${checked.has(r.id) ? 'checked' : ''}></td>
+      <td class="id"><b>${esc(r.id)}</b>${esc(meta.profiles[r.speaker]?.name || r.speaker)}・${r.kind === 'story' ? '劇情' : '泡泡'}</td>
+      <td class="text">${esc(r.text)}${r.act ? `<div class="note">動作：${esc(r.act)}</div>` : ''}</td>
+      <td class="speech">
+        <textarea class="speech-edit ${r.speechEdited ? 'edited' : ''}" rows="${Math.min(7, Math.max(2, Math.ceil(r.speech.length / 16)))}">${esc(r.speech)}</textarea>
+        ${r.speechEdited ? `<div class="note">已修改 <button class="small restore">還原成原始台詞</button></div>` : ''}
+        ${r.speechOutdated ? '<div class="warn note">原始台詞在修改之後又改過了，請確認這裡的內容</div>' : ''}
+      </td>
+      <td class="style"><input type="text" class="style-edit" value="${esc(r.styleOverride)}" placeholder="${esc(r.style || '（沒有語氣）')}"></td>
+      <td class="st"><span class="badge b-${r.status}">${STATUS[r.status]}</span> ${r.time ? `<span class="note">${esc(r.time)}</span>` : ''}
+        ${r.file ? `<div><audio controls preload="none" src="/voice/${encodeURIComponent(r.file)}"></audio></div>` : ''}
+        <div><button class="small one">${r.file ? '重做' : '產生'}</button></div>
+      </td>
+    </tr>`).join('');
+}
+
+$('filters').addEventListener('click', (e) => {
+  const f = e.target.closest('[data-f]')?.dataset.f;
+  if (f) { filter = f; render(); }
+});
+$('search').addEventListener('input', render);
+$('checkAll').addEventListener('change', (e) => {
+  for (const r of visible()) e.target.checked ? checked.add(r.id) : checked.delete(r.id);
+  render();
+});
+$('rows').addEventListener('change', async (e) => {
+  const tr = e.target.closest('tr');
+  if (!tr) return;
+  const id = tr.dataset.id;
+  if (e.target.classList.contains('pick')) {
+    e.target.checked ? checked.add(id) : checked.delete(id);
+    render();
+  } else if (e.target.classList.contains('style-edit')) {
+    await api('/api/style', { id, style: e.target.value });
+    toast('已儲存語氣：這句會變成「要重做」');
+    await loadRows();
+  } else if (e.target.classList.contains('speech-edit')) {
+    await api('/api/speech', { id, speech: e.target.value });
+    toast('已儲存送給模型的台詞：這句會變成「要重做」');
+    await loadRows();
+  }
+});
+$('rows').addEventListener('click', async (e) => {
+  const tr = e.target.closest('tr');
+  if (e.target.classList.contains('one')) startJob([tr.dataset.id]);
+  if (e.target.classList.contains('restore')) {
+    await api('/api/speech', { id: tr.dataset.id, speech: '' });
+    toast('已還原成原始台詞');
+    await loadRows();
+  }
+});
+$('btnPending').addEventListener('click', () => startJob(null));
+$('btnSelected').addEventListener('click', () => startJob([...checked]));
+$('btnStop').addEventListener('click', () => api('/api/stop', {}));
+
+async function startJob(ids) {
+  try {
+    const r = await api('/api/generate', ids ? { ids } : {});
+    toast(`開始產生 ${r.count} 句`);
+    poll();
+  } catch (err) { toast(err.message); }
+}
+
+async function poll() {
+  const j = await api('/api/job');
+  $('job').classList.add('show');
+  $('jobTitle').textContent = j.running ? '產生中…' : '完成';
+  $('jobCount').textContent = `${j.done} / ${j.total}`;
+  $('jobBar').style.width = `${j.total ? (j.done / j.total) * 100 : 0}%`;
+  $('jobLog').textContent = j.log.join('\n');
+  $('jobLog').scrollTop = 1e9;
+  $('btnStop').disabled = !j.running;
+  if (j.running) setTimeout(poll, 1000);
+  else loadRows();
+}
+
+const headH = () => document.documentElement.style.setProperty('--head-h', `${document.querySelector('header').offsetHeight}px`);
+window.addEventListener('resize', headH);
+headH();
+loadMeta().catch((e) => toast(e.message));
+</script>
+</body>
+</html>

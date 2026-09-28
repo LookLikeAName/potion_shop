@@ -3,6 +3,7 @@ import { ART_URLS } from '../../assets/manifest';
 import { ACHIEVEMENTS } from '../../game/config/achievements';
 import { HAPPINESS_ITEMS, type HappinessItem } from '../../game/config/happiness';
 import { SCENES, isScene, speakerName, type SceneId } from '../../game/config/story';
+import { playVoice, stopVoice } from '../../audio/voice';
 import { MASCOT } from '../../game/config/mascot';
 import { redeemCost, redeemLock } from '../../game/commands';
 import { formatHappiness } from '../../game/format';
@@ -173,6 +174,12 @@ function Story({ id }: { id: SceneId }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
+  // 語音：換到這一句就播（旁白不配音）；換句或關掉時停掉前一句
+  useEffect(() => {
+    if (line.who === 'narration' || !line.text) stopVoice();
+    else playVoice(line.id);
+  }, [line.id]);
+  useEffect(() => () => stopVoice(), []);
   const name = speakerName(line.who);
   return (
     <div class="modal-back story-back">

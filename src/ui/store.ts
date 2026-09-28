@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals';
+import { playSfx, type SfxId } from '../audio/sfx';
 import type { EventId } from '../game/config/events';
 import type { BuyMode } from '../game/costs';
 import type { ItemId } from '../game/flow';
@@ -91,7 +92,9 @@ export function openDrawer(tab: DrawerTab, focus: string | null = null): void {
 
 let toastId = 0;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
-export function showToast(text: string, ms = 2200, icon?: { id: string; glyph?: string }): void {
+/** sound：這則提示的音效（預設一般通知；null = 不響，例如玩家自己按的操作回饋） */
+export function showToast(text: string, ms = 2200, icon?: { id: string; glyph?: string }, sound: SfxId | null = 'notify'): void {
+  if (sound) playSfx(sound);
   const id = ++toastId;
   toast.value = { id, text, icon: icon?.id, glyph: icon?.glyph };
   clearTimeout(toastTimer);
