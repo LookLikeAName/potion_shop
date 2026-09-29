@@ -7,6 +7,7 @@
 來源預設為 IdlePotionShop_ArtAssets/，會遞迴找所有 .png/.jpg/.webp，
 依檔名（= 資源 ID）輸出到 src/assets/art/<分類>/<資源ID>.webp。
 - 透明背景的圖會自動裁掉四周的空白。
+- 網頁圖示 app_icon（與 16px 用的 app_icon_small）另外輸出到 public/（favicon、手機主畫面圖示）。
 - src/assets/art/ 視為產出資料夾：來源已經刪除的圖，對應的輸出也會一併刪除。
 原圖不會被修改，之後有新的素材包可以重複執行。
 """
@@ -41,7 +42,7 @@ RULES = [
     ('ui_logo_', 'ui', 1600),
     ('ui_title_logo', 'ui', 1600),
     ('ui_', 'ui', 1024),
-    ('app_icon', 'ui', 512),
+    # app_icon（網頁圖示）不在這裡：由 import_favicon 輸出到 public/
 ]
 # 只當參考用、不進遊戲的圖
 SKIP = {'char_lumia_ref'}
@@ -102,6 +103,66 @@ def trim(im):
                     min(im.width, r + TRIM_PAD), min(im.height, b + TRIM_PAD)))
 
 
+# 網頁圖示：輸出到 public/（index.html 與 manifest.webmanifest 直接引用，檔名固定）
+PUBLIC = os.path.join(ROOT, 'public')
+# 手機主畫面圖示的底色（和 index.html 的 theme-color 同色系：中間亮一點的深棕色）
+ICON_BG = ((74, 51, 38), (43, 29, 20))
+
+
+def despill(im):
+    """去掉綠幕留在半透明邊緣的綠色（綠色不超過紅、藍之中較大的那個）"""
+    px = im.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            pr, pg, pb, pa = px[x, y]
+            if pa and pg > max(pr, pb):
+                px[x, y] = (pr, max(pr, pb), pb, pa)
+    return im
+
+
+def square(im, size, fill=1.0):
+    """裁掉透明邊、置中放進正方形；fill = 主體最長邊佔邊長的比例"""
+    im = im.crop(im.getchannel('A').getbbox())
+    k = size * fill / max(im.size)
+    im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
+    canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    canvas.alpha_composite(im, ((size - im.width) // 2, (size - im.height) // 2))
+    return canvas
+
+
+def with_background(icon, size):
+    """手機主畫面用：不透明的圓形漸層底色（系統會自己裁成圓角或圓形，主體留在中間 70% 內才不會被裁到）"""
+    bg = Image.new('RGBA', (size, size))
+    inner, outer = ICON_BG
+    px = bg.load()
+    c = (size - 1) / 2
+    for y in range(size):
+        for x in range(size):
+            t = min(1.0, ((x - c) ** 2 + (y - c) ** 2) ** 0.5 / (c * 1.2))
+            px[x, y] = tuple(round(i + (o - i) * t) for i, o in zip(inner, outer)) + (255,)
+    bg.alpha_composite(square(icon, size, 0.7))
+    return bg.convert('RGB')
+
+
+def import_favicon(icons):
+    """
+    app_icon（主圖）與 app_icon_small（16px 用的簡化版，可選）→ public/ 的網頁圖示：
+    分頁用透明背景（16px 用簡化版），手機主畫面與 manifest 用加上底色的版本。
+    """
+    main = despill(icons['app_icon'].convert('RGBA'))
+    small = despill(icons['app_icon_small'].convert('RGBA')) if 'app_icon_small' in icons else main
+    outputs = {
+        'favicon-16.png': square(small, 16),
+        'favicon-32.png': square(main, 32),
+        'apple-touch-icon.png': with_background(main, 180),
+        'icon-192.png': with_background(main, 192),
+        'icon-512.png': with_background(main, 512),
+    }
+    for name, im in outputs.items():
+        im.save(os.path.join(PUBLIC, name), 'PNG', optimize=True)
+        print(f'  public/{name}  {im.width}x{im.height}')
+
+
 # 游標的顯示大小（CSS px；另外輸出 2 倍大給高解析度螢幕）。魔法杖是細長的斜線，同樣 32px 看起來比箭頭小很多，放大到 48
 CURSOR_SIZE = {'cursor_pointer': 48, 'cursor_press': 48}
 CURSOR_BASE = 32
@@ -148,6 +209,7 @@ def main():
     count, before, after = 0, 0, 0
     produced = set()
     hotspots = {}
+    favicons = {}
     for dirpath, _, files in os.walk(SRC):
         for name in sorted(files):
             asset_id, ext = os.path.splitext(name)
@@ -155,6 +217,9 @@ def main():
                 continue
             if asset_id.startswith('cursor_'):
                 import_cursor(Image.open(os.path.join(dirpath, name)), asset_id, hotspots, produced)
+                continue
+            if asset_id in ('app_icon', 'app_icon_small'):
+                favicons[asset_id] = Image.open(os.path.join(dirpath, name))
                 continue
             rule = rule_for(asset_id)
             if not rule:
@@ -179,6 +244,8 @@ def main():
             after += os.path.getsize(out)
             print(f'  {folder}/{asset_id}.webp  {im.width}x{im.height}')
     print(f'匯入 {count} 張：{before / 1e6:.1f} MB → {after / 1e6:.1f} MB')
+    if 'app_icon' in favicons:
+        import_favicon(favicons)
     if hotspots:
         path = os.path.join(CURSOR_DIR, 'hotspots.json')
         with open(path, 'w', encoding='utf-8', newline='\n') as f:
