@@ -11,8 +11,8 @@ export function uiFont(): string {
   return currentLang() === 'ja' ? FONT_JA : FONT_TC;
 }
 
-/** CG 只在介面（劇情、事件簿）用網頁圖片顯示，場景用不到 */
-const inScene = (def: AssetDef) => !def.id.startsWith('cg_');
+/** CG（劇情、事件簿）與標題標誌（ui_）只在介面用網頁圖片顯示，場景用不到 */
+const inScene = (def: AssetDef) => !def.id.startsWith('cg_') && !def.id.startsWith('ui_');
 
 /** 場景要載入成貼圖的正式圖網址（開場預先下載用） */
 export function sceneTextureUrls(): string[] {

@@ -46,6 +46,14 @@ RULES = [
 # 只當參考用、不進遊戲的圖
 SKIP = {'char_lumia_ref'}
 
+# WebP 品質。CG 與立繪是大張的圖、佔下載量的大半：用 80（放大比對幾乎看不出差別，檔案小約 30%）
+QUALITY = 88
+QUALITY_BY_PREFIX = {'cg_': 80, 'portrait_': 80}
+
+
+def quality_for(asset_id):
+    return next((q for prefix, q in QUALITY_BY_PREFIX.items() if asset_id.startswith(prefix)), QUALITY)
+
 
 def rule_for(asset_id):
     for prefix, folder, limit in RULES:
@@ -164,7 +172,7 @@ def main():
             out_dir = os.path.join(DST, folder)
             os.makedirs(out_dir, exist_ok=True)
             out = os.path.join(out_dir, asset_id + '.webp')
-            im.save(out, 'WEBP', quality=88, method=6)
+            im.save(out, 'WEBP', quality=quality_for(asset_id), method=6)
             produced.add(os.path.abspath(out))
             count += 1
             before += os.path.getsize(src)

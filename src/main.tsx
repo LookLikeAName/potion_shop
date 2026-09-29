@@ -74,7 +74,7 @@ async function main() {
   render(<App />, document.getElementById('ui')!);
 
   // 依優先順序下載素材：標題的標誌與背景 → 場景貼圖 → 其餘
-  const preload = startPreload(!game.state.redeemed.opening);
+  const preload = startPreload({ opening: !game.state.redeemed.opening, outfit: game.state.mascot.outfit });
   void preload.all.then(() => {
     if (!stayOnTitle) titleOpen.value = false;
   });

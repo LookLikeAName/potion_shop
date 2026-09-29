@@ -2,8 +2,9 @@
 // 依優先順序分批下載，前一批下載完才開始下一批，頻寬先給畫面最先需要的東西。
 //   1. 標題：目前語言的標誌、主背景（場景還沒準備好時，標題畫面先用它當背景）、游標
 //   2. 場景：場景用到的所有貼圖（TextureBank 之後從快取拿，不會再下載）
-//   3. 其餘：序章的 CG 與語音（還沒看過序章時；按開始就馬上播）、介面圖示、立繪、其他 CG、書本材質、音效
-// 1～3 全部完成才能開始遊戲。配樂與其他語音是邊下載邊播放的，不擋開始，之後在背景慢慢預先下載。
+//   3. 其餘：序章的 CG 與語音（還沒看過序章時；按開始就馬上播）、介面圖示、書本材質、音效
+// 1～3 全部完成才能開始遊戲。剛開始用不到的立繪、CG，與邊下載邊播放的配樂、語音不擋開始，
+// 開始之後在背景依序下載（目前服裝的立繪優先）。其他語言的標誌不下載。
 import { signal } from '@preact/signals';
 import { Assets } from 'pixi.js';
 import { ART_URLS } from './manifest';
@@ -13,6 +14,7 @@ import { initSfx } from '../audio/sfx';
 import { musicUrl, trackFor } from '../audio/music';
 import { loadVoiceManifest, voiceUrls } from '../audio/voice';
 import { currentLang } from '../i18n';
+import { OUTFITS, type OutfitId } from '../game/config/mascot';
 
 /** 必要素材（1～3 批）的下載進度 */
 export const loadProgress = signal({ done: 0, total: 1 });
@@ -67,15 +69,42 @@ export interface Preload {
   all: Promise<void>;
 }
 
-/** opening：還沒看過序章（按開始就會播序章，它的 CG 與語音要先下載好） */
-export function startPreload(opening: boolean): Preload {
+const OUTFITS_WITH_PORTRAITS = new Set<string>(Object.keys(OUTFITS).filter((o) => o !== 'default'));
+
+/** 這張立繪是不是這套服裝的（預設服裝的立繪 ID 沒有服裝名稱：portrait_lumia_happy） */
+function portraitOf(id: string, outfit: OutfitId): boolean {
+  const head = id.slice('portrait_lumia_'.length).split('_')[0];
+  return outfit === 'default' ? !OUTFITS_WITH_PORTRAITS.has(head) : head === outfit;
+}
+
+export interface PreloadOpts {
+  /** 還沒看過序章（按開始就會播序章，它的 CG 與語音要先下載好） */
+  opening: boolean;
+  /** 露米婭目前的服裝（背景下載時這套的立繪排第一） */
+  outfit: OutfitId;
+}
+
+export function startPreload({ opening, outfit }: PreloadOpts): Preload {
+  const ids = Object.keys(ART_URLS);
+  const url = (id: string) => ART_URLS[id];
+  // 標誌只要目前語言的（換語言會重新載入）；沒有這個語言的標誌時用沒有文字的外框
   const logo = ART_URLS[`ui_logo_${currentLang()}`] ?? ART_URLS.ui_title_logo;
   const bg = ART_URLS.bg_dollhouse_main;
   const title = [logo, bg].filter(Boolean);
   const scene = sceneTextureUrls().filter((u) => u !== bg);
   const openingCg = opening && ART_URLS.cg_opening ? [ART_URLS.cg_opening] : [];
+  // CG 與立繪（佔全部圖片的三分之二）剛開始用不到：開始遊戲後再在背景下載
+  const later = (id: string) => id.startsWith('cg_') || id.startsWith('portrait_');
+  const skip = (id: string) => id.startsWith('ui_logo_') || id === 'ui_title_logo';
   const early = new Set([...title, ...scene, ...openingCg]);
-  const rest = [...new Set(Object.values(ART_URLS))].filter((u) => !early.has(u));
+  const rest = [...new Set(ids.filter((id) => !later(id) && !skip(id)).map(url))].filter((u) => !early.has(u));
+  const portraits = ids.filter((id) => id.startsWith('portrait_'));
+  const myPortraits = portraits.filter((id) => portraitOf(id, outfit)).map(url);
+  const laterArt = [
+    ...ids.filter((id) => id.startsWith('cg_') && !id.startsWith('cg_evt_')),
+    ...ids.filter((id) => id.startsWith('cg_evt_')),
+    ...portraits.filter((id) => !portraitOf(id, outfit)),
+  ].map(url).filter((u) => !early.has(u));
 
   let done = 0;
   let total = 1;
@@ -100,11 +129,17 @@ export function startPreload(opening: boolean): Preload {
     assetsReady.value = true;
     return fetched;
   });
-  // 背景：配樂、其他語音（一次兩個，不跟遊戲中需要的東西搶頻寬；關掉聲音的就不下載）
+  // 背景（一次三個，不跟遊戲中臨時需要的東西搶頻寬）：目前服裝的立繪 → 配樂 → 劇情 CG → 事件 CG
+  // → 其他服裝的立繪 → 其他語音。關掉的聲音不下載
   void all.then(async (fetched) => {
     const bgm = audible('music') ? musicUrl(trackFor('main')) : null;
     const voices = audible('voice') ? voiceUrls().filter((u) => !fetched.has(u)) : [];
-    await run([...(bgm ? [bgm] : []), ...voices].map(prefetch), 2);
+    await run([
+      ...myPortraits.map((u) => image(u)),
+      ...(bgm ? [prefetch(bgm)] : []),
+      ...laterArt.map((u) => image(u)),
+      ...voices.map(prefetch),
+    ], 3);
   });
   return { scene: sceneDone.then(() => undefined), all: all.then(() => undefined) };
 }
