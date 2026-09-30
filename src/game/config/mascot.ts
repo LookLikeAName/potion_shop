@@ -108,6 +108,7 @@ export const MUTTER_LINES = localizedList(
     ]) as Record<string, string[]>,
   },
   'mutter',
-  // 一般、各工作區、自由活動、疲勞、體力滿了在休息室、夢話、看店裡狀況（缺原料、櫃台排滿、狂熱、市場熱度高／低）
-  ['global', 'greenhouse', 'cauldron', 'counter', 'patrol', 'tired', 'relax', 'sleep', 'starved', 'crowded', 'fever', 'marketHot', 'marketCold'],
+  // 一般、各工作區、自由活動、疲勞、體力滿了在休息室、夢話、看店裡狀況（缺原料、櫃台排滿、狂熱、市場熱度高／低）、
+  // 兌換「星空下的誓約」之後才會說的（vow）
+  ['global', 'greenhouse', 'cauldron', 'counter', 'patrol', 'tired', 'relax', 'sleep', 'starved', 'crowded', 'fever', 'marketHot', 'marketCold', 'vow'],
 );

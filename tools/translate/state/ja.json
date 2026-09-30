@@ -3492,6 +3492,20 @@
     "locked": false,
     "time": "2026-09-28 09:27"
   },
+  "letter.listen": {
+    "hash": "f8a5e80ce050",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-30 20:20"
+  },
+  "letter.stopReading": {
+    "hash": "657f6fe84b89",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-30 20:20"
+  },
   "lines.daily": {
     "hash": "aeb96ec17ea9",
     "by": "ai",
@@ -3946,6 +3960,13 @@
     "model": "gemini-3.5-flash-lite",
     "locked": false,
     "time": "2026-09-28 09:27"
+  },
+  "mutter.vow": {
+    "hash": "6e2ddef71398",
+    "by": "ai",
+    "model": "gemini-3.5-flash-lite",
+    "locked": false,
+    "time": "2026-09-30 20:20"
   },
   "offline.away": {
     "hash": "46740a823dc1",

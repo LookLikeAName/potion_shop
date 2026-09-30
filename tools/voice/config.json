@@ -1,6 +1,7 @@
 {
   "base_url": "https://generativelanguage.googleapis.com/v1beta",
   "model": "gemini-3.8-flash-tts",
+  "refine_model": "gemini-3.5-flash-lite",
   "api_key_env": "GEMINI_API_KEY",
   "voice_lang": "ja",
   "language_code": "ja-JP",

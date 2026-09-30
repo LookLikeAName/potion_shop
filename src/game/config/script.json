@@ -38,5 +38,10 @@
   "bubbles": {
     "speaker": "lumia",
     "prefixes": ["mutter.", "wish.lines.", "event.lines.", "lines."]
+  },
+  "letters": {
+    "_說明": "老師的信（語言檔 letter.<n>.to／body／closing）由誰配音。信太長，語音工具把配音語言的每一段依句子拆成幾小句，每小句一個配音：ID = letter.<n>.<to|body|closing>.<第幾段，兩位數>.<第幾小句>，例如 letter.1.body.02.3。遊戲依 ID 知道是哪一段，照順序播。",
+    "speaker": "book",
+    "ids": [1, 2, 3]
   }
 }

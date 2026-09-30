@@ -4,7 +4,7 @@
     "gender": "female",
     "description": "Cheerful and cute Japanese anime protagonist. The vocal timbre should be bright, sweet, and highly energetic, filled with youthful enthusiasm. She sounds earnest and confident, but carries a slightly ditzy, clumsy, and airheaded charm. Her pacing should be lively—speaking quickly when excited, but with endearing, slightly confused pauses when she messes up or loses her train of thought. The overall tone is warm and affectionate, capturing a natural 'gap moe' appeal without being overly squeaky or grating.",
     "intro": "はじめまして！見習い魔女のルミアです。先生の工房で、代理店長としてポーション屋さんをやっています。失敗することもあるけど、毎日がんばってますよ！よろしくお願いしますね！",
-    "voice_id": "voice_g635ne1wi093",
+    "voice_id": "voice_rpav801tegf1",
     "candidates": [
       {
         "voice_id": "voice_pk4ooycd2obj",
@@ -57,15 +57,56 @@
             "sample": "lumia-voice_g635ne1wi093-intro-20260928-235706-73520d.wav"
           }
         ]
+      },
+      {
+        "voice_id": "voice_rpav801tegf1",
+        "name": "voiceact_2",
+        "description": "日本的年輕的良家的大小姊，語氣平穩高雅，咬字正確。但偶有反差。音高偏高且清亮，音質乾淨細緻，帶有高貴優雅的頭腔共鳴，語速適中且節奏優雅從容，說話時帶有輕微的氣聲與適度的距離感，展現出良好的教養與高雅氣質。",
+        "gender": "female",
+        "sample": "lumia-voice_rpav801tegf1-20260929-193908-c63221.wav",
+        "created": "2026-09-29 19:39",
+        "imported": true,
+        "tries": [
+          {
+            "text": "先生ーーっ！卒業したよ！ただいまーーっ！",
+            "style": "学院を卒業して、久しぶりに育った工房へ帰ってきた。入口から奥へ向かって、弾むような大声で呼びかける。語尾を長く伸ばし、嬉しさいっぱいに。",
+            "sample": "lumia-voice_rpav801tegf1-try-20260929-194123-062c37.wav"
+          },
+          {
+            "text": "はじめまして！見習い魔女のルミアです。先生の工房で、代理店長としてポーション屋さんをやっています。失敗することもあるけど、毎日がんばってますよ！よろしくお願いしますね！",
+            "style": "",
+            "sample": "lumia-voice_rpav801tegf1-intro-20260929-193916-bacae4.wav"
+          }
+        ]
       }
-    ]
+    ],
+    "fx": {
+      "enabled": true,
+      "trim": true,
+      "pad": 60,
+      "pitch": 1.0,
+      "formant": true,
+      "tempo": 1.02,
+      "highpass": 90,
+      "low": -1.5,
+      "mid": 0.0,
+      "presence": 2.5,
+      "air": 3.0,
+      "deess": 20,
+      "comp": 30,
+      "reverb": 0,
+      "room": 0.5,
+      "normalize": true,
+      "loudness": -16.0,
+      "gain": 0.0
+    }
   },
   "book": {
     "name": "魔導書（老師）",
     "gender": "female",
-    "description": "A young adult female voice in her mid-to-late 20s, embodying a calm, reliable, and laid-back older sister figure. The articulation is clear and steady, but the overall delivery carries a distinct \"downer\" vibe—slightly lethargic, low-energy, and mildly listless. She speaks at a relaxed, unhurried pace with a soft and smooth resonance, sounding knowledgeable yet perpetually a bit tired or sleepy. Despite the lazy or mildly exhausted undertone, there is a subtle, deep warmth and affection in her voice.",
+    "description": "20代前半の女性の自然で流暢な日本語。少し低めのピッチと心地よい胸声の響きを持ち、包み込むような面倒見の良さと頼りがいのある姉御肌なトーンが特徴。ハキハキとしたクリアな発音とやや落ち着いたペースで、面倒見の良さとユーモアが自然ににじみ出る、親しみやすく安定した声質。",
     "intro": "やあ、私はこの魔導書……いや、ルミアの先生だ。見ての通り、今は一冊の本の姿をしている。工房のことなら何でも教えてあげよう。まったく、あの子は目が離せなくて困るよ。",
-    "voice_id": "voice_ic0j1u60k93v",
+    "voice_id": "voice_47ozwmwzizs9",
     "candidates": [
       {
         "voice_id": "voice_ic0j1u60k93v",
@@ -94,7 +135,82 @@
             "sample": "book-voice_9xlb36t1zl3a-intro-20260929-000303-399969.wav"
           }
         ]
+      },
+      {
+        "voice_id": "voice_oawxjbezoqr8",
+        "description": "A young adult female voice in her mid-to-late 20s, embodying a calm, reliable, and laid-back older sister figure. The articulation is clear and steady, but the overall delivery carries a distinct \"downer\" vibe—slightly lethargic, low-energy, and mildly listless. She speaks at a relaxed, unhurried pace with a soft and smooth resonance, sounding knowledgeable yet perpetually a bit tired or sleepy. Despite the lazy or mildly exhausted undertone, there is a subtle, deep warmth and affection in her voice.",
+        "gender": "female",
+        "sample": "book-voice_oawxjbezoqr8-20260929-082056-a819cc.wav",
+        "created": "2026-09-29 08:21",
+        "tries": [
+          {
+            "text": "やあ、私はこの魔導書……いや、ルミアの先生だ。見ての通り、今は一冊の本の姿をしている。工房のことなら何でも教えてあげよう。まったく、あの子は目が離せなくて困るよ。",
+            "style": "",
+            "sample": "book-voice_oawxjbezoqr8-intro-20260929-082106-124efe.wav"
+          }
+        ]
+      },
+      {
+        "voice_id": "voice_v5tv8m7qkr8p",
+        "name": "sensei_1",
+        "description": "20代後半の女性の自然で流暢な日本語。落ち着いた低めのピッチと深い胸声の響きを持ち、包み込むような優しさと面倒見の良さを感じさせる、穏やかでクリアな声質。淡々としたクールな語り口でありながら、ふとした瞬間にユーモアと親しみやすさが滲み出る、安定したスローペースと丁寧な発音。",
+        "gender": "female",
+        "sample": "book-voice_v5tv8m7qkr8p-20260929-201246-0cc48c.wav",
+        "created": "2026-09-29 20:12",
+        "tries": [
+          {
+            "text": "コホン <short pause> その通り、私だ。見ての通り、これは特別な魔道具でね[短音]。ちょうど長期旅行の依頼が入って、帰る日は未定なんだ。この工房を荒れさせないために、私の意識の一部をこの本に残しておいたのさぁ",
+            "style": "咳払いで気を取り直し、落ち着いて説明する。穏やかで少しもったいぶった先生らしい語り口。「帰る日は未定」のところはさらりと流し、寂しさを悟らせない。",
+            "sample": "book-voice_v5tv8m7qkr8p-try-20260929-202058-dfdf5d.wav"
+          },
+          {
+            "text": "コホン <short pause> その通り、私だ。見ての通り、これは特別な魔道具でね。ちょうど長期旅行の依頼が入って、帰る日は未定なんだ。この工房を荒れさせないために、私の意識の一部をこの本に残しておいたのさ。",
+            "style": "咳払いで気を取り直し、落ち着いて説明する。穏やかで少しもったいぶった先生らしい語り口。「帰る日は未定」のところはさらりと流し、寂しさを悟らせない。",
+            "sample": "book-voice_v5tv8m7qkr8p-try-20260929-201735-76096c.wav"
+          },
+          {
+            "text": "やあ、私はこの魔導書……いや、ルミアの先生だ。見ての通り、今は一冊の本の姿をしている。工房のことなら何でも教えてあげよう。まったく、あの子は目が離せなくて困るよ。",
+            "style": "",
+            "sample": "book-voice_v5tv8m7qkr8p-intro-20260929-201255-f0f887.wav"
+          }
+        ]
+      },
+      {
+        "voice_id": "voice_47ozwmwzizs9",
+        "name": "sensei_2",
+        "description": "20代前半の女性の自然で流暢な日本語。少し低めのピッチと心地よい胸声の響きを持ち、包み込むような面倒見の良さと頼りがいのある姉御肌なトーンが特徴。ハキハキとしたクリアな発音とやや落ち着いたペースで、面倒見の良さとユーモアが自然ににじみ出る、親しみやすく安定した声質。",
+        "gender": "female",
+        "sample": "book-voice_47ozwmwzizs9-20260929-202352-f42f1c.wav",
+        "created": "2026-09-29 20:24",
+        "tries": [
+          {
+            "text": "やあ、私はこの魔導書……いや、ルミアの先生だ。見ての通り、今は一冊の本の姿をしている。工房のことなら何でも教えてあげよう。まったく、あの子は目が離せなくて困るよ。",
+            "style": "",
+            "sample": "book-voice_47ozwmwzizs9-intro-20260929-202401-26c347.wav"
+          }
+        ]
       }
-    ]
+    ],
+    "fx": {
+      "enabled": true,
+      "trim": true,
+      "pad": 60,
+      "pitch": 0.5,
+      "formant": true,
+      "tempo": 1.0,
+      "highpass": 0,
+      "low": 0.0,
+      "mid": 0.0,
+      "presence": 0.0,
+      "air": 0.0,
+      "deess": 10,
+      "comp": 0,
+      "reverb": 0,
+      "room": 0.5,
+      "normalize": true,
+      "loudness": -16.0,
+      "gain": 0.0
+    },
+    "next_name": ""
   }
 }

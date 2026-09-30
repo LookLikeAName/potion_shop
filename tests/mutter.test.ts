@@ -36,6 +36,21 @@ describe('露米婭自言自語', () => {
     }
   });
 
+  it('誓約的台詞：兌換「星空下的誓約」之後才會出現（工作與放鬆時），睡覺時不會說', () => {
+    const s = createInitialState();
+    s.mascot.assignment = 'greenhouse';
+    s.mascot.stamina = 100;
+    s.materials.redheart = 1e6;
+    const has = () => [...sample(s)].some((l) => MUTTER_LINES.vow.includes(l));
+    expect(has()).toBe(false);
+    s.redeemed.vow = 1;
+    expect(has()).toBe(true);
+    s.mascot.assignment = 'rest'; // 體力滿了：在休息室放鬆
+    expect(has()).toBe(true);
+    s.mascot.stamina = 40; // 睡覺：只說夢話
+    expect(has()).toBe(false);
+  });
+
   it('疲勞、大釜缺料、狂熱時刻時會出現對應的台詞', () => {
     const s = createInitialState();
     s.mascot.assignment = 'cauldron';

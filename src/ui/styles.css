@@ -866,6 +866,15 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 .letter-body p { margin: 0.5em 0; text-indent: 2em; }
 .letter-body .letter-to, .letter-closing p { text-indent: 0; }
 .letter-closing { text-align: right; margin-top: 1em; }
+/* 老師正在唸的那一段：像用螢光筆淡淡畫過 */
+.letter-body p > span {
+  background: linear-gradient(transparent 62%, rgba(255, 205, 120, 0.45) 62%) no-repeat 0 0 / 0 100%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size 0.5s ease;
+}
+.letter-body p.reading > span { background-size: 100% 100%; }
+.letter-actions { display: flex; justify-content: center; gap: 0.8em; }
 .letter-note { color: #8a6a4a; font-style: italic; font-size: 0.85em; margin-bottom: 0.4em; }
 /* 第三封：字跡潦草、急促 */
 .letter-3 p { letter-spacing: 0.02em; transform: rotate(-0.25deg); }

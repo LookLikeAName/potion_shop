@@ -24,7 +24,9 @@ function pickWeighted(groups: [number, string[]][], rng: () => number): string {
  */
 export function pickMutter(s: GameState, rng: () => number = Math.random): string {
   const L = MUTTER_LINES;
-  if (isRelaxing(s)) return pickWeighted([[3, L.relax], [1, L.outfit[s.mascot.outfit]], [1, L.global]], rng);
+  // 兌換「星空下的誓約」之後：工作與放鬆時偶爾會說起誓約與老師
+  const vow = (s.redeemed.vow ?? 0) > 0 ? 2 : 0;
+  if (isRelaxing(s)) return pickWeighted([[3, L.relax], [1, L.outfit[s.mascot.outfit]], [1, L.global], [vow, L.vow]], rng);
   if (isResting(s)) return pickWeighted([[1, L.sleep]], rng);
   const zone = workZone(s);
   const starved = s.cauldrons.some((c) => c.batch === 0 && missingInputs(s, c).length > 0);
@@ -40,5 +42,6 @@ export function pickMutter(s: GameState, rng: () => number = Math.random): strin
     [s.mascot.assignment === 'patrol' ? 1 : 0, L.patrol],
     [2, L.outfit[s.mascot.outfit]],
     [2, L.global],
+    [vow, L.vow],
   ], rng);
 }

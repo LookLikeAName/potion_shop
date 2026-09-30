@@ -335,6 +335,8 @@
   "banner.flip": "翻開這張牌",
   "banner.cardN": "第 {n} 張",
   "letter.keep": "收好這封信",
+  "letter.listen": "▶ 聽老師唸這封信",
+  "letter.stopReading": "■ 停止朗讀",
   "decor.slotNames": [
     "層架左",
     "層架右",

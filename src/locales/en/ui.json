@@ -335,6 +335,8 @@
   "banner.flip": "Flip Card",
   "banner.cardN": "Card {n}",
   "letter.keep": "Keep Letter",
+  "letter.listen": "▶ Listen to Master Read",
+  "letter.stopReading": "■ Stop Reading",
   "decor.slotNames": [
     "Left Shelf",
     "Right Shelf",

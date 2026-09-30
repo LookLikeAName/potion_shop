@@ -335,6 +335,8 @@
   "banner.flip": "このカードをめくる",
   "banner.cardN": "{n}枚目",
   "letter.keep": "この手紙を大切にしまう",
+  "letter.listen": "▶ 先生にこの手紙を読んでもらう",
+  "letter.stopReading": "■ 朗読をやめる",
   "decor.slotNames": [
     "棚の左",
     "棚の右",
