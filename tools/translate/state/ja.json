@@ -3774,10 +3774,10 @@
   },
   "mutter.counter": {
     "hash": "b12c1334acf1",
-    "by": "ai",
+    "by": "human",
     "model": "gemini-3.5-flash-lite",
-    "locked": false,
-    "time": "2026-09-28 09:27"
+    "locked": true,
+    "time": "2026-10-01 20:20"
   },
   "mutter.crowded": {
     "hash": "43e9f0bb2be8",
@@ -3886,10 +3886,10 @@
   },
   "mutter.marketHot": {
     "hash": "b5b450e65a87",
-    "by": "ai",
+    "by": "human",
     "model": "gemini-3.5-flash-lite",
-    "locked": false,
-    "time": "2026-09-28 09:27"
+    "locked": true,
+    "time": "2026-10-01 20:35"
   },
   "mutter.outfit.default": {
     "hash": "beecffeb5368",
@@ -3900,10 +3900,10 @@
   },
   "mutter.outfit.gardener": {
     "hash": "bad30f66cfce",
-    "by": "ai",
+    "by": "human",
     "model": "gemini-3.5-flash-lite",
-    "locked": false,
-    "time": "2026-09-28 09:27"
+    "locked": true,
+    "time": "2026-10-01 20:38"
   },
   "mutter.outfit.maid": {
     "hash": "a363beb6c03c",

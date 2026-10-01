@@ -12,7 +12,7 @@ import { checkoutByClick, tick, type GameEvent, type SimContext } from './sim';
 import { createNewGame, type GameState } from './state';
 import { DisplayQueue } from './displayQueue';
 import { eventAction, type EventAction, type EventActionResult } from './events';
-import { finishTutorial, noteTutorial, skipTutorial, tutorialStep, type TutorialStep } from './tutorial';
+import { finishTutorial, introDone, noteTutorial, skipTutorial, tutorialStep, type TutorialStep } from './tutorial';
 
 /** 一次補算最多跑幾個 tick（再多就走離線結算） */
 const MAX_CATCHUP_TICKS = Math.ceil(OFFLINE.reportThreshold / TICK);
@@ -79,6 +79,8 @@ export class Game {
     if (elapsed > OFFLINE.reportThreshold) {
       this.acc = 0;
       this.flow.reset();
+      // 開頭的教學還沒結束（只是打開過網頁、還沒真的開始玩）：不算離線進度，也不跳離線報告
+      if (!introDone(this.state)) return;
       const report = simulateOffline(this.state, elapsed);
       this.onOffline?.(report);
       this.notify(true);

@@ -19,6 +19,11 @@ export function tutorialStep(s: GameState): TutorialStep | null {
   return null;
 }
 
+/** 開頭的教學（序章＋四個步驟）結束了沒；跳過教學也算結束。結束之後才有離線進度 */
+export function introDone(s: GameState): boolean {
+  return !!s.redeemed.opening && INTRO_STEPS.every((k) => s.tutorial[k]);
+}
+
 /**
  * 客人會不會來：序章看完、教學走到「幫客人結帳」之後才開店（跳過教學的話馬上開店）。
  * 之前客人不來、也不累積來客計時，教學時不會一直堆積客人

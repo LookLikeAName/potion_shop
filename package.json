@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && gh-pages -d dist -t -m \"發布網頁版\"",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name lumiaspotionshop --branch main --commit-dirty=true",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "balance": "tsx scripts/balance.ts",
@@ -21,10 +21,10 @@
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
     "@types/node": "^22.20.4",
-    "gh-pages": "^6.3.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.2",
+    "wrangler": "^4.145.0"
   }
 }
