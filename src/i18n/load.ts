@@ -24,8 +24,15 @@ function detect(): Lang {
     // 無痕模式等情況讀不到，用預設語言
   }
   if (saved && ok.has(saved as Lang)) return saved as Lang;
-  // 預設繁體中文（不看瀏覽器語言）；玩家在設定裡換過語言就記住
-  return SOURCE_LANG;
+  // 沒選過語言：看使用者系統（瀏覽器）的第一語言。中文（不分地區）→ 繁體中文、日文 → 日文、其他 → 英文；
+  // 玩家在設定裡換過語言就記住
+  return systemLang(ok);
+}
+
+function systemLang(ok: Set<Lang>): Lang {
+  const tag = (navigator.languages?.[0] ?? navigator.language ?? '').toLowerCase();
+  const want: Lang = tag.startsWith('zh') ? SOURCE_LANG : tag.startsWith('ja') ? 'ja' : 'en';
+  return ok.has(want) ? want : SOURCE_LANG;
 }
 
 export async function initI18n(): Promise<void> {
