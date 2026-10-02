@@ -163,6 +163,17 @@
     "mutter.tired.03": "mutter.tired.03.mp3",
     "mutter.tired.04": "mutter.tired.04.mp3",
     "mutter.vow.01": "mutter.vow.01.mp3",
+    "mutter.vow.02": "mutter.vow.02.mp3",
+    "mutter.vow.03": "mutter.vow.03.mp3",
+    "mutter.vow.04": "mutter.vow.04.mp3",
+    "mutter.vow.05": "mutter.vow.05.mp3",
+    "mutter.vow.06": "mutter.vow.06.mp3",
+    "mutter.vow.07": "mutter.vow.07.mp3",
+    "mutter.vow.08": "mutter.vow.08.mp3",
+    "mutter.vow.09": "mutter.vow.09.mp3",
+    "mutter.vow.10": "mutter.vow.10.mp3",
+    "mutter.vow.11": "mutter.vow.11.mp3",
+    "mutter.vow.12": "mutter.vow.12.mp3",
     "opening.01": "opening.01.mp3",
     "opening.02": "opening.02.mp3",
     "opening.04": "opening.04.mp3",
@@ -183,6 +194,14 @@
     "vow.08": "vow.08.mp3",
     "vow.09": "vow.09.mp3",
     "vow.10": "vow.10.mp3",
-    "vow.11": "vow.11.mp3"
+    "vow.11": "vow.11.mp3",
+    "wish.lines.done.01": "wish.lines.done.01.mp3",
+    "wish.lines.done.02": "wish.lines.done.02.mp3",
+    "wish.lines.done.03": "wish.lines.done.03.mp3",
+    "wish.lines.fail.01": "wish.lines.fail.01.mp3",
+    "wish.lines.fail.02": "wish.lines.fail.02.mp3",
+    "wish.lines.new.01": "wish.lines.new.01.mp3",
+    "wish.lines.new.02": "wish.lines.new.02.mp3",
+    "wish.lines.new.03": "wish.lines.new.03.mp3"
   }
 }

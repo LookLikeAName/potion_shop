@@ -6137,10 +6137,10 @@
   },
   "wish.lines.new": {
     "hash": "d7df62a15541",
-    "by": "ai",
+    "by": "human",
     "model": "gemini-3.5-flash-lite",
-    "locked": false,
-    "time": "2026-09-28 09:27"
+    "locked": true,
+    "time": "2026-10-02 20:37"
   },
   "wish.rarity.0.name": {
     "hash": "3786860f23a9",
