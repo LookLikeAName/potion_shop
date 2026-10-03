@@ -364,6 +364,8 @@ button.plant-level { font: inherit; font-size: 0.75em; cursor: var(--cursor-poin
 .switch.on .switch-track { background: var(--teal); }
 .switch.on .switch-knob { transform: translateX(1.2em); }
 .switch-label { min-width: 3em; text-align: left; }
+/* 連結做成按鈕的樣子（設定裡的開發筆記） */
+a.btn { display: inline-block; text-decoration: none; color: inherit; text-align: center; }
 .btn {
   font: inherit;
   font-size: 0.85em;

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>開發筆記｜露米婭的藥水工坊</title>
+<meta name="description" content="一個人、50 小時，用 AI 做出《露米婭的藥水工坊》的開發筆記。">
+<meta name="theme-color" content="#2b1d14">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<style>
+  :root {
+    --ink: #4a3426; --ink-soft: #7a5c44; --gold: #d9a441; --teal: #2f6f6a;
+    --cover: #6b3a26; --cover-dark: #3e2217; --page: #f5e8c8; --page-deep: #e9d6ab; --page-edge: #d8c093;
+    --leather: #2b1d14;
+  }
+  * { box-sizing: border-box; }
+  html { background: #1c130e; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--ink);
+    font: 17px/1.95 "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif;
+    background: url(img/ui_leather_texture.webp), linear-gradient(100deg, var(--cover-dark), var(--cover) 30%, var(--cover-dark));
+    background-size: 320px, cover; background-attachment: fixed;
+    padding: 28px 16px 56px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 18px; }
+  header img { width: min(520px, 88%); height: auto; filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .55)); }
+  /* 書頁：羊皮紙、左邊是書脊的陰影、四角的花紋 */
+  .page {
+    position: relative; padding: 46px clamp(22px, 6vw, 70px) 54px;
+    border-radius: 6px 16px 16px 6px;
+    background: url(img/ui_page_texture.webp), radial-gradient(ellipse at 55% 30%, #fbf2dc, var(--page) 55%, var(--page-deep));
+    background-size: 600px, cover;
+    box-shadow: inset 2.2em 0 2em -1.6em rgba(90, 55, 25, .5), 3px 0 0 var(--page-deep), 6px 0 0 var(--page-edge),
+      9px 0 0 var(--page-deep), 12px 0 0 var(--page-edge), 0 18px 40px rgba(0, 0, 0, .55);
+  }
+  .corner { position: absolute; width: 64px; height: 64px; background: url(img/ui_corner.webp) center / contain no-repeat; opacity: .9; pointer-events: none; }
+  .corner.tl { top: 10px; left: 14px; }
+  .corner.tr { top: 10px; right: 10px; transform: scaleX(-1); }
+  .corner.bl { bottom: 10px; left: 14px; transform: scaleY(-1); }
+  .corner.br { bottom: 10px; right: 10px; transform: rotate(180deg); }
+  h1 { margin: 0; text-align: center; font-size: clamp(28px, 5vw, 38px); letter-spacing: .25em; color: #5a3a22; text-indent: .25em; }
+  .date { text-align: center; color: var(--ink-soft); letter-spacing: .1em; margin: 2px 0 0; }
+  .divider { height: 26px; margin: 18px auto 26px; width: min(460px, 90%); background: url(img/ui_divider.webp) center / 100% 100% no-repeat; }
+  p { margin: 0 0 1.05em; text-align: justify; }
+  p.aside { color: var(--ink-soft); font-size: .9em; text-align: center; }
+  ol { list-style: none; counter-reset: n; margin: .2em 0 1.4em; padding: .7em 1em; background: rgba(255, 250, 238, .75);
+    border: 1.5px solid var(--page-edge); border-radius: 12px; box-shadow: 0 2px 0 rgba(120, 85, 45, .12); }
+  ol li { counter-increment: n; display: flex; gap: .7em; align-items: baseline; padding: .2em 0; }
+  ol li::before { content: counter(n); flex: none; display: inline-grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%;
+    font-weight: 700; font-size: .85em; color: #fff7e2; background: linear-gradient(#e2b35a, #b07a2a); box-shadow: 0 2px 0 #7a5420; transform: translateY(-.1em); }
+  /* 圖片：夾在書頁上的照片 */
+  figure { margin: 1.6em auto 1.9em; text-align: center; }
+  figure a.zoom { display: inline-block; padding: 10px; background: #fffaf0; border: 1.5px solid var(--page-edge); border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(90, 60, 30, .28); transform: rotate(-.6deg); transition: transform .2s; cursor: zoom-in; max-width: 100%; }
+  figure:nth-of-type(even) a.zoom { transform: rotate(.6deg); }
+  figure a.zoom:hover { transform: rotate(0) scale(1.01); }
+  figure img { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+  figcaption { margin-top: .7em; color: var(--ink-soft); font-size: .9em; }
+  figure.video video { width: 100%; border-radius: 10px; border: 3px solid var(--gold); box-shadow: 0 8px 22px rgba(0, 0, 0, .35); background: #000; }
+  footer { text-align: center; margin-top: 30px; }
+  .btn { display: inline-block; padding: .55em 2.2em; border-radius: 999px; font-weight: 700; letter-spacing: .08em; text-decoration: none; color: #4a2c12;
+    background: linear-gradient(#ffe7a6, #e2b35a 55%, #c9902f); border: 2px solid #7a5420; box-shadow: 0 4px 0 #6a4518, 0 8px 18px rgba(0, 0, 0, .45); }
+  .btn:hover { filter: brightness(1.07); }
+  /* 點圖片放大 */
+  .lightbox { position: fixed; inset: 0; display: none; place-items: center; background: rgba(18, 12, 8, .88); cursor: zoom-out; padding: 20px; z-index: 9; }
+  .lightbox.show { display: grid; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 10px 40px rgba(0, 0, 0, .6); }
+  @media (max-width: 600px) {
+    body { font-size: 16px; padding: 18px 10px 40px; }
+    .corner { width: 40px; height: 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a href="../"><img src="img/logo.webp" alt="露米婭的藥水工坊" width="1040" height="400"></a></header>
+  <article class="page">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <h1>開發筆記</h1>
+    <p class="date">2026/10/03</p>
+    <div class="divider"></div>
+<p>上周周末，Anthropic 發布了 Opus 5.5，看著離週間額度還有約50%，加上名義上是讓人試用Opus 5.5的重置券。我開始思考究竟能拿來做些什麼事情。</p>
+<p>我第一個想到的便是來做一個遊戲。</p>
+<p>我的身邊有不少創作者，不管是繪圖、寫作，或是音樂製作的。其中也不乏有對AI的技術感到反感的人。然而我認為，AI終究只是一樣技術(至少目前為止還是)，一個工具。</p>
+<p>現在的AI發展是名符其實的日新月異，甚至讓我有了十年前智慧型手機爆發再臨的感覺，或更甚之。以往被人嘲笑的AI問題，也隨著時間漸漸被解決。摸清楚它能幹什麼，不能幹什麼，遠比敬而遠之甚至是感到恐懼來的好得多。</p>
+<p>基於如此，對於製作這個遊戲我幫自己訂下了幾個規則。</p>
+<ol><li>遊戲要能正常地遊玩，有完整的流程。</li><li>遊戲要有完整美術、音樂、系統設計，還有劇情。</li><li>能用AI的部分，就讓AI代勞。</li></ol>
+<p>對，無論是程式，美術、音樂或是劇情，都是讓AI製作的。不過這當然不是代表什麼東西都讓AI去想，而是使用者，也就是我自己，站在導演的角度，負責分派工作，引導遊戲的細節與製作方向。</p>
+<p>在遊戲類型方面。我一開始便有了將點擊類型的遊戲結合養成的想法。但對於其中的細節還需要更進一步的打磨。因此我將想法丟進了Gemini中，要求它與我一起腦力激盪。(會用Gemini純粹是因為不想要浪費Claude的額度)</p>
+<figure><a class="zoom" href="img/game_dev_project_prompt.webp"><img src="img/game_dev_project_prompt.webp" width="562" height="727" alt="和 Gemini 討論遊戲企劃的對話" loading="lazy"></a></figure>
+<p>在與AI討論的過程中，AI提出了建議，我也將自己的想法給了它。最後逐漸定形成了一個加上一點點經營要素的藥水工坊遊戲。當然，這與我一開始的想法有不少的出入，但有了一點雛形，總開始有要開始做點什麼的感覺了。我讓Gemini幫我將討論的內容整理成一個Game Design Document(GDD)，然後便很開心的拿去找了Claude。</p>
+<p>Claude很快地就給了我一個prototype，畫面中已經有了溫室、大釜、櫃台、倉庫跟休息區的區分。代表露米婭的文字方塊也會在各個場景中遊蕩。我必須說我當下非常震撼，因為這是第一個prompt，我甚至沒有做其他的修改，就已經有了第一個可以試玩的版本。當然，這時候還沒有任何美術。所以只有一個個的文字方塊顯示在畫面上。</p>
+<p class="aside">(這邊我沒有留到截圖，只能自行想像了)</p>
+<p>有個可愛的角色在畫面上跑來跑去總是比較讓人開心，所以我的下一個目標就是馬上先來製作遊戲美術。我一開始就有了使用Grok來繪製美術素材的想法。不過根據遊戲設計書中的內容，光是主角角色的立繪差分包含畫面上顯示的Q版人物就有十幾張圖的需求，加上各種icon，UI背景。總共需要的圖片至少也有百來張。要怎麼串進工作流中就成了問題。</p>
+<p>幸運的是，Grok在近期也加入了Build模式，也就是跟chatGPT或是Claude一樣。在AI Agent後面掛了一台虛擬電腦，它可以直接在虛擬電腦上開發各種功能。而Grok本來就考慮到了遊戲開發的需求，在內部準備了好幾個與圖片生成的skill，當然也能直接調用Grok Imagine的API。</p>
+<figure><a class="zoom" href="img/char_lumia_ref.webp"><img src="img/char_lumia_ref.webp" width="1280" height="720" alt="露米婭的角色設定圖" loading="lazy"></a></figure>
+<figure><a class="zoom" href="img/asserts_preview.webp"><img src="img/asserts_preview.webp" width="1179" height="935" alt="用 Grok 生成的美術素材一覽" loading="lazy"></a></figure>
+<p>在這些skill當中，也有為了遊戲所需要的「一致性」的要求，所以即使是不同差分也能維持相同的人物設計與元素。經過去背之後，就能直接使用。我一口氣讓Grok幫我完成了背景，各個物件的圖片生成，然後將這些素材匯入了遊戲之中。</p>
+<p>而其表現的效果，遠比我想像的要好得多。</p>
+<figure><a class="zoom" href="img/early_tutorial-1.webp"><img src="img/early_tutorial-1.webp" width="1400" height="788" alt="遊戲畫面：新手教學" loading="lazy"></a><figcaption>這張其實是完成後截的，但其實這時候大致上主要的畫面就沒有什麼更改了。</figcaption></figure>
+<p>接著便是與Claude來來回回的試玩與調整，發現哪裡可以加什麼元素，就讓Claude幫我加上去。甚至連遊戲平衡的設計，也是讓Claude幫我寫另外一個script跑完模擬之後決定如何設計的。</p>
+<figure><a class="zoom" href="img/balance-report.webp"><img src="img/balance-report.webp" width="720" height="412" alt="遊戲平衡的模擬報告" loading="lazy"></a></figure>
+<p>至此，遊戲的核心玩法都已經完成了。接著便是進一步的打磨。我決定做三件事情。</p>
+<ol><li>加上一個能夠整合遊戲系統的遊戲劇情。</li><li>加上日文與英文的多語言對應。</li><li>加上語音。</li></ol>
+<p>遊戲劇情由我擬定完整的大綱，內容則讓AI幫忙寫我再進行校對與細節修改。(至於內容是什麼，就不再這邊破梗)</p>
+<p>接著便是多語言跟語音。多語言的部分，因為不想要浪費claude的額度來做翻譯的簡單工作，我讓它幫我製作了一個可以讓我用API呼叫其他LLM來進行翻譯，管理跟校對的工具。</p>
+<figure><a class="zoom" href="img/translate_tool.webp"><img src="img/translate_tool.webp" width="934" height="772" alt="翻譯工具" loading="lazy"></a></figure>
+<p>而語音的部分，也用了類似的方法。語音我選用了Google最近剛推出的gemini-3.8-flash-tts。</p>
+<figure><a class="zoom" href="img/voice_tool_0.webp"><img src="img/voice_tool_0.webp" width="1397" height="881" alt="語音工具：聲音設計" loading="lazy"></a></figure>
+<p>這個模型可以先透過聲音設計，調整出符合自己需求的音色，並以同樣的角色生成輸入的台詞。台詞的部分，也能透過各種演技指示的tag達到符合自己需求的演繹方式。</p>
+<figure><a class="zoom" href="img/voice_tool_1.webp"><img src="img/voice_tool_1.webp" width="1383" height="552" alt="語音工具：音效控制台與比較區" loading="lazy"></a></figure>
+<p>其中值得一提的地方是，因為gemini的審核非常嚴格，想要透過「年輕女性」、「少女」這些prompt做出日本聲優的少女音，聲音比較高圓潤可愛的音色都會被模型擋下來。所以我讓Claude在工具中加了一個音效控制台，在這邊可以微調pitch跟一些基本的濾波器，透過後製來建立理想的聲音。雖然已經說到爛嘴了，但結果真的比我想像的要好的許多。最後在每天跟著gemini-3.8-flash-tts一天只能生成100句的限制搏鬥下，我終於把遊戲中想要的地方都加上了語音。最後加上利用Suno生成的BGM遊戲便大功告成了。</p>
+<figure><a class="zoom" href="img/early_title.webp"><img src="img/early_title.webp" width="1400" height="788" alt="遊戲的標題畫面" loading="lazy"></a></figure>
+<p>說到這裡，來看看一個非常粗略的統計數據。</p>
+<p>這個遊戲的開發是我在周末以及晚上下班後製作的，實際上所使用到的時間大約是50小時左右。</p>
+<p>而主要開發使用的Claude，雖然因為是用訂閱的，但使用的token數大約是15.6M，以API價格換算的話大約是43 USD也就是台幣1400元左右。</p>
+<p>加上Grok的圖片生成，因為也是用訂閱制的，稍微換算應該花費在台幣700~800元左右。加上翻譯跟語音生成的API使用費，大約是新台幣300元。</p>
+<p>也就是製作這樣內容的遊戲(雖然不算大規模)，但總花費也就台幣2500元上下(其實更低，因為claude只用到訂閱的額度)。</p>
+<p>一個人，50小時，2500元。製作一個該有的要素都有的遊戲。我想這是在以往都很難想像的到的。</p>
+<p>最後來總結一下。</p>
+<p>我覺得我不得不承認，即使現在的AI離AGI這種什麼都辦的到的萬能AI還有不少的距離。但確實已經不是一個懷疑它到底做不做得到，而是我們該怎麼讓它做才能事半功倍的時代了。</p>
+<figure class="video"><video controls playsinline preload="none" poster="img/promo_poster.webp"><source src="promo.mp4" type="video/mp4"></video></figure>
+<p>甚至連這部宣傳的影片，從分鏡到剪輯都是完全由AI製作的了。</p>
+    <div class="divider"></div>
+  </article>
+  <footer><a class="btn" href="../">▶ 開始遊玩</a></footer>
+</div>
+<div class="lightbox" id="lightbox"><img alt=""></div>
+<script>
+  const box = document.getElementById('lightbox');
+  document.querySelectorAll('a.zoom').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    box.querySelector('img').src = a.getAttribute('href');
+    box.querySelector('img').alt = a.querySelector('img').alt;
+    box.classList.add('show');
+  }));
+  box.addEventListener('click', () => box.classList.remove('show'));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') box.classList.remove('show'); });
+</script>
+</body>
+</html>

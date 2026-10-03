@@ -68,6 +68,11 @@
         "imported": true,
         "tries": [
           {
+            "text": "[bright, welcoming] いらっしゃいませ！ルミアのポーション工房へようこそ！\n[excited] 薬草を育てて、ぐつぐつ煮込んで……[proud] ポーション、完成です！\n[warm, gentle] あなたが留守の間も、お店はちゃんと開けておきますね。\n[energetic, determined] 目指せ、世界一のポーション屋さん！",
+            "style": "cheerful anime heroine doing a lively commercial voice-over, clear and bright",
+            "sample": "lumia-voice_rpav801tegf1-try-20261002-211718-b039b5.wav"
+          },
+          {
             "text": "先生ーーっ！卒業したよ！ただいまーーっ！",
             "style": "学院を卒業して、久しぶりに育った工房へ帰ってきた。入口から奥へ向かって、弾むような大声で呼びかける。語尾を長く伸ばし、嬉しさいっぱいに。",
             "sample": "lumia-voice_rpav801tegf1-try-20260929-194123-062c37.wav"

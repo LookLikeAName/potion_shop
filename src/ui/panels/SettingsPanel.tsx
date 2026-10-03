@@ -217,6 +217,12 @@ export function SettingsPanel() {
           <button class={`btn danger`} onClick={doReset}>{t(confirmReset ? 'settings.resetConfirm' : 'settings.reset')}</button>
         </div>
       </div>
+      {/* 開發筆記（public/dev-note，由 scripts/build_dev_note.py 產生）：只有中文版，所以只在中文介面出現；開在新分頁，遊戲照常進行 */}
+      {currentLang() === 'zh-TW' && <div class="card">
+        <div class="card-title">{t('settings.about')}</div>
+        <p class="hint">{t('settings.devNoteHint')}</p>
+        <a class="btn" href={`${import.meta.env.BASE_URL}dev-note/index.html`} target="_blank" rel="noopener">{t('settings.devNote')}</a>
+      </div>}
     </div>
   );
 }
