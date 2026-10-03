@@ -10,6 +10,7 @@
   - ![說明](檔名) = 圖片（檔案放在 src/credit/）；緊接在圖片下一行的文字 = 圖片說明
   - 用括號包起來的一整行，例如「(這邊沒有截圖)」= 旁註
   - (promo video?) 或 (promo video) = 放宣傳影片（promo/lumia_promo.mp4）
+  - 很短（12 字以內）、完全沒有標點的一行（例如署名）靠右擺
 圖片會轉成 WebP、最寬 1400px；宣傳影片另外壓成網頁用的版本（Cloudflare Pages 單一檔案上限 25MB）。
 """
 import html
@@ -130,7 +131,9 @@ def render_body(lines, video):
                and not re.match(r'(!\[|\d+\.\s|[(（])', lines[i + 1].strip())):
             i += 1
             text += lines[i].strip()
-        out.append('<p>{}</p>'.format(html.escape(text)))
+        # 很短、完全沒有標點的一行（署名）：靠右擺
+        is_sign = len(text) <= 12 and not re.search(r'[。！？!?，、,.:：；;「」()（）]', text)
+        out.append('<p{}>{}</p>'.format(' class="signature"' if is_sign else '', html.escape(text)))
         i += 1
     return '\n'.join(out)
 
@@ -181,6 +184,7 @@ PAGE = '''<!doctype html>
   .divider {{ height: 26px; margin: 18px auto 26px; width: min(460px, 90%); background: url(img/ui_divider.webp) center / 100% 100% no-repeat; }}
   p {{ margin: 0 0 1.05em; text-align: justify; }}
   p.aside {{ color: var(--ink-soft); font-size: .9em; text-align: center; }}
+  p.signature {{ text-align: right; margin-top: 1.6em; font-weight: 700; letter-spacing: .15em; color: #5a3a22; }}
   ol {{ list-style: none; counter-reset: n; margin: .2em 0 1.4em; padding: .7em 1em; background: rgba(255, 250, 238, .75);
     border: 1.5px solid var(--page-edge); border-radius: 12px; box-shadow: 0 2px 0 rgba(120, 85, 45, .12); }}
   ol li {{ counter-increment: n; display: flex; gap: .7em; align-items: baseline; padding: .2em 0; }}
